@@ -1,31 +1,29 @@
 // === 📁 src/types/picking.ts ===
-import { BaseDocument, BaseItem } from './common';
+// Types for Picking module
+
+import { BaseDocument, BaseLine } from './common';
 
 export interface PickingDocument extends BaseDocument {
-  customerId: string;
-  customerName: string;
+  orderId: string;
+  orderNumber: string;
+  customer?: string;
   deliveryAddress?: string;
-  priority?: 'urgent' | 'high' | 'normal' | 'low';
-  route?: RoutePoint[];
-  items: PickingItem[];
+  totalLines: number;
+  completedLines: number;
+  route?: PickingRoute[];
 }
 
-export interface PickingItem extends BaseItem {
-  documentId: string;
-  cellId: string;
-  cellBarcode: string;
-  cellName?: string;
-  planned?: number;
-  picked: number;
-  remaining: number;
-  status: 'pending' | 'partial' | 'completed';
-  routeOrder?: number;
-}
-
-export interface RoutePoint {
+export interface PickingLine extends BaseLine {
   cellId: string;
   cellName: string;
-  order: number;
-  completed: boolean;
+  routeOrder?: number;
+  pickedAt?: number;
 }
 
+export interface PickingRoute {
+  order: number;
+  cellId: string;
+  cellName: string;
+  products: string[];
+  completed: boolean;
+}

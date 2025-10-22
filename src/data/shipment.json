@@ -1,173 +1,72 @@
-[
-  {
-    "id": "DOC-SHP-001",
-    "number": "ОТГ-001234",
-    "date": "2024-10-17T15:30:00.000Z",
-    "status": "in_progress",
-    "syncStatus": "synced",
-    "customerId": "CUST-001",
-    "customerName": "ООО \"Техномаркет\"",
-    "warehouseId": "WH-001",
-    "shippingAddress": "г. Москва, ул. Ленина, д. 10",
-    "carrier": "ПЭК",
-    "trackingNumber": "PEK123456789",
-    "items": [
-      {
-        "id": "1",
-        "documentId": "DOC-SHP-001",
-        "productId": "PROD-001",
-        "productName": "Ноутбук Lenovo ThinkPad X1",
-        "sku": "LEN-X1-2024",
-        "barcode": "4607112345678",
-        "quantity": 3,
-        "unit": "шт",
-        "shipped": 2,
-        "remaining": 1,
-        "status": "partial"
-      },
-      {
-        "id": "2",
-        "documentId": "DOC-SHP-001",
-        "productId": "PROD-002",
-        "productName": "Мышь Logitech MX Master 3",
-        "sku": "LOG-MX3-BLK",
-        "barcode": "4607123456789",
-        "quantity": 5,
-        "unit": "шт",
-        "shipped": 5,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "3",
-        "documentId": "DOC-SHP-001",
-        "productId": "PROD-007",
-        "productName": "SSD Samsung 1TB",
-        "sku": "SAM-SSD-1TB",
-        "barcode": "4607678901234",
-        "quantity": 10,
-        "unit": "шт",
-        "shipped": 0,
-        "remaining": 10,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T15:00:00.000Z",
-    "updatedAt": "2024-10-17T15:45:00.000Z"
-  },
-  {
-    "id": "DOC-SHP-002",
-    "number": "ОТГ-001235",
-    "date": "2024-10-17T16:00:00.000Z",
-    "status": "pending",
-    "syncStatus": "synced",
-    "customerId": "CUST-002",
-    "customerName": "ИП Сидоров М.П.",
-    "warehouseId": "WH-001",
-    "shippingAddress": "г. Санкт-Петербург, Невский пр., д. 50",
-    "carrier": "СДЭК",
-    "trackingNumber": "",
-    "items": [
-      {
-        "id": "4",
-        "documentId": "DOC-SHP-002",
-        "productId": "PROD-004",
-        "productName": "Монитор Samsung 27\"",
-        "sku": "SAM-M27-4K",
-        "barcode": "4607345678901",
-        "quantity": 2,
-        "unit": "шт",
-        "shipped": 0,
-        "remaining": 2,
-        "status": "pending"
-      },
-      {
-        "id": "5",
-        "documentId": "DOC-SHP-002",
-        "productId": "PROD-008",
-        "productName": "RAM Kingston 16GB",
-        "sku": "KIN-RAM-16GB",
-        "barcode": "4607789012345",
-        "quantity": 8,
-        "unit": "шт",
-        "shipped": 0,
-        "remaining": 8,
-        "status": "pending"
-      },
-      {
-        "id": "6",
-        "documentId": "DOC-SHP-002",
-        "productId": "PROD-006",
-        "productName": "Наушники Sony WH-1000XM5",
-        "sku": "SNY-WH1000-BLK",
-        "barcode": "4607567890123",
-        "quantity": 4,
-        "unit": "шт",
-        "shipped": 0,
-        "remaining": 4,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T15:45:00.000Z",
-    "updatedAt": "2024-10-17T15:45:00.000Z"
-  },
-  {
-    "id": "DOC-SHP-003",
-    "number": "ОТГ-001236",
-    "date": "2024-10-17T14:00:00.000Z",
-    "status": "completed",
-    "syncStatus": "synced",
-    "customerId": "CUST-003",
-    "customerName": "ООО \"КомпСервис\"",
-    "warehouseId": "WH-001",
-    "shippingAddress": "г. Екатеринбург, ул. Малышева, д. 5",
-    "carrier": "DPD",
-    "trackingNumber": "DPD987654321",
-    "items": [
-      {
-        "id": "7",
-        "documentId": "DOC-SHP-003",
-        "productId": "PROD-005",
-        "productName": "Веб-камера Logitech C920",
-        "sku": "LOG-C920-HD",
-        "barcode": "4607456789012",
-        "quantity": 6,
-        "unit": "шт",
-        "shipped": 6,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "8",
-        "documentId": "DOC-SHP-003",
-        "productId": "PROD-009",
-        "productName": "Блок питания Corsair 750W",
-        "sku": "COR-PSU-750W",
-        "barcode": "4607890123456",
-        "quantity": 3,
-        "unit": "шт",
-        "shipped": 3,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "9",
-        "documentId": "DOC-SHP-003",
-        "productId": "PROD-002",
-        "productName": "Мышь Logitech MX Master 3",
-        "sku": "LOG-MX3-BLK",
-        "barcode": "4607123456789",
-        "quantity": 10,
-        "unit": "шт",
-        "shipped": 10,
-        "remaining": 0,
-        "status": "completed"
-      }
-    ],
-    "createdAt": "2024-10-17T13:30:00.000Z",
-    "updatedAt": "2024-10-17T14:30:00.000Z"
-  }
-]
-
-
-
+{
+  "documents": [
+    {
+      "id": "SHIP-001",
+      "status": "in_progress",
+      "orderId": "ORD-12345",
+      "orderNumber": "Заказ №12345",
+      "customer": "ООО Клиент",
+      "deliveryAddress": "г. Москва, ул. Примерная, д. 1",
+      "totalLines": 4,
+      "completedLines": 2,
+      "createdAt": 1698825600000,
+      "updatedAt": 1698829200000
+    }
+  ],
+  "lines": [
+    {
+      "id": "SHIP-001-L1",
+      "documentId": "SHIP-001",
+      "productId": "P001",
+      "productName": "Кофе Lavazza 250г",
+      "productSku": "LAV-250",
+      "barcode": "8000070001234",
+      "quantity": 5,
+      "quantityPlan": 5,
+      "quantityFact": 5,
+      "packageId": "PKG-001",
+      "status": "completed",
+      "verifiedAt": 1698826800000
+    },
+    {
+      "id": "SHIP-001-L2",
+      "documentId": "SHIP-001",
+      "productId": "P002",
+      "productName": "Чай Ahmad Earl Grey 100г",
+      "productSku": "AHM-100-EG",
+      "barcode": "5054881234567",
+      "quantity": 10,
+      "quantityPlan": 10,
+      "quantityFact": 10,
+      "packageId": "PKG-002",
+      "status": "completed",
+      "verifiedAt": 1698827400000
+    },
+    {
+      "id": "SHIP-001-L3",
+      "documentId": "SHIP-001",
+      "productId": "P005",
+      "productName": "Печенье Oreo 95г",
+      "productSku": "OREO-95",
+      "barcode": "7622210123456",
+      "quantity": 8,
+      "quantityPlan": 8,
+      "quantityFact": 0,
+      "packageId": "PKG-003",
+      "status": "pending"
+    },
+    {
+      "id": "SHIP-001-L4",
+      "documentId": "SHIP-001",
+      "productId": "P003",
+      "productName": "Сахар 1кг",
+      "productSku": "SUG-1000",
+      "barcode": "4607001234567",
+      "quantity": 20,
+      "quantityPlan": 20,
+      "quantityFact": 0,
+      "packageId": "PKG-004",
+      "status": "pending"
+    }
+  ]
+}

@@ -1,70 +1,62 @@
 // === 📁 src/utils/sound.ts ===
-import { SoundConfig } from '@/types/common';
+// Sound feedback utilities
 
-class SoundManager {
-  private context: AudioContext | null = null;
-  private config: SoundConfig = { enabled: true, volume: 0.7 };
+export type SoundType = 'success' | 'error' | 'warning' | 'scan';
 
-  setConfig(config: SoundConfig) {
-    this.config = config;
+const sounds: Record<SoundType, { frequency: number; duration: number }> = {
+  success: { frequency: 800, duration: 100 },
+  error: { frequency: 200, duration: 300 },
+  warning: { frequency: 500, duration: 200 },
+  scan: { frequency: 1000, duration: 50 },
+};
+
+let audioContext: AudioContext | null = null;
+let enabled = true;
+
+export const initSound = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
+};
 
-  private getContext(): AudioContext {
-    if (!this.context) {
-      this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return this.context;
+export const playSound = (type: SoundType) => {
+  if (!enabled) return;
+  
+  try {
+    if (!audioContext) initSound();
+    if (!audioContext) return;
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = sounds[type].frequency;
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + sounds[type].duration / 1000
+    );
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + sounds[type].duration / 1000);
+  } catch (error) {
+    console.error('Sound playback error:', error);
   }
+};
 
-  private playTone(frequency: number, duration: number) {
-    if (!this.config.enabled) return;
+export const setSoundEnabled = (value: boolean) => {
+  enabled = value;
+  localStorage.setItem('soundEnabled', String(value));
+};
 
-    try {
-      const ctx = this.getContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+export const isSoundEnabled = () => {
+  const stored = localStorage.getItem('soundEnabled');
+  return stored === null ? true : stored === 'true';
+};
 
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
-
-      gainNode.gain.setValueAtTime(this.config.volume, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
-
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + duration / 1000);
-    } catch (error) {
-      console.error('Sound playback error:', error);
-    }
-  }
-
-  success() {
-    this.playTone(800, 100);
-  }
-
-  error() {
-    this.playTone(300, 200);
-    setTimeout(() => this.playTone(200, 200), 150);
-  }
-
-  warning() {
-    this.playTone(500, 150);
-  }
-
-  scan() {
-    this.playTone(1000, 50);
-  }
-
-  complete() {
-    this.playTone(600, 100);
-    setTimeout(() => this.playTone(800, 100), 100);
-    setTimeout(() => this.playTone(1000, 150), 200);
-  }
-}
-
-export const soundManager = new SoundManager();
-
-
-
+// Initialize
+enabled = isSoundEnabled();

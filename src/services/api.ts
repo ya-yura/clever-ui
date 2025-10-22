@@ -1,7 +1,15 @@
 // === 📁 src/services/api.ts ===
+// API service for server communication
+
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { ApiResponse } from '@/types/common';
 import serverConfig from '@/config/server.json';
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
 
 class ApiService {
   private client: AxiosInstance;
@@ -12,8 +20,8 @@ class ApiService {
       baseURL: serverConfig.apiBaseUrl,
       timeout: 30000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     // Request interceptor
@@ -38,131 +46,126 @@ class ApiService {
         return Promise.reject(error);
       }
     );
+
+    // Load token from localStorage
+    this.token = localStorage.getItem('authToken');
   }
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem('authToken', token);
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('authToken');
   }
 
-  loadToken() {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      this.token = token;
+  // Generic request methods
+  async get<T = any>(url: string, params?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.get(url, { params });
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   }
 
-  // Auth
-  async login(username: string, password: string): Promise<ApiResponse<{ token: string; user: any }>> {
-    const { data } = await this.client.post('/auth/login', { username, password });
-    return data;
+  async post<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.post(url, data);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 
+  async put<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.put(url, data);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async delete<T = any>(url: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.delete(url);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Module-specific endpoints
   // Receiving
-  async getReceivingDocuments(): Promise<ApiResponse<any[]>> {
-    const { data } = await this.client.get('/receiving/documents');
-    return data;
+  async getReceivingDocument(id: string) {
+    return this.get(`/receiving/${id}`);
   }
 
-  async getReceivingDocument(id: string): Promise<ApiResponse<any>> {
-    const { data } = await this.client.get(`/receiving/documents/${id}`);
-    return data;
-  }
-
-  async syncReceiving(documentId: string, items: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/receiving/sync', { documentId, items });
-    return data;
-  }
-
-  async completeReceiving(documentId: string): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post(`/receiving/documents/${documentId}/complete`);
-    return data;
+  async syncReceiving(data: any) {
+    return this.post('/receiving/sync', data);
   }
 
   // Placement
-  async getPlacementDocuments(): Promise<ApiResponse<any[]>> {
-    const { data } = await this.client.get('/placement/documents');
-    return data;
+  async getPlacementDocument(id: string) {
+    return this.get(`/placement/${id}`);
   }
 
-  async syncPlacement(documentId: string, items: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/placement/sync', { documentId, items });
-    return data;
+  async syncPlacement(data: any) {
+    return this.post('/placement/sync', data);
   }
 
   // Picking
-  async getPickingDocuments(): Promise<ApiResponse<any[]>> {
-    const { data } = await this.client.get('/picking/documents');
-    return data;
+  async getPickingDocument(id: string) {
+    return this.get(`/picking/${id}`);
   }
 
-  async syncPicking(documentId: string, items: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/picking/sync', { documentId, items });
-    return data;
+  async syncPicking(data: any) {
+    return this.post('/picking/sync', data);
   }
 
   // Shipment
-  async getShipmentDocuments(): Promise<ApiResponse<any[]>> {
-    const { data } = await this.client.get('/shipment/documents');
-    return data;
+  async getShipmentDocument(id: string) {
+    return this.get(`/shipment/${id}`);
   }
 
-  async syncShipment(documentId: string, items: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/shipment/sync', { documentId, items });
-    return data;
+  async syncShipment(data: any) {
+    return this.post('/shipment/sync', data);
   }
 
-  // Return & Write-off
-  async syncReturn(documentId: string, data: any): Promise<ApiResponse<any>> {
-    const { data: response } = await this.client.post('/return-sync', { documentId, ...data });
-    return response;
+  // Return
+  async syncReturn(data: any) {
+    return this.post('/return/sync', data);
   }
 
-  async syncWriteoff(documentId: string, data: any): Promise<ApiResponse<any>> {
-    const { data: response } = await this.client.post('/writeoff-sync', { documentId, ...data });
-    return response;
+  async syncWriteoff(data: any) {
+    return this.post('/writeoff/sync', data);
   }
 
   // Inventory
-  async getInventoryDocuments(): Promise<ApiResponse<any[]>> {
-    const { data } = await this.client.get('/inventory/documents');
-    return data;
+  async getInventoryDocument(id: string) {
+    return this.get(`/inventory/${id}`);
   }
 
-  async syncInventory(documentId: string, items: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/inventory/sync', { documentId, items });
-    return data;
+  async syncInventory(data: any) {
+    return this.post('/inventory/sync', data);
   }
 
-  // Barcodes
-  async uploadBarcodes(barcodes: any[]): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/barcodes/upload', { barcodes });
-    return data;
+  // Barcode collector
+  async uploadBarcodes(barcodes: string[]) {
+    return this.post('/barcodes/upload', { barcodes });
   }
 
-  // Printing
-  async print(labelData: any): Promise<ApiResponse<any>> {
-    const { data } = await this.client.post('/print', labelData);
-    return data;
+  // Label printing
+  async print(data: any) {
+    return this.post('/print', data);
   }
 
-  // Check connection
-  async ping(): Promise<boolean> {
-    try {
-      await this.client.get('/ping');
-      return true;
-    } catch {
-      return false;
-    }
+  async getTemplates() {
+    return this.get('/templates');
   }
 }
 
 export const api = new ApiService();
-
-
-

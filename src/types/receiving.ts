@@ -1,29 +1,18 @@
 // === 📁 src/types/receiving.ts ===
-import { BaseDocument, BaseItem, Status, SyncStatus } from './common';
+// Types for Receiving module
+
+import { BaseDocument, BaseLine } from './common';
 
 export interface ReceivingDocument extends BaseDocument {
-  supplierId: string;
-  supplierName: string;
-  warehouseId: string;
-  items: ReceivingItem[];
+  supplier?: string;
+  deliveryNumber?: string;
+  expectedDate?: number;
+  totalLines: number;
+  completedLines: number;
 }
 
-export interface ReceivingItem extends BaseItem {
-  documentId: string;
-  planned: number;
-  received: number;
-  discrepancy: number;
-  cellId?: string;
-  cellName?: string;
-  status: 'pending' | 'partial' | 'completed' | 'excess';
+export interface ReceivingLine extends BaseLine {
+  expiryDate?: number;
+  lotNumber?: string;
+  receivedAt?: number;
 }
-
-export interface ReceivingScan {
-  barcode: string;
-  timestamp: number;
-  productId?: string;
-  quantity: number;
-}
-
-
-

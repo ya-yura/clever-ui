@@ -1,0 +1,43 @@
+{
+  "name": "Склад-15 - Система управления складом",
+  "short_name": "Склад-15",
+  "description": "PWA-приложение для управления складом Cleverence",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Приёмка",
+      "short_name": "Приёмка",
+      "description": "Приёмка товаров",
+      "url": "/receiving",
+      "icons": []
+    },
+    {
+      "name": "Подбор",
+      "short_name": "Подбор",
+      "description": "Подбор заказов",
+      "url": "/picking",
+      "icons": []
+    },
+    {
+      "name": "Отгрузка",
+      "short_name": "Отгрузка",
+      "description": "Отгрузка заказов",
+      "url": "/shipment",
+      "icons": []
+    }
+  ]
+}
+

@@ -1,32 +1,20 @@
 // === 📁 src/types/placement.ts ===
-import { BaseDocument, BaseItem } from './common';
+// Types for Placement module
+
+import { BaseDocument, BaseLine } from './common';
 
 export interface PlacementDocument extends BaseDocument {
-  warehouseId: string;
   sourceDocumentId?: string;
-  items: PlacementItem[];
+  sourceDocumentType?: string;
+  totalLines: number;
+  completedLines: number;
 }
 
-export interface PlacementItem extends BaseItem {
-  documentId: string;
-  sourceCellId?: string;
-  targetCellId?: string;
-  targetCellName?: string;
-  cellId: string;
-  cellBarcode: string;
-  planned?: number;
-  placed: number;
-  remaining: number;
-  status: 'pending' | 'partial' | 'completed';
+export interface PlacementLine extends BaseLine {
+  cellId?: string;
+  cellName?: string;
+  suggestedCellId?: string;
+  suggestedCellName?: string;
+  placedAt?: number;
+  verifiedCellId?: string;
 }
-
-export interface Cell {
-  id: string;
-  name: string;
-  zoneId: string;
-  zoneName: string;
-  type: string;
-  capacity: number;
-  occupied: number;
-}
-

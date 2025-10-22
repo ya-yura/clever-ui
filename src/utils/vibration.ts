@@ -1,38 +1,36 @@
 // === 📁 src/utils/vibration.ts ===
-import { VibrationConfig } from '@/types/common';
+// Vibration feedback utilities
 
-class VibrationManager {
-  private config: VibrationConfig = { enabled: true, duration: 100 };
+export type VibrationType = 'success' | 'error' | 'warning' | 'light';
 
-  setConfig(config: VibrationConfig) {
-    this.config = config;
+const patterns: Record<VibrationType, number | number[]> = {
+  success: 50,
+  error: [100, 50, 100],
+  warning: [50, 30, 50],
+  light: 20,
+};
+
+let enabled = true;
+
+export const vibrate = (type: VibrationType) => {
+  if (!enabled || !navigator.vibrate) return;
+  
+  try {
+    navigator.vibrate(patterns[type]);
+  } catch (error) {
+    console.error('Vibration error:', error);
   }
+};
 
-  private vibrate(pattern: number | number[]) {
-    if (!this.config.enabled) return;
-    if ('vibrate' in navigator) {
-      navigator.vibrate(pattern);
-    }
-  }
+export const setVibrationEnabled = (value: boolean) => {
+  enabled = value;
+  localStorage.setItem('vibrationEnabled', String(value));
+};
 
-  success() {
-    this.vibrate(this.config.duration);
-  }
+export const isVibrationEnabled = () => {
+  const stored = localStorage.getItem('vibrationEnabled');
+  return stored === null ? true : stored === 'true';
+};
 
-  error() {
-    this.vibrate([this.config.duration, 50, this.config.duration]);
-  }
-
-  warning() {
-    this.vibrate([50, 50, 50]);
-  }
-
-  scan() {
-    this.vibrate(50);
-  }
-}
-
-export const vibrationManager = new VibrationManager();
-
-
-
+// Initialize
+enabled = isVibrationEnabled();

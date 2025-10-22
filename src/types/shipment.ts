@@ -1,33 +1,36 @@
 // === 📁 src/types/shipment.ts ===
-import { BaseDocument, BaseItem } from './common';
+// Types for Shipment module
+
+import { BaseDocument, BaseLine } from './common';
 
 export interface ShipmentDocument extends BaseDocument {
-  customerId: string;
-  customerName: string;
-  shippingAddress: string;
+  orderId: string;
+  orderNumber: string;
+  customer?: string;
   deliveryAddress?: string;
+  totalLines: number;
+  completedLines: number;
+  totalWeight?: number;
+  totalPackages?: number;
+  ttn?: string;
   carrier?: string;
   trackingNumber?: string;
-  items: ShipmentItem[];
   signature?: string;
-  photos?: string[];
-}
-
-export interface ShipmentItem extends BaseItem {
-  documentId: string;
-  planned?: number;
-  shipped: number;
-  remaining: number;
-  packageId?: string;
-  serialNumbers?: string[];
-  status: 'pending' | 'partial' | 'completed';
-}
-
-export interface Discrepancy {
-  itemId: string;
-  type: 'shortage' | 'excess' | 'damage';
-  quantity: number;
-  reason?: string;
   photo?: string;
+  shippedAt?: number;
 }
 
+export interface ShipmentLine extends BaseLine {
+  packageId?: string;
+  serialNumber?: string;
+  weight?: number;
+  verifiedAt?: number;
+}
+
+export interface ShipmentDiscrepancy {
+  lineId: string;
+  productName: string;
+  planned: number;
+  actual: number;
+  action?: 'adjust' | 'mark_shortage' | 'confirm';
+}

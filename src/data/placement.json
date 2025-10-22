@@ -1,179 +1,95 @@
-[
-  {
-    "id": "DOC-PLM-001",
-    "number": "РЗ-000045",
-    "date": "2024-10-17T10:30:00.000Z",
-    "status": "in_progress",
-    "syncStatus": "synced",
-    "warehouseId": "WH-001",
-    "sourceDocumentId": "DOC-RCV-001",
-    "items": [
-      {
-        "id": "1",
-        "documentId": "DOC-PLM-001",
-        "productId": "PROD-001",
-        "productName": "Ноутбук Lenovo ThinkPad X1",
-        "sku": "LEN-X1-2024",
-        "barcode": "4607112345678",
-        "quantity": 7,
-        "unit": "шт",
-        "cellId": "A-01-01",
-        "cellBarcode": "CELL-A0101",
-        "placed": 5,
-        "remaining": 2,
-        "status": "partial"
-      },
-      {
-        "id": "2",
-        "documentId": "DOC-PLM-001",
-        "productId": "PROD-002",
-        "productName": "Мышь Logitech MX Master 3",
-        "sku": "LOG-MX3-BLK",
-        "barcode": "4607123456789",
-        "quantity": 25,
-        "unit": "шт",
-        "cellId": "B-02-03",
-        "cellBarcode": "CELL-B0203",
-        "placed": 25,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "3",
-        "documentId": "DOC-PLM-001",
-        "productId": "PROD-003",
-        "productName": "Клавиатура Keychron K8",
-        "sku": "KEY-K8-RGB",
-        "barcode": "4607234567890",
-        "quantity": 0,
-        "unit": "шт",
-        "cellId": "B-02-04",
-        "cellBarcode": "CELL-B0204",
-        "placed": 0,
-        "remaining": 0,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T10:30:00.000Z",
-    "updatedAt": "2024-10-17T11:00:00.000Z"
-  },
-  {
-    "id": "DOC-PLM-002",
-    "number": "РЗ-000046",
-    "date": "2024-10-17T12:00:00.000Z",
-    "status": "pending",
-    "syncStatus": "synced",
-    "warehouseId": "WH-001",
-    "sourceDocumentId": "DOC-RCV-002",
-    "items": [
-      {
-        "id": "4",
-        "documentId": "DOC-PLM-002",
-        "productId": "PROD-004",
-        "productName": "Монитор Samsung 27\"",
-        "sku": "SAM-M27-4K",
-        "barcode": "4607345678901",
-        "quantity": 8,
-        "unit": "шт",
-        "cellId": "C-03-01",
-        "cellBarcode": "CELL-C0301",
-        "placed": 0,
-        "remaining": 8,
-        "status": "pending"
-      },
-      {
-        "id": "5",
-        "documentId": "DOC-PLM-002",
-        "productId": "PROD-005",
-        "productName": "Веб-камера Logitech C920",
-        "sku": "LOG-C920-HD",
-        "barcode": "4607456789012",
-        "quantity": 12,
-        "unit": "шт",
-        "cellId": "B-02-05",
-        "cellBarcode": "CELL-B0205",
-        "placed": 0,
-        "remaining": 12,
-        "status": "pending"
-      },
-      {
-        "id": "6",
-        "documentId": "DOC-PLM-002",
-        "productId": "PROD-006",
-        "productName": "Наушники Sony WH-1000XM5",
-        "sku": "SNY-WH1000-BLK",
-        "barcode": "4607567890123",
-        "quantity": 20,
-        "unit": "шт",
-        "cellId": "B-02-06",
-        "cellBarcode": "CELL-B0206",
-        "placed": 0,
-        "remaining": 20,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T12:00:00.000Z",
-    "updatedAt": "2024-10-17T12:00:00.000Z"
-  },
-  {
-    "id": "DOC-PLM-003",
-    "number": "РЗ-000047",
-    "date": "2024-10-17T12:30:00.000Z",
-    "status": "completed",
-    "syncStatus": "synced",
-    "warehouseId": "WH-001",
-    "sourceDocumentId": "DOC-RCV-003",
-    "items": [
-      {
-        "id": "7",
-        "documentId": "DOC-PLM-003",
-        "productId": "PROD-007",
-        "productName": "SSD Samsung 1TB",
-        "sku": "SAM-SSD-1TB",
-        "barcode": "4607678901234",
-        "quantity": 30,
-        "unit": "шт",
-        "cellId": "D-04-02",
-        "cellBarcode": "CELL-D0402",
-        "placed": 30,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "8",
-        "documentId": "DOC-PLM-003",
-        "productId": "PROD-008",
-        "productName": "RAM Kingston 16GB",
-        "sku": "KIN-RAM-16GB",
-        "barcode": "4607789012345",
-        "quantity": 40,
-        "unit": "шт",
-        "cellId": "D-04-03",
-        "cellBarcode": "CELL-D0403",
-        "placed": 40,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "9",
-        "documentId": "DOC-PLM-003",
-        "productId": "PROD-009",
-        "productName": "Блок питания Corsair 750W",
-        "sku": "COR-PSU-750W",
-        "barcode": "4607890123456",
-        "quantity": 15,
-        "unit": "шт",
-        "cellId": "D-04-04",
-        "cellBarcode": "CELL-D0404",
-        "placed": 15,
-        "remaining": 0,
-        "status": "completed"
-      }
-    ],
-    "createdAt": "2024-10-17T12:30:00.000Z",
-    "updatedAt": "2024-10-17T13:00:00.000Z"
-  }
-]
-
-
-
+{
+  "documents": [
+    {
+      "id": "PLM-001",
+      "status": "in_progress",
+      "sourceDocumentId": "RCV-001",
+      "sourceDocumentType": "receiving",
+      "totalLines": 5,
+      "completedLines": 3,
+      "createdAt": 1698652800000,
+      "updatedAt": 1698656400000
+    }
+  ],
+  "lines": [
+    {
+      "id": "PLM-001-L1",
+      "documentId": "PLM-001",
+      "productId": "P001",
+      "productName": "Кофе Lavazza 250г",
+      "productSku": "LAV-250",
+      "barcode": "8000070001234",
+      "quantity": 10,
+      "quantityPlan": 10,
+      "quantityFact": 10,
+      "cellId": "CELL-A12",
+      "cellName": "A-12",
+      "suggestedCellId": "CELL-A12",
+      "suggestedCellName": "A-12",
+      "status": "completed",
+      "placedAt": 1698653400000
+    },
+    {
+      "id": "PLM-001-L2",
+      "documentId": "PLM-001",
+      "productId": "P002",
+      "productName": "Чай Ahmad Earl Grey 100г",
+      "productSku": "AHM-100-EG",
+      "barcode": "5054881234567",
+      "quantity": 18,
+      "quantityPlan": 18,
+      "quantityFact": 18,
+      "cellId": "CELL-A13",
+      "cellName": "A-13",
+      "suggestedCellId": "CELL-A13",
+      "suggestedCellName": "A-13",
+      "status": "completed",
+      "placedAt": 1698654000000
+    },
+    {
+      "id": "PLM-001-L3",
+      "documentId": "PLM-001",
+      "productId": "P003",
+      "productName": "Сахар 1кг",
+      "productSku": "SUG-1000",
+      "barcode": "4607001234567",
+      "quantity": 50,
+      "quantityPlan": 50,
+      "quantityFact": 25,
+      "cellId": "CELL-B05",
+      "cellName": "B-05",
+      "suggestedCellId": "CELL-B05",
+      "suggestedCellName": "B-05",
+      "status": "partial",
+      "placedAt": 1698654600000
+    },
+    {
+      "id": "PLM-001-L4",
+      "documentId": "PLM-001",
+      "productId": "P004",
+      "productName": "Молоко 3.2% 1л",
+      "productSku": "MLK-32-1L",
+      "barcode": "4607012345678",
+      "quantity": 30,
+      "quantityPlan": 30,
+      "quantityFact": 0,
+      "suggestedCellId": "CELL-C01",
+      "suggestedCellName": "C-01",
+      "status": "pending"
+    },
+    {
+      "id": "PLM-001-L5",
+      "documentId": "PLM-001",
+      "productId": "P005",
+      "productName": "Печенье Oreo 95г",
+      "productSku": "OREO-95",
+      "barcode": "7622210123456",
+      "quantity": 15,
+      "quantityPlan": 15,
+      "quantityFact": 0,
+      "suggestedCellId": "CELL-A15",
+      "suggestedCellName": "A-15",
+      "status": "pending"
+    }
+  ]
+}

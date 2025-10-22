@@ -1,35 +1,38 @@
 // === 📁 src/utils/export.ts ===
-import { BarcodeItem } from '@/types/barcode';
+// Export utilities for data export
 
-export function exportToCSV(data: BarcodeItem[], filename: string = 'barcodes.csv') {
-  const headers = ['ID', 'Barcode', 'Timestamp', 'Type', 'Date'];
-  const rows = data.map(item => [
-    item.id,
-    item.barcode,
-    item.timestamp,
-    item.type || '',
-    new Date(item.timestamp).toLocaleString('ru-RU')
-  ]);
+export const exportToCSV = (data: any[], filename: string) => {
+  if (data.length === 0) return;
 
-  const csv = [
+  const headers = Object.keys(data[0]);
+  const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.join(','))
+    ...data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }).join(',')
+    )
   ].join('\n');
 
-  downloadFile(csv, filename, 'text/csv');
-}
+  downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
+};
 
-export function exportToTXT(data: BarcodeItem[], filename: string = 'barcodes.txt') {
-  const text = data.map(item => item.barcode).join('\n');
-  downloadFile(text, filename, 'text/plain');
-}
+export const exportToJSON = (data: any, filename: string) => {
+  const jsonContent = JSON.stringify(data, null, 2);
+  downloadFile(jsonContent, filename, 'application/json');
+};
 
-export function exportToJSON(data: unknown, filename: string = 'data.json') {
-  const json = JSON.stringify(data, null, 2);
-  downloadFile(json, filename, 'application/json');
-}
+export const exportToTXT = (data: string[], filename: string) => {
+  const txtContent = data.join('\n');
+  downloadFile(txtContent, filename, 'text/plain;charset=utf-8;');
+};
 
-function downloadFile(content: string, filename: string, mimeType: string) {
+const downloadFile = (content: string, filename: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -39,7 +42,10 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-}
+};
 
-
-
+export const formatFilename = (prefix: string, extension: string): string => {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  return `${prefix}_${timestamp}.${extension}`;
+};

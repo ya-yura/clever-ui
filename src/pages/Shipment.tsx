@@ -1,173 +1,360 @@
 // === 📁 src/pages/Shipment.tsx ===
-import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { HeaderBar } from '@/components/HeaderBar';
-import { ScanHint } from '@/components/ScanHint';
-import { Card } from '@/components/Card';
-import { Button } from '@/components/Button';
-import { StatusBadge } from '@/components/StatusBadge';
-import { ProgressBar } from '@/components/ProgressBar';
-import { Input } from '@/components/Input';
+// Shipment module page
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { db } from '@/services/db';
+import { api } from '@/services/api';
 import { useScanner } from '@/hooks/useScanner';
-import { useNotifications } from '@/hooks/useNotifications';
-import { feedback } from '@/utils/feedback';
-import type { ShipmentDocument } from '@/types/shipment';
-import demoData from '@/data/shipment.json';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useSync } from '@/hooks/useSync';
+import { ShipmentDocument, ShipmentLine } from '@/types/shipment';
+import { scanFeedback } from '@/utils/feedback';
+import ScanHint from '@/components/receiving/ScanHint';
 
-export function Shipment() {
+const Shipment: React.FC = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sourceId = searchParams.get('source');
+
   const [document, setDocument] = useState<ShipmentDocument | null>(null);
-  const [hint, setHint] = useState('Сканируйте документ отгрузки');
-  const [hintType, setHintType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
-  const { success, error } = useNotifications();
+  const [lines, setLines] = useState<ShipmentLine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showTtnModal, setShowTtnModal] = useState(false);
+  const [ttnNumber, setTtnNumber] = useState('');
 
-  // Загрузка демо-данных при монтировании
+  const { addSyncAction } = useOfflineStorage('shipment');
+  const { sync, isSyncing, pendingCount } = useSync({
+    module: 'shipment',
+    syncEndpoint: '/shipment/sync',
+  });
+
   useEffect(() => {
-    if (demoData && demoData.length > 0) {
-      const firstDoc = demoData[0] as ShipmentDocument;
-      setDocument(firstDoc);
-      setHint('Документ загружен. Сканируйте товары для отгрузки');
-      setHintType('success');
-    }
-  }, []);
+    loadDocument();
+  }, [id, sourceId]);
 
-  const handleScan = useCallback((result: { barcode: string; type: string }) => {
+  const loadDocument = async () => {
+    setLoading(true);
+    try {
+      if (id) {
+        let doc = await db.shipmentDocuments.get(id);
+        let docLines = await db.shipmentLines.where('documentId').equals(id).toArray();
+
+        if (!doc) {
+          const response = await api.getShipmentDocument(id);
+          if (response.success && response.data) {
+            doc = response.data.document;
+            docLines = response.data.lines;
+            await db.shipmentDocuments.put(doc);
+            await db.shipmentLines.bulkPut(docLines);
+          }
+        }
+
+        if (doc) {
+          setDocument(doc);
+          setLines(docLines);
+        }
+      } else if (sourceId) {
+        // Create from picking document
+        const pickingDoc = await db.pickingDocuments.get(sourceId);
+        const pickingLines = await db.pickingLines.where('documentId').equals(sourceId).toArray();
+
+        if (pickingDoc && pickingLines.length > 0) {
+          const newDoc: ShipmentDocument = {
+            id: `SHIP-${Date.now()}`,
+            status: 'in_progress',
+            orderId: pickingDoc.orderId,
+            orderNumber: pickingDoc.orderNumber,
+            customer: pickingDoc.customer,
+            deliveryAddress: pickingDoc.deliveryAddress,
+            totalLines: pickingLines.length,
+            completedLines: 0,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          const newLines: ShipmentLine[] = pickingLines.map((pLine, index) => ({
+            id: `SHIP-${Date.now()}-L${index + 1}`,
+            documentId: newDoc.id,
+            productId: pLine.productId,
+            productName: pLine.productName,
+            productSku: pLine.productSku,
+            barcode: pLine.barcode,
+            quantity: pLine.quantityFact,
+            quantityPlan: pLine.quantityFact,
+            quantityFact: 0,
+            status: 'pending' as const,
+          }));
+
+          await db.shipmentDocuments.add(newDoc);
+          await db.shipmentLines.bulkPut(newLines);
+
+          setDocument(newDoc);
+          setLines(newLines);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScan = async (code: string) => {
     if (!document) return;
 
-    const item = document.items.find(i => i.barcode === result.barcode);
-    if (item && item.remaining > 0) {
-      const updatedDoc = {
-        ...document,
-        items: document.items.map(i =>
-          i.id === item.id
-            ? { ...i, shipped: i.shipped + 1, remaining: i.remaining - 1, status: i.remaining === 1 ? 'completed' as const : 'partial' as const }
-            : i
-        )
+    const line = lines.find(l =>
+      (l.barcode === code || l.productSku === code || l.packageId === code) &&
+      l.status !== 'completed'
+    );
+
+    if (line) {
+      const updatedLine: ShipmentLine = {
+        ...line,
+        quantityFact: line.quantityFact + 1,
+        status: line.quantityFact + 1 >= line.quantityPlan ? 'completed' : 'partial',
+        verifiedAt: Date.now(),
       };
-      setDocument(updatedDoc);
-      setHint(`Отгружен товар "${item.productName}"`);
-      setHintType('success');
-      feedback.scan();
+
+      await db.shipmentLines.update(line.id, updatedLine);
+      await addSyncAction('verify_package', updatedLine);
+
+      setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
+      scanFeedback(true, `Проверено: ${line.productName}`);
+
+      updateDocumentProgress();
     } else {
-      setHint('Товар не найден или уже отгружен');
-      setHintType('error');
-      feedback.error('Товар не найден');
+      scanFeedback(false, 'Упаковка не найдена');
     }
-  }, [document]);
+  };
 
-  useScanner(handleScan);
+  const { lastScan } = useScanner({
+    mode: 'keyboard',
+    onScan: handleScan,
+  });
 
-  const handleQuantityChange = (itemId: string, shipped: number) => {
+  const updateDocumentProgress = async () => {
     if (!document) return;
-    const item = document.items.find(i => i.id === itemId);
-    if (!item) return;
 
+    const completedLines = lines.filter(l => l.status === 'completed').length;
     const updatedDoc = {
       ...document,
-      items: document.items.map(i =>
-        i.id === itemId
-          ? { ...i, shipped, remaining: i.quantity - shipped, status: shipped >= i.quantity ? 'completed' as const : shipped > 0 ? 'partial' as const : 'pending' as const }
-          : i
-      )
+      completedLines,
+      updatedAt: Date.now(),
     };
+
+    await db.shipmentDocuments.update(document.id, updatedDoc);
     setDocument(updatedDoc);
   };
 
-  const handleComplete = () => {
+  const completeDocument = async () => {
     if (!document) return;
-    feedback.complete('Отгрузка завершена');
-    success('Отгрузка завершена');
-    setTimeout(() => {
-      navigate('/');
-    }, 1000);
+
+    if (!document.ttn) {
+      setShowTtnModal(true);
+      return;
+    }
+
+    const updatedDoc: ShipmentDocument = {
+      ...document,
+      status: 'completed',
+      shippedAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await db.shipmentDocuments.update(document.id, updatedDoc);
+    await addSyncAction('complete_shipment', updatedDoc);
+
+    setDocument(updatedDoc);
+    sync();
+
+    scanFeedback(true, 'Отгрузка завершена!');
+    setTimeout(() => navigate('/'), 2000);
   };
 
-  const totalItems = document?.items.length || 0;
-  const completedItems = document?.items.filter(i => i.shipped >= i.quantity).length || 0;
+  const saveTtn = async () => {
+    if (!document || !ttnNumber.trim()) return;
+
+    const updatedDoc = {
+      ...document,
+      ttn: ttnNumber.trim(),
+      updatedAt: Date.now(),
+    };
+
+    await db.shipmentDocuments.update(document.id, updatedDoc);
+    setDocument(updatedDoc);
+    setShowTtnModal(false);
+    setTtnNumber('');
+
+    completeDocument();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
+
+  if (!document) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
+      </div>
+    );
+  }
+
+  const progress = document.totalLines > 0
+    ? (document.completedLines / document.totalLines) * 100
+    : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <HeaderBar title="🧾 Отгрузка" />
-      <div className="p-4 space-y-4">
-        {document && (
-          <>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h2 className="font-semibold mb-2">Отгрузка №{document.number}</h2>
-              <p className="text-sm text-gray-600">Клиент: {document.customerName}</p>
-              <p className="text-sm text-gray-600">Адрес: {document.shippingAddress}</p>
-              <p className="text-sm text-gray-600">Перевозчик: {document.carrier}</p>
-              {document.trackingNumber && (
-                <p className="text-sm text-gray-600">Трек-номер: {document.trackingNumber}</p>
-              )}
-              <div className="mt-3">
-                <ProgressBar current={completedItems} total={totalItems} />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              🧾 Отгрузка
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Заказ: {document.orderNumber || document.id}
+            </p>
+            {document.customer && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Клиент: {document.customer}
+              </p>
+            )}
+            {document.ttn && (
+              <p className="text-sm font-semibold text-orange-600 dark:text-orange-400 mt-1">
+                📋 ТТН: {document.ttn}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {pendingCount > 0 && (
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
+                {pendingCount} не синхр.
+              </span>
+            )}
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              document.status === 'completed' ? 'bg-green-100 text-green-800' :
+              'bg-orange-100 text-orange-800'
+            }`}>
+              {document.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-600 dark:text-gray-400">Прогресс проверки</span>
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {document.completedLines} / {document.totalLines}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="bg-orange-600 h-2 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={completeDocument}
+            disabled={document.completedLines < document.totalLines}
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700"
+          >
+            ✅ Завершить отгрузку
+          </button>
+          <button
+            onClick={() => sync()}
+            disabled={isSyncing || pendingCount === 0}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
+          >
+            {isSyncing ? '⏳' : '🔄'}
+          </button>
+        </div>
+      </div>
+
+      {/* Scan Hint */}
+      <ScanHint lastScan={lastScan} hint="Сканируйте упаковки для проверки комплектности" />
+
+      {/* Lines */}
+      <div className="space-y-2">
+        {lines.map(line => {
+          const statusColor =
+            line.status === 'completed' ? 'bg-green-100 border-green-500 dark:bg-green-900' :
+            line.status === 'partial' ? 'bg-yellow-100 border-yellow-500 dark:bg-yellow-900' :
+            'bg-gray-100 border-gray-300 dark:bg-gray-700';
+
+          return (
+            <div key={line.id} className={`card border-2 ${statusColor}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    {line.productName}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Артикул: {line.productSku}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {line.quantityFact} / {line.quantityPlan}
+                  </div>
+                  <div className="text-2xl">
+                    {line.status === 'completed' ? '✅' :
+                     line.status === 'partial' ? '🟡' : '⚪'}
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-3">
-              {document.items.map(item => (
-                <Card key={item.id}>
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm">{item.productName}</h3>
-                        <p className="text-xs text-gray-500">Артикул: {item.sku}</p>
-                      </div>
-                      <StatusBadge status={item.status} />
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600">Отгружено</label>
-                        <Input
-                          type="number"
-                          value={item.shipped}
-                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                          min={0}
-                          max={item.quantity}
-                        />
-                      </div>
-                      <div className="text-center pt-5">
-                        <span className="text-xs text-gray-600">из</span>
-                      </div>
-                      <div className="flex-1 pt-5">
-                        <div className="bg-gray-100 rounded p-2 text-center font-semibold">
-                          {item.quantity}
-                        </div>
-                      </div>
-                    </div>
-
-                    {item.remaining > 0 && (
-                      <div className="text-xs text-orange-600">
-                        Осталось отгрузить: {item.remaining} {item.unit}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <Button
-              fullWidth
-              variant="success"
-              onClick={handleComplete}
-              disabled={completedItems < totalItems}
-            >
-              ✅ Завершить отгрузку
-            </Button>
-          </>
-        )}
-
-        {!document && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🧾</div>
-            <h2 className="text-xl font-semibold mb-2">Отгрузка товаров</h2>
-            <p className="text-gray-600">Отсканируйте документ для начала</p>
-          </div>
-        )}
+          );
+        })}
       </div>
-      <ScanHint message={hint} type={hintType} />
+
+      {/* TTN Modal */}
+      {showTtnModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Введите номер ТТН
+            </h3>
+            <input
+              type="text"
+              value={ttnNumber}
+              onChange={(e) => setTtnNumber(e.target.value)}
+              placeholder="TTH-123456"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={saveTtn}
+                disabled={!ttnNumber.trim()}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-orange-700"
+              >
+                Сохранить
+              </button>
+              <button
+                onClick={() => setShowTtnModal(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
+export default Shipment;

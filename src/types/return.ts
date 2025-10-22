@@ -1,37 +1,28 @@
 // === 📁 src/types/return.ts ===
-import { BaseDocument, BaseItem } from './common';
+// Types for Return/Write-off module
+
+import { BaseDocument, BaseLine } from './common';
 
 export type ReturnType = 'return' | 'writeoff';
 
+export type ReturnReason = 
+  | 'damaged'
+  | 'expired'
+  | 'wrong_item'
+  | 'customer_return'
+  | 'other';
+
 export interface ReturnDocument extends BaseDocument {
   type: ReturnType;
-  customerId?: string | null;
-  customerName?: string | null;
-  sourceDocumentId?: string | null;
-  items: ReturnItem[];
+  sourceDocumentId?: string;
+  totalLines: number;
+  responsible?: string;
 }
 
-export interface ReturnItem extends BaseItem {
-  documentId: string;
-  reason: string;
+export interface ReturnLine extends BaseLine {
+  reason?: ReturnReason;
   reasonText?: string;
-  reasonCode?: string;
-  processed: number;
-  remaining: number;
-  status: 'pending' | 'partial' | 'completed';
   photos?: string[];
   signature?: string;
-  damage?: boolean;
-  cellId?: string;
+  addedAt?: number;
 }
-
-export const RETURN_REASONS = [
-  { value: 'defect', label: 'Брак / Дефект' },
-  { value: 'damaged', label: 'Повреждение' },
-  { value: 'expired', label: 'Срок годности истёк' },
-  { value: 'wrong_item', label: 'Ошибка комплектации' },
-  { value: 'not_satisfied', label: 'Возврат от клиента' },
-  { value: 'quality', label: 'Низкое качество' },
-  { value: 'other', label: 'Другое' }
-];
-

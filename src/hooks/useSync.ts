@@ -1,125 +1,118 @@
 // === 📁 src/hooks/useSync.ts ===
+// Synchronization hook for offline-first data sync
+
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/services/api';
 import { useOfflineStorage } from './useOfflineStorage';
 import serverConfig from '@/config/server.json';
 
-export function useSync() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+interface SyncConfig {
+  module: string;
+  syncEndpoint: string;
+  onSyncComplete?: () => void;
+  onSyncError?: (error: string) => void;
+}
+
+export const useSync = ({
+  module,
+  syncEndpoint,
+  onSyncComplete,
+  onSyncError,
+}: SyncConfig) => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
-  const { getSyncQueue, removeFromSyncQueue, incrementRetries } = useOfflineStorage();
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Отслеживание статуса сети
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+  const {
+    isOnline,
+    pendingSyncActions,
+    markSynced,
+    markError,
+  } = useOfflineStorage(module);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Синхронизация очереди
-  const syncQueue = useCallback(async () => {
-    if (!isOnline || isSyncing) return;
+  // Sync pending actions
+  const sync = useCallback(async () => {
+    if (!isOnline || isSyncing || pendingSyncActions.length === 0) {
+      return;
+    }
 
     setIsSyncing(true);
-    setSyncProgress(0);
+    setSyncError(null);
 
     try {
-      const queue = await getSyncQueue();
-      
-      if (queue.length === 0) {
-        setIsSyncing(false);
-        return;
-      }
-
-      let completed = 0;
-
-      for (const item of queue) {
+      // Process actions in batches
+      for (const action of pendingSyncActions) {
         try {
-          // Пропускаем элементы с превышенным числом попыток
-          if (item.retries >= serverConfig.offline.maxRetries) {
-            continue;
-          }
+          const response = await api.post(syncEndpoint, {
+            action: action.action,
+            data: action.data,
+            timestamp: action.timestamp,
+          });
 
-          // Выполняем синхронизацию в зависимости от типа
-          switch (item.type) {
-            case 'receiving':
-              await api.syncReceiving(item.documentId, item.data);
-              break;
-            case 'placement':
-              await api.syncPlacement(item.documentId, item.data);
-              break;
-            case 'picking':
-              await api.syncPicking(item.documentId, item.data);
-              break;
-            case 'shipment':
-              await api.syncShipment(item.documentId, item.data);
-              break;
-            case 'return':
-              await api.syncReturn(item.documentId, item.data);
-              break;
-            case 'inventory':
-              await api.syncInventory(item.documentId, item.data);
-              break;
+          if (response.success) {
+            await markSynced(action.id!);
+          } else {
+            await markError(action.id!, response.error || 'Unknown error');
           }
-
-          // Удаляем из очереди при успехе
-          await removeFromSyncQueue(item.id);
-          completed++;
-        } catch (error) {
-          // Увеличиваем счётчик попыток
-          await incrementRetries(item.id, error instanceof Error ? error.message : 'Unknown error');
+        } catch (error: any) {
+          await markError(action.id!, error.message);
         }
-
-        setSyncProgress((completed / queue.length) * 100);
       }
-    } catch (error) {
-      console.error('Sync error:', error);
+
+      setLastSyncTime(Date.now());
+      onSyncComplete?.();
+    } catch (error: any) {
+      const errorMessage = error.message || 'Sync failed';
+      setSyncError(errorMessage);
+      onSyncError?.(errorMessage);
     } finally {
       setIsSyncing(false);
-      setSyncProgress(0);
     }
-  }, [isOnline, isSyncing, getSyncQueue, removeFromSyncQueue, incrementRetries]);
+  }, [
+    isOnline,
+    isSyncing,
+    pendingSyncActions,
+    syncEndpoint,
+    markSynced,
+    markError,
+    onSyncComplete,
+    onSyncError,
+  ]);
 
-  // Автоматическая синхронизация при восстановлении сети
+  // Auto-sync when online
   useEffect(() => {
-    if (isOnline && serverConfig.offline.autoSyncEnabled) {
-      syncQueue();
+    if (isOnline && pendingSyncActions.length > 0) {
+      const timer = setTimeout(sync, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [isOnline, syncQueue]);
+  }, [isOnline, pendingSyncActions.length, sync]);
 
-  // Периодическая синхронизация
+  // Periodic sync
   useEffect(() => {
-    if (!serverConfig.offline.autoSyncEnabled) return;
+    if (!isOnline) return;
 
     const interval = setInterval(() => {
-      if (isOnline) {
-        syncQueue();
+      if (pendingSyncActions.length > 0) {
+        sync();
       }
     }, serverConfig.syncIntervalSec * 1000);
 
     return () => clearInterval(interval);
-  }, [isOnline, syncQueue]);
+  }, [isOnline, pendingSyncActions.length, sync]);
 
-  // Принудительная синхронизация
+  // Force sync
   const forceSync = useCallback(() => {
-    syncQueue();
-  }, [syncQueue]);
+    if (isOnline) {
+      sync();
+    }
+  }, [isOnline, sync]);
 
   return {
-    isOnline,
     isSyncing,
-    syncProgress,
-    forceSync
+    isOnline,
+    lastSyncTime,
+    syncError,
+    pendingCount: pendingSyncActions.length,
+    sync: forceSync,
   };
-}
-
-
-
+};

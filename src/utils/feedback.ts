@@ -1,38 +1,54 @@
 // === 📁 src/utils/feedback.ts ===
-import { soundManager } from './sound';
-import { vibrationManager } from './vibration';
-import { voiceManager } from './voice';
+// Combined feedback utility
 
-export const feedback = {
-  success(message?: string) {
-    soundManager.success();
-    vibrationManager.success();
-    if (message) voiceManager.success(message);
-  },
+import { playSound, SoundType } from './sound';
+import { vibrate, VibrationType } from './vibration';
+import { speak } from './voice';
 
-  error(message?: string) {
-    soundManager.error();
-    vibrationManager.error();
-    if (message) voiceManager.error(message);
-  },
+export type FeedbackType = 'success' | 'error' | 'warning';
 
-  warning(message?: string) {
-    soundManager.warning();
-    vibrationManager.warning();
-    if (message) voiceManager.warning(message);
-  },
+const messages: Record<FeedbackType, string> = {
+  success: 'Успешно',
+  error: 'Ошибка',
+  warning: 'Внимание',
+};
 
-  scan() {
-    soundManager.scan();
-    vibrationManager.scan();
-  },
+export const provideFeedback = (
+  type: FeedbackType,
+  customMessage?: string,
+  options?: {
+    sound?: boolean;
+    vibration?: boolean;
+    voice?: boolean;
+  }
+) => {
+  const opts = {
+    sound: true,
+    vibration: true,
+    voice: false,
+    ...options,
+  };
 
-  complete(message?: string) {
-    soundManager.complete();
-    vibrationManager.success();
-    if (message) voiceManager.success(message);
+  // Sound feedback
+  if (opts.sound) {
+    playSound(type as SoundType);
+  }
+
+  // Vibration feedback
+  if (opts.vibration) {
+    vibrate(type as VibrationType);
+  }
+
+  // Voice feedback
+  if (opts.voice && customMessage) {
+    speak(customMessage);
   }
 };
 
-
-
+export const scanFeedback = (success: boolean, message?: string) => {
+  if (success) {
+    provideFeedback('success', message || 'Товар добавлен', { voice: !!message });
+  } else {
+    provideFeedback('error', message || 'Товар не найден', { voice: true });
+  }
+};

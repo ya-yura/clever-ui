@@ -1,143 +1,43 @@
-[
-  {
-    "id": "DOC-RET-001",
-    "number": "ВЗВ-000056",
-    "date": "2024-10-17T11:00:00.000Z",
-    "type": "return",
-    "status": "in_progress",
-    "syncStatus": "synced",
-    "customerId": "CUST-001",
-    "customerName": "ООО \"Техномаркет\"",
-    "warehouseId": "WH-001",
-    "sourceDocumentId": "DOC-SHP-001",
-    "items": [
-      {
-        "id": "1",
-        "documentId": "DOC-RET-001",
-        "productId": "PROD-001",
-        "productName": "Ноутбук Lenovo ThinkPad X1",
-        "sku": "LEN-X1-2024",
-        "barcode": "4607112345678",
-        "quantity": 1,
-        "unit": "шт",
-        "reason": "defect",
-        "reasonText": "Дефект экрана",
-        "processed": 1,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "2",
-        "documentId": "DOC-RET-001",
-        "productId": "PROD-002",
-        "productName": "Мышь Logitech MX Master 3",
-        "sku": "LOG-MX3-BLK",
-        "barcode": "4607123456789",
-        "quantity": 2,
-        "unit": "шт",
-        "reason": "wrong_item",
-        "reasonText": "Не тот товар",
-        "processed": 0,
-        "remaining": 2,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T10:45:00.000Z",
-    "updatedAt": "2024-10-17T11:15:00.000Z"
-  },
-  {
-    "id": "DOC-WRT-001",
-    "number": "СПС-000012",
-    "date": "2024-10-17T12:00:00.000Z",
-    "type": "writeoff",
-    "status": "pending",
-    "syncStatus": "synced",
-    "customerId": null,
-    "customerName": null,
-    "warehouseId": "WH-001",
-    "sourceDocumentId": null,
-    "items": [
-      {
-        "id": "3",
-        "documentId": "DOC-WRT-001",
-        "productId": "PROD-010",
-        "productName": "Планшет Apple iPad Pro",
-        "sku": "APL-IPD-PRO",
-        "barcode": "4607901234567",
-        "quantity": 1,
-        "unit": "шт",
-        "reason": "damaged",
-        "reasonText": "Повреждение при транспортировке",
-        "processed": 0,
-        "remaining": 1,
-        "status": "pending"
-      },
-      {
-        "id": "4",
-        "documentId": "DOC-WRT-001",
-        "productId": "PROD-005",
-        "productName": "Веб-камера Logitech C920",
-        "sku": "LOG-C920-HD",
-        "barcode": "4607456789012",
-        "quantity": 3,
-        "unit": "шт",
-        "reason": "expired",
-        "reasonText": "Истёк срок годности",
-        "processed": 0,
-        "remaining": 3,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T11:45:00.000Z",
-    "updatedAt": "2024-10-17T11:45:00.000Z"
-  },
-  {
-    "id": "DOC-RET-002",
-    "number": "ВЗВ-000057",
-    "date": "2024-10-16T15:00:00.000Z",
-    "type": "return",
-    "status": "completed",
-    "syncStatus": "synced",
-    "customerId": "CUST-002",
-    "customerName": "ИП Сидоров М.П.",
-    "warehouseId": "WH-001",
-    "sourceDocumentId": "DOC-SHP-002",
-    "items": [
-      {
-        "id": "5",
-        "documentId": "DOC-RET-002",
-        "productId": "PROD-004",
-        "productName": "Монитор Samsung 27\"",
-        "sku": "SAM-M27-4K",
-        "barcode": "4607345678901",
-        "quantity": 1,
-        "unit": "шт",
-        "reason": "not_satisfied",
-        "reasonText": "Клиент передумал",
-        "processed": 1,
-        "remaining": 0,
-        "status": "completed"
-      },
-      {
-        "id": "6",
-        "documentId": "DOC-RET-002",
-        "productId": "PROD-006",
-        "productName": "Наушники Sony WH-1000XM5",
-        "sku": "SNY-WH1000-BLK",
-        "barcode": "4607567890123",
-        "quantity": 1,
-        "unit": "шт",
-        "reason": "defect",
-        "reasonText": "Не работает шумоподавление",
-        "processed": 1,
-        "remaining": 0,
-        "status": "completed"
-      }
-    ],
-    "createdAt": "2024-10-16T14:30:00.000Z",
-    "updatedAt": "2024-10-16T15:30:00.000Z"
-  }
-]
-
-
-
+{
+  "documents": [
+    {
+      "id": "RETURN-001",
+      "type": "return",
+      "status": "in_progress",
+      "totalLines": 2,
+      "responsible": "Иванов И.И.",
+      "createdAt": 1698912000000,
+      "updatedAt": 1698915600000
+    }
+  ],
+  "lines": [
+    {
+      "id": "RETURN-001-L1",
+      "documentId": "RETURN-001",
+      "productId": "P002",
+      "productName": "Чай Ahmad Earl Grey 100г",
+      "productSku": "AHM-100-EG",
+      "barcode": "5054881234567",
+      "quantity": 2,
+      "quantityPlan": 2,
+      "quantityFact": 2,
+      "status": "completed",
+      "reason": "damaged",
+      "addedAt": 1698912600000
+    },
+    {
+      "id": "RETURN-001-L2",
+      "documentId": "RETURN-001",
+      "productId": "P004",
+      "productName": "Молоко 3.2% 1л",
+      "productSku": "MLK-32-1L",
+      "barcode": "4607012345678",
+      "quantity": 5,
+      "quantityPlan": 5,
+      "quantityFact": 5,
+      "status": "completed",
+      "reason": "expired",
+      "addedAt": 1698913200000
+    }
+  ]
+}

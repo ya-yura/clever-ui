@@ -2,34 +2,8 @@
   "apiBaseUrl": "https://warehouse.company.com/api",
   "syncIntervalSec": 60,
   "authMode": "token",
-  "demoMode": false,
   "printer": {
     "type": "bluetooth",
     "defaultPrinter": "Zebra-Mobile"
-  },
-  "scanner": {
-    "type": "auto",
-    "bluetoothEnabled": true,
-    "cameraEnabled": true
-  },
-  "offline": {
-    "autoSyncEnabled": true,
-    "maxRetries": 3,
-    "retryDelaySec": 30
-  },
-  "sound": {
-    "enabled": true,
-    "volume": 0.7
-  },
-  "vibration": {
-    "enabled": true,
-    "duration": 100
-  },
-  "voice": {
-    "enabled": false,
-    "lang": "ru-RU"
   }
 }
-
-
-

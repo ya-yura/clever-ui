@@ -1,239 +1,285 @@
 // === 📁 src/pages/Receiving.tsx ===
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { HeaderBar } from '@/components/HeaderBar';
-import { ScanHint } from '@/components/ScanHint';
-import { ProductCard } from '@/components/receiving/ProductCard';
-import { Button } from '@/components/Button';
-import { ProgressBar } from '@/components/ProgressBar';
-import { useScanner } from '@/hooks/useScanner';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useNotifications } from '@/hooks/useNotifications';
-import { feedback } from '@/utils/feedback';
+// Receiving module page
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '@/services/db';
 import { api } from '@/services/api';
-import { getISOString } from '@/utils/date';
-import type { ReceivingDocument, ReceivingItem } from '@/types/receiving';
-import demoData from '@/data/receiving.json';
+import { useScanner } from '@/hooks/useScanner';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useSync } from '@/hooks/useSync';
+import { ReceivingDocument, ReceivingLine } from '@/types/receiving';
+import { scanFeedback } from '@/utils/feedback';
+import ReceivingCard from '@/components/receiving/ReceivingCard';
+import ScanHint from '@/components/receiving/ScanHint';
 
-export function Receiving() {
+const Receiving: React.FC = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [document, setDocument] = useState<ReceivingDocument | null>(null);
-  const [hint, setHint] = useState('Сканируйте документ приёмки');
-  const [hintType, setHintType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
-  const { saveReceivingDoc, addToSyncQueue, setupAutoSave } = useOfflineStorage();
-  const { success, error } = useNotifications();
+  const [lines, setLines] = useState<ReceivingLine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentCell, setCurrentCell] = useState<string>('');
 
-  // Загрузка демо-данных при монтировании
+  const { addSyncAction } = useOfflineStorage('receiving');
+  const { sync, isSyncing, pendingCount } = useSync({
+    module: 'receiving',
+    syncEndpoint: '/receiving/sync',
+  });
+
+  // Load document
   useEffect(() => {
-    if (demoData && demoData.length > 0) {
-      const firstDoc = demoData[0] as ReceivingDocument;
-      setDocument(firstDoc);
-      setHint('Документ загружен. Сканируйте товары или измените количество');
-      setHintType('success');
-    }
-  }, []);
+    loadDocument();
+  }, [id]);
 
-  // Автосохранение каждые 30 секунд
-  useEffect(() => {
-    if (!document) return;
-    
-    const cleanup = setupAutoSave(async () => {
-      await saveReceivingDoc(document);
-    }, 30);
+  const loadDocument = async () => {
+    setLoading(true);
+    try {
+      if (id) {
+        // Try to load from local DB first
+        let doc = await db.receivingDocuments.get(id);
+        let docLines = await db.receivingLines.where('documentId').equals(id).toArray();
 
-    return cleanup;
-  }, [document, saveReceivingDoc, setupAutoSave]);
-
-  // Обработка сканирования
-  const handleScan = useCallback(async (result: { barcode: string; type: string }) => {
-    if (!document) {
-      // Загрузка документа по штрихкоду
-      if (result.type === 'document') {
-        try {
-          // В реальности здесь запрос к API
-          const mockDoc: ReceivingDocument = {
-            id: result.barcode,
-            number: result.barcode.replace('DOC-', ''),
-            date: getISOString(),
-            status: 'in_progress',
-            syncStatus: 'pending',
-            supplierId: 'SUP-001',
-            supplierName: 'ООО "Поставщик"',
-            warehouseId: 'WH-001',
-            items: [
-              {
-                id: '1',
-                documentId: result.barcode,
-                productId: 'PROD-001',
-                productName: 'Товар Тестовый 1',
-                sku: 'SKU-001',
-                barcode: '1234567890',
-                quantity: 10,
-                unit: 'шт',
-                planned: 10,
-                received: 0,
-                discrepancy: 0,
-                status: 'pending'
-              },
-              {
-                id: '2',
-                documentId: result.barcode,
-                productId: 'PROD-002',
-                productName: 'Товар Тестовый 2',
-                sku: 'SKU-002',
-                barcode: '0987654321',
-                quantity: 20,
-                unit: 'шт',
-                planned: 20,
-                received: 0,
-                discrepancy: 0,
-                status: 'pending'
-              }
-            ],
-            createdAt: getISOString(),
-            updatedAt: getISOString()
-          };
-          
-          setDocument(mockDoc);
-          await saveReceivingDoc(mockDoc);
-          setHint('Документ загружен. Сканируйте товары');
-          setHintType('success');
-          feedback.success('Документ загружен');
-          success('Документ загружен');
-        } catch (err) {
-          setHint('Ошибка загрузки документа');
-          setHintType('error');
-          feedback.error('Ошибка загрузки документа');
-          error('Ошибка загрузки документа');
+        // If not found locally, fetch from server
+        if (!doc) {
+          const response = await api.getReceivingDocument(id);
+          if (response.success && response.data) {
+            doc = response.data.document;
+            docLines = response.data.lines;
+            // Save to local DB
+            await db.receivingDocuments.put(doc);
+            await db.receivingLines.bulkPut(docLines);
+          }
         }
-      }
-    } else {
-      // Обработка сканирования товара
-      const item = document.items.find(i => i.barcode === result.barcode);
-      
-      if (item) {
-        const updatedDoc = {
-          ...document,
-          items: document.items.map(i =>
-            i.id === item.id
-              ? { ...i, received: i.received + 1, discrepancy: i.received + 1 - i.planned }
-              : i
-          ),
-          updatedAt: getISOString()
-        };
-        
-        setDocument(updatedDoc);
-        await saveReceivingDoc(updatedDoc);
-        await addToSyncQueue('receiving', document.id, 'update', updatedDoc);
-        
-        setHint(`Товар "${item.productName}" добавлен`);
-        setHintType('success');
-        feedback.success();
+
+        if (doc) {
+          setDocument(doc);
+          setLines(docLines);
+        }
       } else {
-        setHint('Товар не найден в документе');
-        setHintType('error');
-        feedback.error('Товар не найден');
+        // Create new document
+        const newDoc: ReceivingDocument = {
+          id: `RCV-${Date.now()}`,
+          status: 'draft',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          totalLines: 0,
+          completedLines: 0,
+        };
+        await db.receivingDocuments.add(newDoc);
+        setDocument(newDoc);
       }
+    } catch (error) {
+      console.error('Error loading document:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [document, saveReceivingDoc, addToSyncQueue, success, error]);
+  };
 
-  useScanner(handleScan);
+  // Handle scan
+  const handleScan = async (code: string) => {
+    if (!document) return;
 
-  // Изменение количества вручную
-  const handleQuantityChange = useCallback(async (itemId: string, quantity: number) => {
+    // Check if it's a document barcode
+    if (code.startsWith('DOC-')) {
+      // Load document
+      navigate(`/receiving/${code}`);
+      return;
+    }
+
+    // Find product by barcode
+    const line = lines.find(l => l.barcode === code || l.productSku === code);
+    
+    if (line) {
+      // Increment fact
+      const updatedLine = {
+        ...line,
+        quantityFact: line.quantityFact + 1,
+        status: line.quantityFact + 1 >= line.quantityPlan ? 'completed' : 'partial' as const,
+      };
+
+      await db.receivingLines.update(line.id, updatedLine);
+      await addSyncAction('update_line', updatedLine);
+      
+      // Refresh lines
+      setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
+      
+      scanFeedback(true, `Добавлено: ${line.productName}`);
+      
+      // Update document progress
+      updateDocumentProgress();
+    } else {
+      scanFeedback(false, 'Товар не найден в документе');
+    }
+  };
+
+  const { lastScan } = useScanner({
+    mode: 'keyboard',
+    onScan: handleScan,
+  });
+
+  // Update document progress
+  const updateDocumentProgress = async () => {
+    if (!document) return;
+
+    const completedLines = lines.filter(l => l.status === 'completed').length;
+    const updatedDoc = {
+      ...document,
+      completedLines,
+      updatedAt: Date.now(),
+    };
+
+    await db.receivingDocuments.update(document.id, updatedDoc);
+    setDocument(updatedDoc);
+  };
+
+  // Complete document
+  const completeDocument = async () => {
     if (!document) return;
 
     const updatedDoc = {
       ...document,
-      items: document.items.map(i =>
-        i.id === itemId
-          ? { ...i, received: quantity, discrepancy: quantity - i.planned }
-          : i
-      ),
-      updatedAt: getISOString()
-    };
-
-    setDocument(updatedDoc);
-    await saveReceivingDoc(updatedDoc);
-  }, [document, saveReceivingDoc]);
-
-  // Завершение приёмки
-  const handleComplete = async () => {
-    if (!document) return;
-
-    const completedDoc = {
-      ...document,
       status: 'completed' as const,
-      updatedAt: getISOString()
+      updatedAt: Date.now(),
     };
 
-    await saveReceivingDoc(completedDoc);
-    await addToSyncQueue('receiving', document.id, 'complete', completedDoc);
+    await db.receivingDocuments.update(document.id, updatedDoc);
+    await addSyncAction('complete', updatedDoc);
     
-    feedback.complete('Приёмка завершена');
-    success('Приёмка завершена');
+    setDocument(updatedDoc);
+    sync();
 
-    // Предложение перейти к размещению
-    setTimeout(() => {
-      if (window.confirm('Перейти к размещению товаров?')) {
-        navigate('/placement', { state: { fromReceiving: document.id } });
-      } else {
-        navigate('/');
-      }
-    }, 1000);
+    // Navigate to placement
+    if (confirm('Документ завершён. Перейти к размещению?')) {
+      navigate(`/placement?source=${document.id}`);
+    }
   };
 
-  const totalItems = document?.items.length || 0;
-  const completedItems = document?.items.filter(i => i.received >= i.planned).length || 0;
+  const adjustQuantity = async (lineId: string, delta: number) => {
+    const line = lines.find(l => l.id === lineId);
+    if (!line) return;
+
+    const newFact = Math.max(0, line.quantityFact + delta);
+    const updatedLine = {
+      ...line,
+      quantityFact: newFact,
+      status: newFact >= line.quantityPlan ? 'completed' : newFact > 0 ? 'partial' : 'pending' as const,
+    };
+
+    await db.receivingLines.update(lineId, updatedLine);
+    await addSyncAction('update_line', updatedLine);
+    
+    setLines(prev => prev.map(l => l.id === lineId ? updatedLine : l));
+    updateDocumentProgress();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!document) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
+      </div>
+    );
+  }
+
+  const progress = document.totalLines > 0 
+    ? (document.completedLines / document.totalLines) * 100 
+    : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <HeaderBar title="📦 Приёмка" />
-
-      <div className="p-4 space-y-4">
-        {document && (
-          <>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h2 className="font-semibold mb-2">Документ №{document.number}</h2>
-              <p className="text-sm text-gray-600">Поставщик: {document.supplierName}</p>
-              <div className="mt-3">
-                <ProgressBar current={completedItems} total={totalItems} />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {document.items.map(item => (
-                <ProductCard
-                  key={item.id}
-                  item={item}
-                  onQuantityChange={handleQuantityChange}
-                />
-              ))}
-            </div>
-
-            <Button
-              fullWidth
-              variant="success"
-              onClick={handleComplete}
-              disabled={completedItems < totalItems}
-            >
-              📤 Завершить приёмку
-            </Button>
-          </>
-        )}
-
-        {!document && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📦</div>
-            <h2 className="text-xl font-semibold mb-2">Приёмка товаров</h2>
-            <p className="text-gray-600">Отсканируйте документ для начала</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              📦 Приёмка
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Документ: {document.id}
+            </p>
           </div>
-        )}
+          <div className="flex items-center space-x-2">
+            {pendingCount > 0 && (
+              <span className="status-warning">
+                {pendingCount} не синхр.
+              </span>
+            )}
+            <span className={`status-badge ${
+              document.status === 'completed' ? 'bg-green-100 text-green-800' :
+              document.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {document.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-600 dark:text-gray-400">Прогресс</span>
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {document.completedLines} / {document.totalLines}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={completeDocument}
+            disabled={document.completedLines < document.totalLines}
+            className="btn-success flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ✅ Завершить приёмку
+          </button>
+          <button
+            onClick={() => sync()}
+            disabled={isSyncing || pendingCount === 0}
+            className="btn-secondary"
+          >
+            {isSyncing ? '⏳' : '🔄'}
+          </button>
+        </div>
       </div>
 
-      <ScanHint message={hint} type={hintType} />
+      {/* Scan Hint */}
+      <ScanHint lastScan={lastScan} />
+
+      {/* Lines */}
+      <div className="space-y-2">
+        {lines.map(line => (
+          <ReceivingCard
+            key={line.id}
+            line={line}
+            onAdjust={(delta) => adjustQuantity(line.id, delta)}
+          />
+        ))}
+      </div>
+
+      {lines.length === 0 && (
+        <div className="card text-center py-12">
+          <p className="text-gray-600 dark:text-gray-400">
+            Нет товаров в документе. Отсканируйте документ для загрузки.
+          </p>
+        </div>
+      )}
     </div>
   );
-}
+};
 
+export default Receiving;

@@ -1,173 +1,77 @@
-[
-  {
-    "id": "DOC-RCV-001",
-    "number": "ПР-000123",
-    "date": "2024-10-17T10:00:00.000Z",
-    "status": "in_progress",
-    "syncStatus": "synced",
-    "supplierId": "SUP-001",
-    "supplierName": "ООО \"Поставщик Альфа\"",
-    "warehouseId": "WH-001",
-    "items": [
-      {
-        "id": "1",
-        "documentId": "DOC-RCV-001",
-        "productId": "PROD-001",
-        "productName": "Ноутбук Lenovo ThinkPad X1",
-        "sku": "LEN-X1-2024",
-        "barcode": "4607112345678",
-        "quantity": 10,
-        "unit": "шт",
-        "planned": 10,
-        "received": 7,
-        "discrepancy": -3,
-        "status": "partial"
-      },
-      {
-        "id": "2",
-        "documentId": "DOC-RCV-001",
-        "productId": "PROD-002",
-        "productName": "Мышь Logitech MX Master 3",
-        "sku": "LOG-MX3-BLK",
-        "barcode": "4607123456789",
-        "quantity": 25,
-        "unit": "шт",
-        "planned": 25,
-        "received": 25,
-        "discrepancy": 0,
-        "status": "completed"
-      },
-      {
-        "id": "3",
-        "documentId": "DOC-RCV-001",
-        "productId": "PROD-003",
-        "productName": "Клавиатура Keychron K8",
-        "sku": "KEY-K8-RGB",
-        "barcode": "4607234567890",
-        "quantity": 15,
-        "unit": "шт",
-        "planned": 15,
-        "received": 0,
-        "discrepancy": -15,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T09:00:00.000Z",
-    "updatedAt": "2024-10-17T10:30:00.000Z"
-  },
-  {
-    "id": "DOC-RCV-002",
-    "number": "ПР-000124",
-    "date": "2024-10-17T11:00:00.000Z",
-    "status": "pending",
-    "syncStatus": "synced",
-    "supplierId": "SUP-002",
-    "supplierName": "ИП Петров В.А.",
-    "warehouseId": "WH-001",
-    "items": [
-      {
-        "id": "4",
-        "documentId": "DOC-RCV-002",
-        "productId": "PROD-004",
-        "productName": "Монитор Samsung 27\"",
-        "sku": "SAM-M27-4K",
-        "barcode": "4607345678901",
-        "quantity": 8,
-        "unit": "шт",
-        "planned": 8,
-        "received": 0,
-        "discrepancy": 0,
-        "status": "pending"
-      },
-      {
-        "id": "5",
-        "documentId": "DOC-RCV-002",
-        "productId": "PROD-005",
-        "productName": "Веб-камера Logitech C920",
-        "sku": "LOG-C920-HD",
-        "barcode": "4607456789012",
-        "quantity": 12,
-        "unit": "шт",
-        "planned": 12,
-        "received": 0,
-        "discrepancy": 0,
-        "status": "pending"
-      },
-      {
-        "id": "6",
-        "documentId": "DOC-RCV-002",
-        "productId": "PROD-006",
-        "productName": "Наушники Sony WH-1000XM5",
-        "sku": "SNY-WH1000-BLK",
-        "barcode": "4607567890123",
-        "quantity": 20,
-        "unit": "шт",
-        "planned": 20,
-        "received": 0,
-        "discrepancy": 0,
-        "status": "pending"
-      }
-    ],
-    "createdAt": "2024-10-17T10:45:00.000Z",
-    "updatedAt": "2024-10-17T10:45:00.000Z"
-  },
-  {
-    "id": "DOC-RCV-003",
-    "number": "ПР-000125",
-    "date": "2024-10-17T12:00:00.000Z",
-    "status": "completed",
-    "syncStatus": "synced",
-    "supplierId": "SUP-003",
-    "supplierName": "ООО \"ТехноСнаб\"",
-    "warehouseId": "WH-001",
-    "items": [
-      {
-        "id": "7",
-        "documentId": "DOC-RCV-003",
-        "productId": "PROD-007",
-        "productName": "SSD Samsung 1TB",
-        "sku": "SAM-SSD-1TB",
-        "barcode": "4607678901234",
-        "quantity": 30,
-        "unit": "шт",
-        "planned": 30,
-        "received": 30,
-        "discrepancy": 0,
-        "status": "completed"
-      },
-      {
-        "id": "8",
-        "documentId": "DOC-RCV-003",
-        "productId": "PROD-008",
-        "productName": "RAM Kingston 16GB",
-        "sku": "KIN-RAM-16GB",
-        "barcode": "4607789012345",
-        "quantity": 40,
-        "unit": "шт",
-        "planned": 40,
-        "received": 40,
-        "discrepancy": 0,
-        "status": "completed"
-      },
-      {
-        "id": "9",
-        "documentId": "DOC-RCV-003",
-        "productId": "PROD-009",
-        "productName": "Блок питания Corsair 750W",
-        "sku": "COR-PSU-750W",
-        "barcode": "4607890123456",
-        "quantity": 15,
-        "unit": "шт",
-        "planned": 15,
-        "received": 15,
-        "discrepancy": 0,
-        "status": "completed"
-      }
-    ],
-    "createdAt": "2024-10-17T11:30:00.000Z",
-    "updatedAt": "2024-10-17T12:15:00.000Z"
-  }
-]
-
-
-
+{
+  "documents": [
+    {
+      "id": "RCV-001",
+      "status": "in_progress",
+      "supplier": "ООО Поставщик",
+      "deliveryNumber": "ДН-12345",
+      "expectedDate": 1698652800000,
+      "totalLines": 5,
+      "completedLines": 2,
+      "createdAt": 1698566400000,
+      "updatedAt": 1698652800000
+    }
+  ],
+  "lines": [
+    {
+      "id": "RCV-001-L1",
+      "documentId": "RCV-001",
+      "productId": "P001",
+      "productName": "Кофе Lavazza 250г",
+      "productSku": "LAV-250",
+      "barcode": "8000070001234",
+      "quantity": 10,
+      "quantityPlan": 10,
+      "quantityFact": 10,
+      "status": "completed"
+    },
+    {
+      "id": "RCV-001-L2",
+      "documentId": "RCV-001",
+      "productId": "P002",
+      "productName": "Чай Ahmad Earl Grey 100г",
+      "productSku": "AHM-100-EG",
+      "barcode": "5054881234567",
+      "quantity": 20,
+      "quantityPlan": 20,
+      "quantityFact": 18,
+      "status": "partial"
+    },
+    {
+      "id": "RCV-001-L3",
+      "documentId": "RCV-001",
+      "productId": "P003",
+      "productName": "Сахар 1кг",
+      "productSku": "SUG-1000",
+      "barcode": "4607001234567",
+      "quantity": 50,
+      "quantityPlan": 50,
+      "quantityFact": 0,
+      "status": "pending"
+    },
+    {
+      "id": "RCV-001-L4",
+      "documentId": "RCV-001",
+      "productId": "P004",
+      "productName": "Молоко 3.2% 1л",
+      "productSku": "MLK-32-1L",
+      "barcode": "4607012345678",
+      "quantity": 30,
+      "quantityPlan": 30,
+      "quantityFact": 0,
+      "status": "pending"
+    },
+    {
+      "id": "RCV-001-L5",
+      "documentId": "RCV-001",
+      "productId": "P005",
+      "productName": "Печенье Oreo 95г",
+      "productSku": "OREO-95",
+      "barcode": "7622210123456",
+      "quantity": 15,
+      "quantityPlan": 15,
+      "quantityFact": 0,
+      "status": "pending"
+    }
+  ]
+}

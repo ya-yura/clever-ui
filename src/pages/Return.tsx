@@ -1,235 +1,426 @@
 // === 📁 src/pages/Return.tsx ===
-import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { HeaderBar } from '@/components/HeaderBar';
-import { ScanHint } from '@/components/ScanHint';
-import { Card } from '@/components/Card';
-import { Button } from '@/components/Button';
-import { StatusBadge } from '@/components/StatusBadge';
-import { ProgressBar } from '@/components/ProgressBar';
-import { Input } from '@/components/Input';
-import { Select } from '@/components/Select';
+// Return/Write-off module page
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { db } from '@/services/db';
 import { useScanner } from '@/hooks/useScanner';
-import { useNotifications } from '@/hooks/useNotifications';
-import { feedback } from '@/utils/feedback';
-import { RETURN_REASONS, type ReturnDocument } from '@/types/return';
-import demoData from '@/data/return.json';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useSync } from '@/hooks/useSync';
+import { ReturnDocument, ReturnLine, ReturnType, ReturnReason } from '@/types/return';
+import { scanFeedback } from '@/utils/feedback';
+import ScanHint from '@/components/receiving/ScanHint';
 
-export function Return() {
+const Return: React.FC = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [documents, setDocuments] = useState<ReturnDocument[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState<ReturnDocument | null>(null);
-  const [hint, setHint] = useState('Выберите документ для работы');
-  const [hintType, setHintType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
-  const { success, error } = useNotifications();
 
-  // Загрузка демо-данных при монтировании
+  const [document, setDocument] = useState<ReturnDocument | null>(null);
+  const [lines, setLines] = useState<ReturnLine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const [selectedReason, setSelectedReason] = useState<ReturnReason | ''>('');
+  const [customReason, setCustomReason] = useState('');
+
+  const { addSyncAction } = useOfflineStorage('return');
+  const { sync, isSyncing, pendingCount } = useSync({
+    module: 'return',
+    syncEndpoint: document?.type === 'return' ? '/return/sync' : '/writeoff/sync',
+  });
+
   useEffect(() => {
-    if (demoData && demoData.length > 0) {
-      setDocuments(demoData as ReturnDocument[]);
-      setHint('Выберите документ для работы или сканируйте товары');
-      setHintType('success');
-    }
-  }, []);
+    loadDocument();
+  }, [id]);
 
-  const handleDocumentSelect = (docId: string) => {
-    const doc = documents.find(d => d.id === docId);
-    if (doc) {
-      setSelectedDoc(doc);
-      setHint(`Документ загружен. Сканируйте товары для обработки`);
-      setHintType('success');
+  const loadDocument = async () => {
+    setLoading(true);
+    try {
+      if (id) {
+        const doc = await db.returnDocuments.get(id);
+        const docLines = await db.returnLines.where('documentId').equals(id).toArray();
+
+        if (doc) {
+          setDocument(doc);
+          setLines(docLines);
+        }
+      } else {
+        setShowTypeSelector(true);
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleScan = useCallback((result: { barcode: string; type: string }) => {
-    if (!selectedDoc) return;
-
-    const item = selectedDoc.items.find(i => i.barcode === result.barcode);
-    if (item && item.remaining > 0) {
-      const updatedDoc = {
-        ...selectedDoc,
-        items: selectedDoc.items.map(i =>
-          i.id === item.id
-            ? { ...i, processed: i.processed + 1, remaining: i.remaining - 1, status: i.remaining === 1 ? 'completed' as const : 'partial' as const }
-            : i
-        )
-      };
-      setSelectedDoc(updatedDoc);
-      setDocuments(docs => docs.map(d => d.id === updatedDoc.id ? updatedDoc : d));
-      setHint(`Обработан товар "${item.productName}"`);
-      setHintType('success');
-      feedback.scan();
-    } else {
-      setHint('Товар не найден или уже обработан');
-      setHintType('error');
-      feedback.error('Товар не найден');
-    }
-  }, [selectedDoc]);
-
-  useScanner(handleScan);
-
-  const handleQuantityChange = (itemId: string, processed: number) => {
-    if (!selectedDoc) return;
-    const item = selectedDoc.items.find(i => i.id === itemId);
-    if (!item) return;
-
-    const updatedDoc = {
-      ...selectedDoc,
-      items: selectedDoc.items.map(i =>
-        i.id === itemId
-          ? { ...i, processed, remaining: i.quantity - processed, status: processed >= i.quantity ? 'completed' as const : processed > 0 ? 'partial' as const : 'pending' as const }
-          : i
-      )
+  const createDocument = async (type: ReturnType) => {
+    const newDoc: ReturnDocument = {
+      id: `${type.toUpperCase()}-${Date.now()}`,
+      status: 'in_progress',
+      type,
+      totalLines: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
-    setSelectedDoc(updatedDoc);
-    setDocuments(docs => docs.map(d => d.id === updatedDoc.id ? updatedDoc : d));
+
+    await db.returnDocuments.add(newDoc);
+    setDocument(newDoc);
+    setShowTypeSelector(false);
   };
 
-  const handleComplete = () => {
-    if (!selectedDoc) return;
-    const docType = selectedDoc.type === 'return' ? 'Возврат' : 'Списание';
-    feedback.complete(`${docType} завершён`);
-    success(`${docType} завершён`);
-    setTimeout(() => {
-      navigate('/');
-    }, 1000);
+  const handleScan = async (code: string) => {
+    if (!document) return;
+
+    // Check if product already in lines
+    const existingLine = lines.find(l => l.barcode === code || l.productSku === code);
+
+    if (existingLine) {
+      scanFeedback(false, 'Товар уже добавлен');
+      return;
+    }
+
+    // Create new line (in real app, we'd fetch product info from API)
+    const newLine: ReturnLine = {
+      id: `${document.id}-L${lines.length + 1}`,
+      documentId: document.id,
+      productId: `P${Date.now()}`,
+      productName: `Товар ${code}`,
+      productSku: code,
+      barcode: code,
+      quantity: 1,
+      quantityPlan: 1,
+      quantityFact: 1,
+      status: 'pending',
+      addedAt: Date.now(),
+    };
+
+    await db.returnLines.add(newLine);
+    await addSyncAction('add_line', newLine);
+
+    setLines(prev => [...prev, newLine]);
+    scanFeedback(true, 'Товар добавлен');
+
+    // Update document
+    const updatedDoc = {
+      ...document,
+      totalLines: lines.length + 1,
+      updatedAt: Date.now(),
+    };
+    await db.returnDocuments.update(document.id, updatedDoc);
+    setDocument(updatedDoc);
+
+    // Show reason modal
+    setSelectedLineId(newLine.id);
+    setShowReasonModal(true);
   };
 
-  const totalItems = selectedDoc?.items.length || 0;
-  const completedItems = selectedDoc?.items.filter(i => i.processed >= i.quantity).length || 0;
+  const { lastScan } = useScanner({
+    mode: 'keyboard',
+    onScan: handleScan,
+  });
 
-  const getReasonLabel = (reason: string) => {
-    const reasonObj = RETURN_REASONS.find(r => r.value === reason);
-    return reasonObj?.label || reason;
+  const saveReason = async () => {
+    if (!selectedLineId || !selectedReason) return;
+
+    const line = lines.find(l => l.id === selectedLineId);
+    if (!line) return;
+
+    const updatedLine: ReturnLine = {
+      ...line,
+      reason: selectedReason,
+      reasonText: selectedReason === 'other' ? customReason : undefined,
+      status: 'completed',
+    };
+
+    await db.returnLines.update(selectedLineId, updatedLine);
+    await addSyncAction('update_reason', updatedLine);
+
+    setLines(prev => prev.map(l => l.id === selectedLineId ? updatedLine : l));
+
+    // Reset modal
+    setShowReasonModal(false);
+    setSelectedLineId(null);
+    setSelectedReason('');
+    setCustomReason('');
   };
+
+  const completeDocument = async () => {
+    if (!document) return;
+
+    // Check if all lines have reasons
+    const missingReasons = lines.filter(l => !l.reason);
+    if (missingReasons.length > 0) {
+      alert('Укажите причину для всех товаров');
+      return;
+    }
+
+    const updatedDoc: ReturnDocument = {
+      ...document,
+      status: 'completed',
+      updatedAt: Date.now(),
+    };
+
+    await db.returnDocuments.update(document.id, updatedDoc);
+    await addSyncAction('complete', updatedDoc);
+
+    setDocument(updatedDoc);
+    sync();
+
+    scanFeedback(true, 'Документ завершён!');
+    setTimeout(() => navigate('/'), 2000);
+  };
+
+  const removeProduct = async (lineId: string) => {
+    await db.returnLines.delete(lineId);
+    setLines(prev => prev.filter(l => l.id !== lineId));
+
+    if (document) {
+      const updatedDoc = {
+        ...document,
+        totalLines: lines.length - 1,
+        updatedAt: Date.now(),
+      };
+      await db.returnDocuments.update(document.id, updatedDoc);
+      setDocument(updatedDoc);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (showTypeSelector) {
+    return (
+      <div className="space-y-4">
+        <div className="card text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            Выберите тип документа
+          </h2>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => createDocument('return')}
+              className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              ♻️ Возврат
+            </button>
+            <button
+              onClick={() => createDocument('writeoff')}
+              className="px-8 py-4 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+            >
+              🗑️ Списание
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!document) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
+      </div>
+    );
+  }
+
+  const reasons: { value: ReturnReason; label: string }[] = [
+    { value: 'damaged', label: '🔨 Брак / Повреждение' },
+    { value: 'expired', label: '📅 Срок годности истёк' },
+    { value: 'wrong_item', label: '❌ Ошибка комплектации' },
+    { value: 'customer_return', label: '↩️ Возврат от клиента' },
+    { value: 'other', label: '📝 Другое' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <HeaderBar title="♻️ Возврат / Списание" />
-      <div className="p-4 space-y-4">
-        {!selectedDoc && documents.length > 0 && (
-          <div className="space-y-4">
-            <div className="text-center py-6">
-              <div className="text-6xl mb-4">♻️</div>
-              <h2 className="text-xl font-semibold mb-2">Возврат / Списание</h2>
-              <p className="text-gray-600">Выберите документ для работы</p>
-            </div>
-
-            <div className="space-y-3">
-              {documents.map(doc => (
-                <Card key={doc.id} onClick={() => handleDocumentSelect(doc.id)} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">
-                        {doc.type === 'return' ? '♻️ Возврат' : '🧾 Списание'} №{doc.number}
-                      </h3>
-                      <StatusBadge status={doc.status} />
-                    </div>
-                    {doc.customerName && (
-                      <p className="text-sm text-gray-600">Клиент: {doc.customerName}</p>
-                    )}
-                    <p className="text-sm text-gray-600">
-                      Товаров: {doc.items.length} | Обработано: {doc.items.filter(i => i.processed >= i.quantity).length}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(doc.date).toLocaleString('ru-RU')}
-                    </p>
-                  </div>
-                </Card>
-              ))}
-            </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {document.type === 'return' ? '♻️ Возврат' : '🗑️ Списание'}
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Документ: {document.id}
+            </p>
           </div>
-        )}
-
-        {selectedDoc && (
-          <>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-semibold">
-                  {selectedDoc.type === 'return' ? '♻️ Возврат' : '🧾 Списание'} №{selectedDoc.number}
-                </h2>
-                <Button variant="secondary" size="sm" onClick={() => setSelectedDoc(null)}>
-                  Назад
-                </Button>
-              </div>
-              {selectedDoc.customerName && (
-                <p className="text-sm text-gray-600">Клиент: {selectedDoc.customerName}</p>
-              )}
-              <div className="mt-3">
-                <ProgressBar current={completedItems} total={totalItems} />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {selectedDoc.items.map(item => (
-                <Card key={item.id}>
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm">{item.productName}</h3>
-                        <p className="text-xs text-gray-500">Артикул: {item.sku}</p>
-                        <p className="text-xs text-orange-600">
-                          Причина: {getReasonLabel(item.reason)}
-                        </p>
-                        {item.reasonText && (
-                          <p className="text-xs text-gray-500 italic">"{item.reasonText}"</p>
-                        )}
-                      </div>
-                      <StatusBadge status={item.status} />
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600">Обработано</label>
-                        <Input
-                          type="number"
-                          value={item.processed}
-                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                          min={0}
-                          max={item.quantity}
-                        />
-                      </div>
-                      <div className="text-center pt-5">
-                        <span className="text-xs text-gray-600">из</span>
-                      </div>
-                      <div className="flex-1 pt-5">
-                        <div className="bg-gray-100 rounded p-2 text-center font-semibold">
-                          {item.quantity}
-                        </div>
-                      </div>
-                    </div>
-
-                    {item.remaining > 0 && (
-                      <div className="text-xs text-orange-600">
-                        Осталось обработать: {item.remaining} {item.unit}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <Button
-              fullWidth
-              variant="success"
-              onClick={handleComplete}
-              disabled={completedItems < totalItems}
-            >
-              ✅ Завершить {selectedDoc.type === 'return' ? 'возврат' : 'списание'}
-            </Button>
-          </>
-        )}
-
-        {!selectedDoc && documents.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">♻️</div>
-            <h2 className="text-xl font-semibold mb-2">Возврат / Списание</h2>
-            <p className="text-gray-600">Нет документов для обработки</p>
+          <div className="flex items-center space-x-2">
+            {pendingCount > 0 && (
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
+                {pendingCount} не синхр.
+              </span>
+            )}
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              document.status === 'completed' ? 'bg-green-100 text-green-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {document.status}
+            </span>
           </div>
-        )}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {lines.length}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Всего позиций</div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {lines.filter(l => l.reason).length}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">С причиной</div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={completeDocument}
+            disabled={lines.length === 0 || lines.some(l => !l.reason)}
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700"
+          >
+            ✅ Завершить документ
+          </button>
+          <button
+            onClick={() => sync()}
+            disabled={isSyncing || pendingCount === 0}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
+          >
+            {isSyncing ? '⏳' : '🔄'}
+          </button>
+        </div>
       </div>
-      <ScanHint message={hint} type={hintType} />
+
+      {/* Scan Hint */}
+      <ScanHint lastScan={lastScan} hint="Сканируйте товары для добавления" />
+
+      {/* Lines */}
+      <div className="space-y-2">
+        {lines.map(line => (
+          <div
+            key={line.id}
+            className={`card border-2 ${
+              line.reason
+                ? 'bg-green-50 border-green-500 dark:bg-green-900'
+                : 'bg-red-50 border-red-500 dark:bg-red-900'
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {line.productName}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Артикул: {line.productSku}
+                </p>
+                {line.reason && (
+                  <div className="mt-2 flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                      Причина:
+                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {reasons.find(r => r.value === line.reason)?.label || line.reasonText}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                {!line.reason && (
+                  <button
+                    onClick={() => {
+                      setSelectedLineId(line.id);
+                      setShowReasonModal(true);
+                    }}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    Указать причину
+                  </button>
+                )}
+                <button
+                  onClick={() => removeProduct(line.id)}
+                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {lines.length === 0 && (
+        <div className="card text-center py-12">
+          <p className="text-gray-600 dark:text-gray-400">
+            Нет товаров. Отсканируйте товары для добавления.
+          </p>
+        </div>
+      )}
+
+      {/* Reason Modal */}
+      {showReasonModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Укажите причину
+            </h3>
+            <div className="space-y-2 mb-4">
+              {reasons.map(reason => (
+                <button
+                  key={reason.value}
+                  onClick={() => setSelectedReason(reason.value)}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors ${
+                    selectedReason === reason.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {reason.label}
+                </button>
+              ))}
+            </div>
+            {selectedReason === 'other' && (
+              <textarea
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                placeholder="Опишите причину"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+                rows={3}
+              />
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={saveReason}
+                disabled={!selectedReason || (selectedReason === 'other' && !customReason.trim())}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-green-700"
+              >
+                Сохранить
+              </button>
+              <button
+                onClick={() => {
+                  setShowReasonModal(false);
+                  setSelectedLineId(null);
+                  setSelectedReason('');
+                  setCustomReason('');
+                }}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
+export default Return;

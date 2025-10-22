@@ -1,49 +1,64 @@
 // === 📁 src/utils/voice.ts ===
-import { VoiceConfig } from '@/types/common';
+// Voice feedback utilities using Web Speech API
 
-class VoiceManager {
-  private config: VoiceConfig = { enabled: false, lang: 'ru-RU' };
-  private synth: SpeechSynthesis | null = null;
+let enabled = true;
+let synth: SpeechSynthesis | null = null;
+let voice: SpeechSynthesisVoice | null = null;
 
-  constructor() {
-    if ('speechSynthesis' in window) {
-      this.synth = window.speechSynthesis;
+export const initVoice = () => {
+  if ('speechSynthesis' in window) {
+    synth = window.speechSynthesis;
+    
+    // Try to get Russian voice
+    const voices = synth.getVoices();
+    voice = voices.find(v => v.lang.startsWith('ru')) || voices[0] || null;
+    
+    // Load voices if not ready
+    if (voices.length === 0) {
+      synth.onvoiceschanged = () => {
+        const loadedVoices = synth!.getVoices();
+        voice = loadedVoices.find(v => v.lang.startsWith('ru')) || loadedVoices[0] || null;
+      };
     }
   }
+};
 
-  setConfig(config: VoiceConfig) {
-    this.config = config;
-  }
-
-  speak(text: string) {
-    if (!this.config.enabled || !this.synth) return;
-
+export const speak = (text: string, options?: { rate?: number; pitch?: number }) => {
+  if (!enabled || !synth) return;
+  
+  try {
     // Cancel any ongoing speech
-    this.synth.cancel();
-
+    synth.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = this.config.lang;
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    this.synth.speak(utterance);
+    if (voice) utterance.voice = voice;
+    utterance.rate = options?.rate || 1.0;
+    utterance.pitch = options?.pitch || 1.0;
+    utterance.volume = 0.8;
+    
+    synth.speak(utterance);
+  } catch (error) {
+    console.error('Voice synthesis error:', error);
   }
+};
 
-  success(message: string = 'Успешно') {
-    this.speak(message);
+export const stopSpeaking = () => {
+  if (synth) {
+    synth.cancel();
   }
+};
 
-  error(message: string = 'Ошибка') {
-    this.speak(message);
-  }
+export const setVoiceEnabled = (value: boolean) => {
+  enabled = value;
+  localStorage.setItem('voiceEnabled', String(value));
+  if (!value) stopSpeaking();
+};
 
-  warning(message: string = 'Внимание') {
-    this.speak(message);
-  }
-}
+export const isVoiceEnabled = () => {
+  const stored = localStorage.getItem('voiceEnabled');
+  return stored === null ? false : stored === 'true';
+};
 
-export const voiceManager = new VoiceManager();
-
-
-
+// Initialize
+enabled = isVoiceEnabled();
+initVoice();

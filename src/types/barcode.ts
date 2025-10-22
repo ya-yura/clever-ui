@@ -1,21 +1,18 @@
 // === 📁 src/types/barcode.ts ===
-export interface BarcodeItem {
-  id: string;
+// Types for Barcode Collector module
+
+export interface BarcodeRecord {
+  id?: number;
   barcode: string;
   timestamp: number;
-  type?: 'product' | 'cell' | 'document' | 'package';
-  meta?: Record<string, unknown>;
+  type?: string;
+  duplicate?: boolean;
+  exported?: boolean;
 }
 
-export interface BarcodeSession {
-  id: string;
-  startTime: number;
-  endTime?: number;
-  items: BarcodeItem[];
-  exported: boolean;
+export interface BarcodeExport {
+  barcodes: string[];
+  timestamp: number;
+  count: number;
+  format: 'txt' | 'csv' | 'json';
 }
-
-export type ExportFormat = 'csv' | 'txt' | 'json';
-
-
-

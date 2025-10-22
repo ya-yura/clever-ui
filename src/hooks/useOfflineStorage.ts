@@ -1,121 +1,102 @@
 // === 📁 src/hooks/useOfflineStorage.ts ===
-import { useCallback } from 'react';
-import { db, SyncQueueItem } from '@/services/db';
-import { getISOString } from '@/utils/date';
+// Offline storage hook using IndexedDB via Dexie
 
-export function useOfflineStorage() {
-  // Добавление в очередь синхронизации
-  const addToSyncQueue = useCallback(async (
-    type: SyncQueueItem['type'],
-    documentId: string,
-    action: SyncQueueItem['action'],
-    data: any
-  ) => {
-    const item: SyncQueueItem = {
-      id: `${type}-${documentId}-${Date.now()}`,
-      type,
-      documentId,
-      action,
-      data,
-      timestamp: Date.now(),
-      retries: 0
+import { useEffect, useState, useCallback } from 'react';
+import { db, SyncAction } from '@/services/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+
+export const useOfflineStorage = (module: string) => {
+  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
-
-    await db.syncQueue.add(item);
   }, []);
 
-  // Получение очереди синхронизации
-  const getSyncQueue = useCallback(async () => {
-    return await db.syncQueue.toArray();
-  }, []);
+  // Get pending sync actions
+  const pendingSyncActions = useLiveQuery(
+    () => db.syncActions
+      .where({ module, synced: false })
+      .toArray(),
+    [module]
+  );
 
-  // Удаление из очереди
-  const removeFromSyncQueue = useCallback(async (id: string) => {
-    await db.syncQueue.delete(id);
-  }, []);
-
-  // Увеличение счётчика попыток
-  const incrementRetries = useCallback(async (id: string, error: string) => {
-    const item = await db.syncQueue.get(id);
-    if (item) {
-      await db.syncQueue.update(id, {
-        retries: item.retries + 1,
-        lastError: error
+  // Add sync action
+  const addSyncAction = useCallback(async (action: string, data: any) => {
+    try {
+      await db.syncActions.add({
+        module,
+        action,
+        data,
+        timestamp: Date.now(),
+        synced: false,
       });
+    } catch (error) {
+      console.error('Failed to add sync action:', error);
+    }
+  }, [module]);
+
+  // Mark action as synced
+  const markSynced = useCallback(async (id: number) => {
+    try {
+      await db.syncActions.update(id, { synced: true });
+    } catch (error) {
+      console.error('Failed to mark action as synced:', error);
     }
   }, []);
 
-  // Сохранение документа приёмки
-  const saveReceivingDoc = useCallback(async (doc: any) => {
-    await db.receivingDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
+  // Mark action as error
+  const markError = useCallback(async (id: number, error: string) => {
+    try {
+      await db.syncActions.update(id, { error });
+      await db.errorLogs.add({
+        module,
+        error,
+        timestamp: Date.now(),
+        resolved: false,
+      });
+    } catch (err) {
+      console.error('Failed to mark error:', err);
+    }
+  }, [module]);
 
-  // Сохранение документа размещения
-  const savePlacementDoc = useCallback(async (doc: any) => {
-    await db.placementDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
+  // Auto-save functionality
+  const enableAutoSave = useCallback((callback: () => void, interval = 30000) => {
+    if (autoSaveTimer) {
+      clearInterval(autoSaveTimer);
+    }
 
-  // Сохранение документа подбора
-  const savePickingDoc = useCallback(async (doc: any) => {
-    await db.pickingDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
+    const timer = setInterval(callback, interval);
+    setAutoSaveTimer(timer);
 
-  // Сохранение документа отгрузки
-  const saveShipmentDoc = useCallback(async (doc: any) => {
-    await db.shipmentDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
+    return () => clearInterval(timer);
+  }, [autoSaveTimer]);
 
-  // Сохранение документа возврата
-  const saveReturnDoc = useCallback(async (doc: any) => {
-    await db.returnDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
-
-  // Сохранение документа инвентаризации
-  const saveInventoryDoc = useCallback(async (doc: any) => {
-    await db.inventoryDocs.put({
-      ...doc,
-      updatedAt: getISOString()
-    });
-  }, []);
-
-  // Автосохранение с интервалом
-  const setupAutoSave = useCallback((
-    saveFunction: () => Promise<void>,
-    intervalSec: number = 30
-  ) => {
-    const interval = setInterval(saveFunction, intervalSec * 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+      }
+    };
+  }, [autoSaveTimer]);
 
   return {
-    addToSyncQueue,
-    getSyncQueue,
-    removeFromSyncQueue,
-    incrementRetries,
-    saveReceivingDoc,
-    savePlacementDoc,
-    savePickingDoc,
-    saveShipmentDoc,
-    saveReturnDoc,
-    saveInventoryDoc,
-    setupAutoSave
+    isOnline,
+    pendingSyncActions: pendingSyncActions || [],
+    addSyncAction,
+    markSynced,
+    markError,
+    enableAutoSave,
   };
-}
-
-
-
+};

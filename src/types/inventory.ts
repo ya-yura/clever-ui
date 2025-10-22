@@ -1,35 +1,32 @@
 // === 📁 src/types/inventory.ts ===
-import { BaseDocument, BaseItem } from './common';
+// Types for Inventory module
+
+import { BaseDocument, BaseLine } from './common';
 
 export interface InventoryDocument extends BaseDocument {
-  warehouseId: string;
-  responsiblePerson: string;
-  zone: string;
-  zones?: string[];
-  items: InventoryItem[];
+  type?: 'full' | 'partial' | 'cycle';
+  zone?: string;
+  totalLines: number;
+  completedLines: number;
+  discrepanciesCount: number;
+  currentCellId?: string;
 }
 
-export interface InventoryItem extends BaseItem {
-  documentId: string;
+export interface InventoryLine extends BaseLine {
   cellId: string;
-  cellBarcode: string;
-  cellName?: string;
-  expectedQuantity: number;
-  actualQuantity: number;
-  planned?: number;
-  actual?: number;
+  cellName: string;
+  quantitySystem: number; // Quantity in the system before inventory
   discrepancy: number;
-  status: 'pending' | 'counted' | 'verified' | 'discrepancy';
-  countedAt?: string | null;
-  countedBy?: string;
+  countedAt?: number;
+  verified?: boolean;
 }
 
-export interface InventoryReport {
-  totalItems: number;
-  countedItems: number;
-  discrepancies: number;
-  shortages: number;
-  excesses: number;
-  accuracy: number;
+export interface InventoryDiscrepancy {
+  lineId: string;
+  productName: string;
+  cellName: string;
+  system: number;
+  actual: number;
+  difference: number;
+  action?: 'accept' | 'recount' | 'system_error';
 }
-
