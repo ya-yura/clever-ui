@@ -5,19 +5,22 @@
   "type": "module",
   "description": "PWA-приложение для управления складом Cleverence - Склад-15",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "dev": "npx vite",
+    "build": "tsc && npx vite build",
+    "preview": "npx vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "axios": "^1.6.2",
     "dexie": "^3.2.4",
     "dexie-react-hooks": "^1.1.7",
+    "framer-motion": "^12.23.24",
     "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.548.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0"
+    "react-router-dom": "^6.20.0",
+    "react-swipeable": "^7.0.2"
   },
   "devDependencies": {
     "@types/node": "^24.9.1",

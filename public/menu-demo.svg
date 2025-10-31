@@ -1,0 +1,94 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#343436"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Arial, sans-serif" font-size="24" fill="#e3e3dd" text-anchor="middle" font-weight="bold">
+    Гамбургер-меню «Склад-15»
+  </text>
+  
+  <!-- Phone Frame -->
+  <rect x="50" y="80" width="300" height="500" rx="20" fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+  
+  <!-- Screen -->
+  <rect x="65" y="100" width="270" height="460" fill="#343436"/>
+  
+  <!-- Header -->
+  <rect x="65" y="100" width="270" height="50" fill="#2a2a2a"/>
+  <text x="75" y="130" font-family="Arial, sans-serif" font-size="16" fill="#e3e3dd">☰ Склад 15</text>
+  <circle cx="310" cy="125" r="5" fill="#22c55e"/>
+  
+  <!-- Menu Overlay -->
+  <rect x="370" y="80" width="380" height="500" rx="20" fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+  
+  <!-- Menu Background -->
+  <rect x="385" y="100" width="350" height="460" fill="rgba(17, 24, 39, 0.95)"/>
+  
+  <!-- Menu Header -->
+  <rect x="385" y="100" width="350" height="80" fill="rgba(31, 41, 55, 0.5)"/>
+  <circle cx="410" cy="130" r="20" fill="#3b82f6"/>
+  <text x="435" y="135" font-family="Arial, sans-serif" font-size="14" fill="#e3e3dd" font-weight="bold">Пользователь</text>
+  <text x="435" y="150" font-family="Arial, sans-serif" font-size="11" fill="#9ca3af">Склад-15</text>
+  <circle cx="410" cy="165" r="4" fill="#22c55e"/>
+  <text x="418" y="169" font-family="Arial, sans-serif" font-size="11" fill="#22c55e">Онлайн</text>
+  
+  <!-- Menu Items -->
+  <g id="menu-items">
+    <!-- Item 1 -->
+    <rect x="385" y="195" width="350" height="45" fill="transparent"/>
+    <text x="420" y="220" font-family="Arial, sans-serif" font-size="13" fill="#e3e3dd">🔄 Синхронизировать</text>
+    
+    <!-- Item 2 -->
+    <rect x="385" y="240" width="350" height="45" fill="transparent"/>
+    <text x="420" y="265" font-family="Arial, sans-serif" font-size="13" fill="#e3e3dd">🧩 Обновить справочники</text>
+    
+    <!-- Item 3 - Expanded -->
+    <rect x="385" y="285" width="350" height="45" fill="rgba(55, 65, 81, 0.5)"/>
+    <text x="420" y="310" font-family="Arial, sans-serif" font-size="13" fill="#e3e3dd" font-weight="bold">▼ ⚙️ Настройки</text>
+    
+    <!-- Submenu -->
+    <rect x="385" y="330" width="350" height="120" fill="rgba(31, 41, 55, 0.5)"/>
+    <text x="445" y="350" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">• Подключение</text>
+    <text x="445" y="375" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">• Пользователь</text>
+    <text x="445" y="400" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">• Поведение</text>
+    <text x="445" y="425" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db">• Синхронизация</text>
+    
+    <!-- Item 4 -->
+    <rect x="385" y="450" width="350" height="45" fill="transparent"/>
+    <text x="420" y="475" font-family="Arial, sans-serif" font-size="13" fill="#e3e3dd">👥 Напарник</text>
+    
+    <!-- Item 5 -->
+    <rect x="385" y="495" width="350" height="45" fill="transparent"/>
+    <text x="420" y="520" font-family="Arial, sans-serif" font-size="13" fill="#e3e3dd">🧾 Мои документы</text>
+  </g>
+  
+  <!-- Menu Footer -->
+  <rect x="385" y="540" width="350" height="20" fill="rgba(31, 41, 55, 0.3)"/>
+  <text x="560" y="554" font-family="Arial, sans-serif" font-size="9" fill="#6b7280" text-anchor="middle">Cleverence · v1.0.0</text>
+  
+  <!-- Animation Arrows -->
+  <g id="animations">
+    <!-- Swipe left arrow -->
+    <path d="M 730 250 L 760 250" stroke="#3b82f6" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+    <text x="740" y="245" font-family="Arial, sans-serif" font-size="11" fill="#3b82f6" text-anchor="middle">Свайп</text>
+    
+    <!-- Click overlay -->
+    <circle cx="380" cy="350" r="8" fill="rgba(59, 130, 246, 0.3)" stroke="#3b82f6" stroke-width="2"/>
+    <text x="340" y="360" font-family="Arial, sans-serif" font-size="11" fill="#3b82f6">Клик закрывает</text>
+  </g>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    </marker>
+  </defs>
+  
+  <!-- Features List -->
+  <g id="features">
+    <text x="50" y="600" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af">
+      ✓ Анимации (framer-motion)   ✓ Свайпы (react-swipeable)   ✓ Оффлайн режим   ✓ Виброотклик
+    </text>
+  </g>
+</svg>
+

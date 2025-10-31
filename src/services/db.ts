@@ -88,6 +88,10 @@ export class WarehouseDatabase extends Dexie {
   employees!: Table<Employee, string>;
   partnerSessions!: Table<PartnerSession, string>;
 
+  // Reference data (справочники)
+  products!: Table<any, string>;
+  cells!: Table<any, string>;
+
   constructor() {
     super('WarehouseDB');
 
@@ -134,6 +138,13 @@ export class WarehouseDatabase extends Dexie {
       // Add new tables
       employees: 'id, name, role, department, isActive, lastActiveAt',
       partnerSessions: 'id, userId, partnerId, startedAt, endedAt, status',
+    });
+
+    // Version 3 - Added reference data tables
+    this.version(3).stores({
+      // Reference data
+      products: 'id, name, sku, barcode',
+      cells: 'id, name, zone, type',
     });
   }
 }

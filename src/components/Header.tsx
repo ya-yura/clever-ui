@@ -3,12 +3,15 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useMenu } from '@/modules/menu';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOnline } = useOfflineStorage('app');
+  const { openMenu } = useMenu();
 
   const isHome = location.pathname === '/';
 
@@ -29,11 +32,13 @@ const Header: React.FC = () => {
               </button>
             )}
             {isHome && (
-              <div className="flex flex-col space-y-1">
-                <div className="w-6 h-1 bg-[#e3e3dd] rounded"></div>
-                <div className="w-6 h-1 bg-[#e3e3dd] rounded"></div>
-                <div className="w-6 h-1 bg-[#e3e3dd] rounded"></div>
-              </div>
+              <button
+                onClick={openMenu}
+                className="p-2 hover:bg-[#474747] rounded-lg transition-colors touch-manipulation"
+                aria-label="Открыть меню"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
             )}
             <h1 
               className="text-2xl font-normal cursor-pointer tracking-wide"
