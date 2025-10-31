@@ -57,6 +57,13 @@ const Home: React.FC = () => {
     loadDocTypes();
   }, []);
 
+  // Debug: log docTypes whenever it changes
+  useEffect(() => {
+    console.log('🔄 [RENDER] docTypes changed:', docTypes);
+    console.log('🔄 [RENDER] docTypes.length:', docTypes.length);
+    console.log('🔄 [RENDER] usingMockData:', usingMockData);
+  }, [docTypes, usingMockData]);
+
   const loadDocTypes = async () => {
     setLoading(true);
     setError(null);
@@ -112,12 +119,16 @@ const Home: React.FC = () => {
 
       setUsingMockData(isMockData);
 
+      console.log('📊 [STATE] Setting docTypes:', typesWithCounts);
+      console.log('📊 [STATE] docTypes.length:', typesWithCounts.length);
+      
       setDocTypes(typesWithCounts);
       setTotalDocs(typesWithCounts.reduce((sum, type) => sum + type.docsCount, 0));
       setError(null);  // Clear error if we successfully got data
       
       console.log('✅ [FINAL] Loaded', typesWithCounts.length, 'types with', 
                   typesWithCounts.reduce((sum, t) => sum + t.docsCount, 0), 'total documents');
+      console.log('📊 [FINAL] docTypes state should now have', typesWithCounts.length, 'items');
       
     } catch (error: any) {
       console.error('❌ [CRITICAL] Error loading doc types:', error);
@@ -132,6 +143,9 @@ const Home: React.FC = () => {
         docsCount: 0,
       }));
       
+      console.log('📊 [FALLBACK] Setting mock types:', mockTypes);
+      console.log('📊 [FALLBACK] mockTypes.length:', mockTypes.length);
+      
       setDocTypes(mockTypes);
       setTotalDocs(0);
       setUsingMockData(true);
@@ -140,6 +154,8 @@ const Home: React.FC = () => {
       setLoading(false);
     }
   };
+
+  console.log('🎯 [RENDER] Home render - loading:', loading, 'error:', error, 'docTypes.length:', docTypes.length);
 
   // Loading state
   if (loading) {
@@ -262,6 +278,7 @@ const Home: React.FC = () => {
 
       {/* Dynamic Document Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {console.log('🎨 [RENDER] Rendering docTypes grid, count:', docTypes.length)}
         {docTypes.map((docType) => (
           <button
             key={docType.uni}
