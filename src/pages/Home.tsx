@@ -102,7 +102,8 @@ const Home: React.FC = () => {
       
     } catch (error: any) {
       console.error('❌ Critical error loading doc types:', error);
-      setError('Ошибка загрузки типов документов. Проверьте подключение к серверу.');
+      const errorMessage = error.message || error.toString();
+      setError(`Ошибка загрузки типов документов.\n\nДетали: ${errorMessage}\n\nПроверьте:\n1. API сервер запущен (http://localhost:9000/MobileSMARTS/api/v1/DocTypes)\n2. CORS настроен на сервере\n3. Консоль браузера (F12) для подробностей`);
     } finally {
       setLoading(false);
     }
@@ -124,16 +125,30 @@ const Home: React.FC = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
+        <div className="text-center max-w-2xl px-4">
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-red-500 mb-2">Ошибка загрузки</h2>
-          <p className="text-[#a7a7a7] mb-6">{error}</p>
-          <button
-            onClick={loadDocTypes}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
-          >
-            Повторить попытку
-          </button>
+          <pre className="text-[#a7a7a7] mb-6 text-left bg-[#2a2a2c] p-4 rounded-lg whitespace-pre-wrap text-sm">{error}</pre>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={loadDocTypes}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              Повторить попытку
+            </button>
+            <button
+              onClick={() => window.open('http://localhost:9000/MobileSMARTS/api/v1/DocTypes', '_blank')}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              Проверить API в браузере
+            </button>
+            <button
+              onClick={() => navigate('/diagnostics')}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              Диагностика
+            </button>
+          </div>
         </div>
       </div>
     );
