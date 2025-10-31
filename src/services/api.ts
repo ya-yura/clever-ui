@@ -63,28 +63,46 @@ class ApiService {
 
   /**
    * Update baseURL from config
+   * 
+   * Senior approach: Multiple checks for dev environment
+   * - Check hostname (most reliable)
+   * - Check import.meta.env
+   * - Check mode explicitly
    */
   updateBaseURL() {
     try {
-      // FORCE relative path in development (for Vite proxy to work)
-      const isDevelopment = import.meta.env.DEV;
+      // Multiple ways to detect development
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1';
+      const isDevMode = import.meta.env.MODE === 'development';
+      const isDevEnv = import.meta.env.DEV === true;
+      
+      const isDevelopment = isLocalhost || isDevMode || isDevEnv;
+      
+      console.log('🔍 [ENV] Environment detection:');
+      console.log('  - hostname:', window.location.hostname);
+      console.log('  - isLocalhost:', isLocalhost);
+      console.log('  - import.meta.env.MODE:', import.meta.env.MODE);
+      console.log('  - import.meta.env.DEV:', import.meta.env.DEV);
+      console.log('  - isDevelopment:', isDevelopment);
       
       if (isDevelopment) {
-        // ALWAYS use relative path in dev to enable Vite proxy
+        // ALWAYS use relative path in development for Vite proxy
         const devBaseUrl = '/MobileSMARTS/api/v1';
         this.client.defaults.baseURL = devBaseUrl;
-        console.log('🔧 [DEV] Using relative path (via Vite proxy):', devBaseUrl);
-        console.log('🔧 [DEV] Proxy will forward to: http://localhost:9000');
+        console.log('✅ [DEV MODE] Using relative path (via Vite proxy):', devBaseUrl);
+        console.log('✅ [DEV MODE] Proxy will forward to: http://localhost:9000');
+        console.log('✅ [DEV MODE] Ignoring any saved config from localStorage');
         return;
       }
       
-      // In production, use configured URL
+      // Production mode - use configured URL
       if (configService.isConfigured()) {
         const serverUrl = configService.getServerUrl();
         this.client.defaults.baseURL = serverUrl;
-        console.log('✅ [PROD] baseURL from config:', this.client.defaults.baseURL);
+        console.log('✅ [PRODUCTION] Using configured baseURL:', this.client.defaults.baseURL);
       } else {
-        console.error('❌ [PROD] No server URL configured!');
+        console.error('❌ [PRODUCTION] No server URL configured!');
         throw new Error('Server URL not configured. Please go to Setup page.');
       }
     } catch (error) {
