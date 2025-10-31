@@ -11,6 +11,25 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    // Proxy to bypass CORS in development
+    proxy: {
+      '/MobileSMARTS': {
+        target: 'http://localhost:9000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('❌ [PROXY] error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('🔄 [PROXY]', req.method, req.url, '→', proxyReq.path);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('✅ [PROXY]', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+    },
   }
 });
