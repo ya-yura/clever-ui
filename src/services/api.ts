@@ -16,6 +16,8 @@ class ApiService {
   private token: string | null = null;
 
   constructor() {
+    console.log('🔧 [API] Initializing ApiService...');
+    
     this.client = axios.create({
       timeout: 30000,
       headers: {
@@ -25,6 +27,8 @@ class ApiService {
 
     // Update baseURL dynamically
     this.updateBaseURL();
+    
+    console.log('🔧 [API] ApiService initialized with baseURL:', this.client.defaults.baseURL);
 
     // Request interceptor
     this.client.interceptors.request.use(
@@ -66,10 +70,15 @@ class ApiService {
         const serverUrl = configService.getServerUrl();
         // Server URL already contains /MobileSMARTS/api/v1
         this.client.defaults.baseURL = serverUrl;
-        console.log('✅ API baseURL updated:', this.client.defaults.baseURL);
+        console.log('✅ [API] baseURL updated from config:', this.client.defaults.baseURL);
+      } else {
+        // Use default baseURL if not configured
+        const defaultBaseUrl = 'http://localhost:9000/MobileSMARTS/api/v1';
+        this.client.defaults.baseURL = defaultBaseUrl;
+        console.warn('⚠️ [API] Config not configured, using default baseURL:', defaultBaseUrl);
       }
     } catch (error) {
-      console.warn('⚠️ Failed to update API baseURL:', error);
+      console.error('❌ [API] Failed to update baseURL:', error);
     }
   }
 
@@ -110,9 +119,18 @@ class ApiService {
   async get<T = any>(url: string, params?: any): Promise<ApiResponse<T>> {
     try {
       this.updateBaseURL(); // Ensure baseURL is current
+      const fullUrl = `${this.client.defaults.baseURL}${url}`;
+      console.log(`🌐 [API] GET ${fullUrl}`, params ? `with params: ${JSON.stringify(params)}` : '');
+      
       const response = await this.client.get(url, { params });
+      
+      console.log(`✅ [API] Response status: ${response.status}`);
+      console.log(`📦 [API] Response data:`, response.data);
+      
       return { success: true, data: response.data };
     } catch (error: any) {
+      console.error(`❌ [API] GET ${url} failed:`, error.message);
+      console.error(`❌ [API] Error details:`, error.response?.data || error);
       return { success: false, error: error.message };
     }
   }

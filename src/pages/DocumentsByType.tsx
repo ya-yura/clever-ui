@@ -50,6 +50,8 @@ const DocumentsByType: React.FC = () => {
   const loadDocuments = async () => {
     if (!docTypeUni) return;
 
+    console.log(`📄 [DOCS] Loading documents for type: ${docTypeUni}`);
+
     try {
       setLoading(true);
       setError(null);
@@ -63,18 +65,21 @@ const DocumentsByType: React.FC = () => {
         if (docType && docType.displayName) {
           displayName = docType.displayName;
         }
+        console.log(`📄 [DOCS] Display name: ${displayName}`);
       } catch (err) {
-        console.warn('Could not load doc type info:', err);
+        console.warn('⚠️ [DOCS] Could not load doc type info:', err);
       }
 
       setDocTypeName(displayName);
 
       // Fetch documents from cache/API
+      console.log(`📄 [DOCS] Fetching documents for: ${docTypeUni}`);
       const docs = await odataCache.getDocsByType(docTypeUni);
+      console.log(`📄 [DOCS] Loaded ${docs.length} documents:`, docs);
       setDocuments(docs);
       
     } catch (error: any) {
-      console.error('Error loading documents:', error);
+      console.error('❌ [DOCS] Error loading documents:', error);
       setError('Ошибка загрузки документов. Проверьте подключение к серверу.');
     } finally {
       setLoading(false);

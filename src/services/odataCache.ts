@@ -87,6 +87,8 @@ class ODataCacheService {
   async getDocsByType(docTypeUni: string, forceRefresh = false): Promise<ODataDocument[]> {
     const cacheKey = `docs_${docTypeUni}`;
 
+    console.log(`📦 [CACHE] getDocsByType(${docTypeUni})`);
+
     // Try cache first (if not forcing refresh)
     if (!forceRefresh && await this.isCacheValid(cacheKey)) {
       const cached = await db.odataDocuments
@@ -95,19 +97,31 @@ class ODataCacheService {
         .toArray();
       
       if (cached.length > 0) {
-        console.log(`✅ Loaded ${cached.length} documents from cache for ${docTypeUni}`);
+        console.log(`✅ [CACHE] Loaded ${cached.length} documents from cache for ${docTypeUni}`);
         return cached;
       }
     }
 
     // Try to fetch from API (with or without auth)
     try {
-      console.log(`🌐 Fetching documents from API for ${docTypeUni}...`);
+      console.log(`🌐 [API] Fetching documents from /Docs/${docTypeUni}...`);
       const response = await api.getDocsByType(docTypeUni);
       
+      console.log(`📡 [API] Response for ${docTypeUni}:`, response);
+      
       if (response.success && response.data) {
-        const odataResponse = response.data as ODataCollection<ODataDocument>;
-        const docs = odataResponse.value || [];
+        // Handle both OData collection format and plain array
+        let docs: ODataDocument[] = [];
+        
+        if (Array.isArray(response.data)) {
+          console.log(`✅ [API] Got plain array with ${response.data.length} documents`);
+          docs = response.data;
+        } else if (response.data.value && Array.isArray(response.data.value)) {
+          console.log(`✅ [API] Got OData collection with ${response.data.value.length} documents`);
+          docs = response.data.value;
+        } else {
+          console.warn(`⚠️ [API] Unexpected response format:`, response.data);
+        }
 
         // Save to cache (replace existing docs of this type)
         await db.odataDocuments
@@ -117,17 +131,16 @@ class ODataCacheService {
         
         if (docs.length > 0) {
           await db.odataDocuments.bulkAdd(docs);
+          await this.updateCacheMetadata(cacheKey);
         }
-        
-        await this.updateCacheMetadata(cacheKey);
 
-        console.log(`✅ Fetched and cached ${docs.length} documents from API for ${docTypeUni}`);
+        console.log(`✅ [API] Fetched and cached ${docs.length} documents for ${docTypeUni}`);
         return docs;
       } else {
-        console.warn(`⚠️ API returned no data for ${docTypeUni}:`, response);
+        console.warn(`⚠️ [API] No data returned for ${docTypeUni}:`, response);
       }
-    } catch (error) {
-      console.error(`❌ Failed to fetch documents from API for ${docTypeUni}:`, error);
+    } catch (error: any) {
+      console.error(`❌ [API] Failed to fetch documents for ${docTypeUni}:`, error.message || error);
     }
 
     // Fallback to stale cache
@@ -137,12 +150,12 @@ class ODataCacheService {
       .toArray();
     
     if (cached.length > 0) {
-      console.log(`⚠️ Using stale cache for documents of ${docTypeUni}`);
+      console.log(`⚠️ [CACHE] Using stale cache: ${cached.length} documents for ${docTypeUni}`);
       return cached;
     }
 
     // Return empty array instead of throwing
-    console.log(`ℹ️ No documents available for ${docTypeUni} (not authenticated and no cache)`);
+    console.log(`ℹ️ [CACHE] No documents available for ${docTypeUni} (API failed and no cache)`);
     return [];
   }
 
