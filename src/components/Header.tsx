@@ -41,7 +41,7 @@ const Header: React.FC = () => {
   const { openMenu } = useMenu();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { documentInfo } = useDocumentHeader();
+  const { documentInfo, listInfo } = useDocumentHeader();
 
   const isHome = location.pathname === '/';
   
@@ -91,7 +91,7 @@ const Header: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-medium tracking-wide">
-                  {pageInfo.title}
+                  {listInfo ? listInfo.title : pageInfo.title}
                 </h1>
                 {documentInfo && (
                   <span className="text-sm text-[#a7a7a7]">
@@ -111,6 +111,10 @@ const Header: React.FC = () => {
                     {documentInfo.completed}/{documentInfo.total}
                   </span>
                 </div>
+              ) : listInfo ? (
+                <p className="text-xs text-[#a7a7a7] mt-1">
+                  Всего: {listInfo.count}
+                </p>
               ) : (
                 pageInfo.subtitle && (
                   <p className="text-xs text-[#a7a7a7] mt-1">

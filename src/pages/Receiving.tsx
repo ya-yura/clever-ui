@@ -23,7 +23,7 @@ const Receiving: React.FC = () => {
   const [documents, setDocuments] = useState<ReceivingDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentCell, setCurrentCell] = useState<string>('');
-  const { setDocumentInfo } = useDocumentHeader();
+  const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('receiving');
   const { sync, isSyncing, pendingCount } = useSync({
@@ -31,7 +31,7 @@ const Receiving: React.FC = () => {
     syncEndpoint: '/receiving/sync',
   });
 
-  // Update header with document info
+  // Update header with document info or list info
   useEffect(() => {
     if (document && id) {
       setDocumentInfo({
@@ -39,14 +39,20 @@ const Receiving: React.FC = () => {
         completed: document.completedLines || 0,
         total: document.totalLines || 0,
       });
-    } else {
+      setListInfo(null);
+    } else if (!id) {
       setDocumentInfo(null);
+      setListInfo({
+        title: 'Приёмка',
+        count: documents.length,
+      });
     }
     
     return () => {
       setDocumentInfo(null);
+      setListInfo(null);
     };
-  }, [document, id, setDocumentInfo]);
+  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
 
   // Load document
   useEffect(() => {

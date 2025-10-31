@@ -9,18 +9,26 @@ interface DocumentHeaderInfo {
   total: number;
 }
 
+interface DocumentListInfo {
+  title: string;
+  count: number;
+}
+
 interface DocumentHeaderContextType {
   documentInfo: DocumentHeaderInfo | null;
   setDocumentInfo: (info: DocumentHeaderInfo | null) => void;
+  listInfo: DocumentListInfo | null;
+  setListInfo: (info: DocumentListInfo | null) => void;
 }
 
 const DocumentHeaderContext = createContext<DocumentHeaderContextType | undefined>(undefined);
 
 export const DocumentHeaderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [documentInfo, setDocumentInfo] = useState<DocumentHeaderInfo | null>(null);
+  const [listInfo, setListInfo] = useState<DocumentListInfo | null>(null);
 
   return (
-    <DocumentHeaderContext.Provider value={{ documentInfo, setDocumentInfo }}>
+    <DocumentHeaderContext.Provider value={{ documentInfo, setDocumentInfo, listInfo, setListInfo }}>
       {children}
     </DocumentHeaderContext.Provider>
   );

@@ -15,6 +15,7 @@ import { STATUS_LABELS } from '@/types/document';
 import PickingCard from '@/components/picking/PickingCard';
 import RouteProgress from '@/components/picking/RouteProgress';
 import ScannerInput from '@/components/ScannerInput';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 
 const Picking: React.FC = () => {
   const { id } = useParams();
@@ -26,12 +27,36 @@ const Picking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentCell, setCurrentCell] = useState<string>('');
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('picking');
   const { sync, isSyncing, pendingCount } = useSync({
     module: 'picking',
     syncEndpoint: '/picking/sync',
   });
+
+  // Update header with document info or list info
+  useEffect(() => {
+    if (document && id) {
+      setDocumentInfo({
+        documentId: document.id,
+        completed: document.completedLines || 0,
+        total: document.totalLines || 0,
+      });
+      setListInfo(null);
+    } else if (!id) {
+      setDocumentInfo(null);
+      setListInfo({
+        title: 'Подбор',
+        count: documents.length,
+      });
+    }
+    
+    return () => {
+      setDocumentInfo(null);
+      setListInfo(null);
+    };
+  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
 
   // Load document
   useEffect(() => {

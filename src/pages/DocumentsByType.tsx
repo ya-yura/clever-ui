@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { odataCache } from '@/services/odataCache';
 import { ODataDocument } from '@/types/odata';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 
 // Mapping of document type uni to display names (fallback)
 const DOC_TYPE_DISPLAY_NAMES: Record<string, string> = {
@@ -19,6 +20,7 @@ const DOC_TYPE_DISPLAY_NAMES: Record<string, string> = {
 const DocumentsByType: React.FC = () => {
   const { docTypeUni } = useParams<{ docTypeUni: string }>();
   const navigate = useNavigate();
+  const { setListInfo } = useDocumentHeader();
   
   const [documents, setDocuments] = useState<ODataDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,20 @@ const DocumentsByType: React.FC = () => {
       loadDocuments();
     }
   }, [docTypeUni]);
+
+  // Update header with list info
+  useEffect(() => {
+    if (docTypeName) {
+      setListInfo({
+        title: docTypeName,
+        count: documents.length,
+      });
+    }
+    
+    return () => {
+      setListInfo(null);
+    };
+  }, [docTypeName, documents.length, setListInfo]);
 
   const loadDocuments = async () => {
     if (!docTypeUni) return;
@@ -130,24 +146,7 @@ const DocumentsByType: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-[#e3e3dd]">{docTypeName}</h1>
-          <p className="text-sm text-[#a7a7a7] mt-1">
-            Всего документов: {documents.length}
-          </p>
-        </div>
-        <button
-          onClick={loadDocuments}
-          className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          title="Обновить"
-        >
-          🔄
-        </button>
-      </div>
-
+    <div className="space-y-3">
       {/* Documents list */}
       {documents.length === 0 ? (
         <div className="text-center py-12 bg-[#474747] rounded-lg">

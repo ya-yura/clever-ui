@@ -11,6 +11,7 @@ import { ReturnDocument, ReturnLine, ReturnType, ReturnReason } from '@/types/re
 import { scanFeedback, feedback } from '@/utils/feedback';
 import { STATUS_LABELS } from '@/types/document';
 import ScannerInput from '@/components/ScannerInput';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 
 const Return: React.FC = () => {
   const { id } = useParams();
@@ -25,12 +26,37 @@ const Return: React.FC = () => {
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [selectedReason, setSelectedReason] = useState<ReturnReason | ''>('');
   const [customReason, setCustomReason] = useState('');
+  const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('return');
   const { sync, isSyncing, pendingCount } = useSync({
     module: 'return',
     syncEndpoint: document?.type === 'return' ? '/return/sync' : '/writeoff/sync',
   });
+
+  // Update header with document info or list info
+  useEffect(() => {
+    if (document && id) {
+      const title = document.type === 'return' ? 'Возврат' : 'Списание';
+      setDocumentInfo({
+        documentId: document.id,
+        completed: lines.filter(l => l.reason).length,
+        total: lines.length,
+      });
+      setListInfo(null);
+    } else if (!id) {
+      setDocumentInfo(null);
+      setListInfo({
+        title: 'Возврат',
+        count: documents.length,
+      });
+    }
+    
+    return () => {
+      setDocumentInfo(null);
+      setListInfo(null);
+    };
+  }, [document, id, documents.length, lines.length, lines, setDocumentInfo, setListInfo]);
 
   useEffect(() => {
     loadDocument();

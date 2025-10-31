@@ -12,6 +12,7 @@ import { ShipmentDocument, ShipmentLine } from '@/types/shipment';
 import { scanFeedback, feedback } from '@/utils/feedback';
 import { STATUS_LABELS } from '@/types/document';
 import ScannerInput from '@/components/ScannerInput';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 
 const Shipment: React.FC = () => {
   const { id } = useParams();
@@ -25,12 +26,36 @@ const Shipment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showTtnModal, setShowTtnModal] = useState(false);
   const [ttnNumber, setTtnNumber] = useState('');
+  const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('shipment');
   const { sync, isSyncing, pendingCount } = useSync({
     module: 'shipment',
     syncEndpoint: '/shipment/sync',
   });
+
+  // Update header with document info or list info
+  useEffect(() => {
+    if (document && id) {
+      setDocumentInfo({
+        documentId: document.id,
+        completed: document.completedLines || 0,
+        total: document.totalLines || 0,
+      });
+      setListInfo(null);
+    } else if (!id) {
+      setDocumentInfo(null);
+      setListInfo({
+        title: 'Отгрузка',
+        count: documents.length,
+      });
+    }
+    
+    return () => {
+      setDocumentInfo(null);
+      setListInfo(null);
+    };
+  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
 
   useEffect(() => {
     loadDocument();

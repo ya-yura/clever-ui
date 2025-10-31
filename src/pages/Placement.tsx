@@ -13,6 +13,7 @@ import { scanFeedback, feedback } from '@/utils/feedback';
 import { STATUS_LABELS } from '@/types/document';
 import PlacementCard from '@/components/placement/PlacementCard';
 import ScannerInput from '@/components/ScannerInput';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 
 const Placement: React.FC = () => {
   const { id } = useParams();
@@ -26,12 +27,36 @@ const Placement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentCell, setCurrentCell] = useState<string>('');
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('placement');
   const { sync, isSyncing, pendingCount } = useSync({
     module: 'placement',
     syncEndpoint: '/placement/sync',
   });
+
+  // Update header with document info or list info
+  useEffect(() => {
+    if (document && id) {
+      setDocumentInfo({
+        documentId: document.id,
+        completed: document.completedLines || 0,
+        total: document.totalLines || 0,
+      });
+      setListInfo(null);
+    } else if (!id) {
+      setDocumentInfo(null);
+      setListInfo({
+        title: 'Размещение',
+        count: documents.length,
+      });
+    }
+    
+    return () => {
+      setDocumentInfo(null);
+      setListInfo(null);
+    };
+  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
 
   // Load document
   useEffect(() => {
