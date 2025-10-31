@@ -106,11 +106,17 @@ const Home: React.FC = () => {
             }
           }
 
+          // Fix color format: if buttonColor is hex, wrap it in bg-[...]
+          let color = type.buttonColor || getColorForIndex(index);
+          if (color && !color.startsWith('bg-')) {
+            color = `bg-[${color}]`;
+          }
+
           return {
             uni: type.uni,
             displayName: type.displayName || type.name,
             description: `Работа с документами типа "${type.displayName || type.name}"`,
-            color: type.buttonColor || getColorForIndex(index),
+            color: color,
             icon: getIconForDocType(type.name),
             docsCount,
           };
@@ -134,14 +140,22 @@ const Home: React.FC = () => {
       console.error('❌ [CRITICAL] Error loading doc types:', error);
       // Even if everything fails, use mock data
       console.warn('⚠️ [FALLBACK] Using mock data due to critical error');
-      const mockTypes = MOCK_DOC_TYPES.map((type, index) => ({
-        uni: type.uni,
-        displayName: type.displayName || type.name,
-        description: `Работа с документами типа "${type.displayName || type.name}"`,
-        color: type.buttonColor || getColorForIndex(index),
-        icon: getIconForDocType(type.name),
-        docsCount: 0,
-      }));
+      const mockTypes = MOCK_DOC_TYPES.map((type, index) => {
+        // Fix color format: if buttonColor is hex, wrap it in bg-[...]
+        let color = type.buttonColor || getColorForIndex(index);
+        if (color && !color.startsWith('bg-')) {
+          color = `bg-[${color}]`;
+        }
+
+        return {
+          uni: type.uni,
+          displayName: type.displayName || type.name,
+          description: `Работа с документами типа "${type.displayName || type.name}"`,
+          color: color,
+          icon: getIconForDocType(type.name),
+          docsCount: 0,
+        };
+      });
       
       console.log('📊 [FALLBACK] Setting mock types:', mockTypes);
       console.log('📊 [FALLBACK] mockTypes.length:', mockTypes.length);
@@ -279,7 +293,9 @@ const Home: React.FC = () => {
       {/* Dynamic Document Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {console.log('🎨 [RENDER] Rendering docTypes grid, count:', docTypes.length)}
-        {docTypes.map((docType) => (
+        {docTypes.map((docType, index) => {
+          console.log(`🎨 [MAP] Rendering docType [${index}]:`, docType);
+          return (
           <button
             key={docType.uni}
             onClick={() => navigate(`/docs/${docType.uni}`)}
@@ -301,7 +317,8 @@ const Home: React.FC = () => {
               </p>
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Empty state */}
