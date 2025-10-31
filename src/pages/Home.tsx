@@ -3,109 +3,128 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '@/services/db';
+import { odataCache } from '@/services/odataCache';
+import { ODataDocumentType } from '@/types/odata';
 
-interface Module {
-  id: string;
-  title: string;
-  icon: string;
+interface DocTypeCard {
+  uni: string;
+  displayName: string;
   description: string;
-  path: string;
   color: string;
+  icon: string;
+  docsCount: number;
 }
 
-const modules: Module[] = [
-  {
-    id: 'receiving',
-    title: 'Приход',
-    icon: '📦',
-    description: 'Приёмка товара от поставщиков',
-    path: '/receiving',
-    color: 'bg-[#daa420]',
-  },
-  {
-    id: 'inventory',
-    title: 'Остатки',
-    icon: '📊',
-    description: 'Инвентаризация и учёт остатков',
-    path: '/inventory',
-    color: 'bg-[#fea079]',
-  },
-  {
-    id: 'picking',
-    title: 'Подбор',
-    icon: '🚚',
-    description: 'Комплектация заказов для отгрузки',
-    path: '/picking',
-    color: 'bg-[#f3a361]',
-  },
-  {
-    id: 'placement',
-    title: 'Учёт',
-    icon: '📝',
-    description: 'Размещение товара по ячейкам',
-    path: '/placement',
-    color: 'bg-[#86e0cb]',
-  },
-  {
-    id: 'shipment',
-    title: 'Документооборот',
-    icon: '📄',
-    description: 'Отгрузка товара клиентам',
-    path: '/shipment',
-    color: 'bg-[#91ed91]',
-  },
-  {
-    id: 'return',
-    title: 'Штрихкоды',
-    icon: '📷',
-    description: 'Сканирование и работа со штрихкодами',
-    path: '/return',
-    color: 'bg-[#ba8f8e]',
-  },
-];
+// Icon mapping based on document type name
+const getIconForDocType = (name: string): string => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('прих') || lowerName.includes('receiving')) return '📦';
+  if (lowerName.includes('инвентар') || lowerName.includes('inventory')) return '📊';
+  if (lowerName.includes('подбор') || lowerName.includes('pick')) return '🚚';
+  if (lowerName.includes('размещ') || lowerName.includes('placement')) return '📝';
+  if (lowerName.includes('отгруз') || lowerName.includes('shipment')) return '📄';
+  if (lowerName.includes('возврат') || lowerName.includes('return')) return '📷';
+  if (lowerName.includes('перемещ') || lowerName.includes('move')) return '🔄';
+  if (lowerName.includes('маркир') || lowerName.includes('label')) return '🏷️';
+  return '📋';
+};
+
+// Color mapping based on index
+const getColorForIndex = (index: number): string => {
+  const colors = [
+    'bg-[#daa420]', // yellow
+    'bg-[#fea079]', // orange
+    'bg-[#f3a361]', // light orange
+    'bg-[#86e0cb]', // mint
+    'bg-[#91ed91]', // green
+    'bg-[#ba8f8e]', // rose
+    'bg-[#f0e78d]', // pale yellow
+    'bg-[burlywood]', // burlywood
+  ];
+  return colors[index % colors.length];
+};
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    receiving: 0,
-    placement: 0,
-    picking: 0,
-    shipment: 0,
-    return: 0,
-    inventory: 0,
-    total: 0,
-  });
+  const [docTypes, setDocTypes] = useState<DocTypeCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalDocs, setTotalDocs] = useState(0);
 
   useEffect(() => {
-    loadStats();
+    loadDocTypes();
   }, []);
 
-  const loadStats = async () => {
+  const loadDocTypes = async () => {
     try {
-      const receivingCount = await db.receivingDocuments.count();
-      const placementCount = await db.placementDocuments.count();
-      const pickingCount = await db.pickingDocuments.count();
-      const shipmentCount = await db.shipmentDocuments.count();
-      const returnCount = await db.returnDocuments.count();
-      const inventoryCount = await db.inventoryDocuments.count();
+      setLoading(true);
+      setError(null);
 
-      const total = receivingCount + placementCount + pickingCount + 
-                    shipmentCount + returnCount + inventoryCount;
+      // Fetch doc types from cache/API
+      const types = await odataCache.getDocTypes();
 
-      setStats({
-        receiving: receivingCount,
-        placement: placementCount,
-        picking: pickingCount,
-        shipment: shipmentCount,
-        return: returnCount,
-        inventory: inventoryCount,
-        total,
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
+      // Load document counts for each type
+      const typesWithCounts = await Promise.all(
+        types.map(async (type, index) => {
+          let docsCount = 0;
+          try {
+            const docs = await odataCache.getDocsByType(type.uni);
+            docsCount = docs.length;
+          } catch (err) {
+            console.warn(`Failed to load docs count for ${type.uni}:`, err);
+          }
+
+          return {
+            uni: type.uni,
+            displayName: type.displayName || type.name,
+            description: `Работа с документами типа "${type.displayName || type.name}"`,
+            color: type.buttonColor || getColorForIndex(index),
+            icon: getIconForDocType(type.name),
+            docsCount,
+          };
+        })
+      );
+
+      setDocTypes(typesWithCounts);
+      setTotalDocs(typesWithCounts.reduce((sum, type) => sum + type.docsCount, 0));
+    } catch (error: any) {
+      console.error('Error loading doc types:', error);
+      setError('Ошибка загрузки типов документов. Проверьте подключение к серверу.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">📦</div>
+          <p className="text-xl text-[#a7a7a7]">Загрузка типов документов...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-500 mb-2">Ошибка загрузки</h2>
+          <p className="text-[#a7a7a7] mb-6">{error}</p>
+          <button
+            onClick={loadDocTypes}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+          >
+            Повторить попытку
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -126,7 +145,7 @@ const Home: React.FC = () => {
           </div>
           <div className="text-right">
             <div className="text-5xl font-bold text-white">
-              {stats.total}
+              {totalDocs}
             </div>
             <div className="text-xs text-blue-100 opacity-80 mt-1">
               документов
@@ -158,158 +177,43 @@ const Home: React.FC = () => {
         </div>
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Первая карточка - большая */}
-        <button
-          onClick={() => navigate(modules[0].path)}
-          className={`${modules[0].color} rounded-lg p-6 text-left hover:opacity-90 transition-all relative overflow-hidden h-64 flex flex-col justify-between`}
-        >
-          <div>
-            <h2 className="text-3xl font-bold text-[#725a1e] mb-3">
-              {modules[0].title}
-            </h2>
-            <p className="text-sm text-[#725a1e] opacity-90 max-w-[160px] leading-relaxed">
-              {modules[0].description}
-            </p>
-          </div>
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-xs text-[#725a1e] opacity-80">Документов:</p>
-            </div>
-            <p className="text-5xl font-normal text-white tracking-tight">
-              {stats.receiving}
-            </p>
-          </div>
-        </button>
-
-        {/* Вторая и третья карточки - справа */}
-        <div className="space-y-4">
+      {/* Dynamic Document Type Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {docTypes.map((docType) => (
           <button
-            onClick={() => navigate(modules[1].path)}
-            className={`${modules[1].color} rounded-lg p-6 text-left hover:opacity-90 transition-all w-full h-[calc(50%-0.5rem)] flex flex-col justify-between`}
+            key={docType.uni}
+            onClick={() => navigate(`/docs/${docType.uni}`)}
+            className={`${docType.color} rounded-lg p-6 text-left hover:opacity-90 transition-all relative overflow-hidden flex flex-col justify-between min-h-[180px]`}
           >
             <div>
-              <h2 className="text-2xl font-bold text-[#8c533b] mb-2">
-                {modules[1].title}
+              <h2 className="text-2xl font-bold text-[#343436] mb-2 flex items-center gap-2">
+                <span className="text-3xl">{docType.icon}</span>
+                {docType.displayName}
               </h2>
-              <p className="text-xs text-[#8c533b] opacity-80 max-w-[140px] leading-relaxed">
-                {modules[1].description}
+              <p className="text-xs text-[#343436] opacity-80 leading-relaxed">
+                {docType.description}
               </p>
             </div>
-            <div className="text-right">
+            <div className="flex justify-between items-end mt-4">
+              <p className="text-xs text-[#343436] opacity-70">Документов:</p>
               <p className="text-4xl font-normal text-white tracking-tight">
-                {stats.inventory}
+                {docType.docsCount}
               </p>
             </div>
           </button>
-
-          <button
-            onClick={() => navigate(modules[2].path)}
-            className={`${modules[2].color} rounded-lg p-6 text-left hover:opacity-90 transition-all w-full h-[calc(50%-0.5rem)] flex flex-col justify-between`}
-          >
-            <div>
-              <h2 className="text-2xl font-bold text-[#8b5931] mb-2">
-                {modules[2].title}
-              </h2>
-              <p className="text-xs text-[#8b5931] opacity-80 max-w-[140px] leading-relaxed">
-                {modules[2].description}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-4xl font-normal text-white tracking-tight">
-                {stats.picking}
-              </p>
-            </div>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Средняя секция */}
-      <div className="grid grid-cols-2 gap-4">
-        <button
-          onClick={() => navigate(modules[3].path)}
-          className="border border-[#474747] rounded-lg p-5 text-left hover:bg-[#474747] hover:bg-opacity-20 transition-all h-24 flex justify-between items-start"
-        >
-          <div>
-            <h3 className="text-lg font-bold text-[#86e0cb] mb-1">
-              {modules[3].title}
-            </h3>
-            <p className="text-[10px] text-[#a7a7a7] leading-tight max-w-[130px]">
-              {modules[3].description}
-            </p>
-          </div>
-          <p className="text-2xl text-[#a7a7a7] font-normal">
-            {stats.placement}
+      {/* Empty state */}
+      {docTypes.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">📋</div>
+          <h3 className="text-xl text-[#a7a7a7] mb-2">Нет доступных типов документов</h3>
+          <p className="text-sm text-[#a7a7a7] opacity-80">
+            Проверьте настройки подключения к серверу
           </p>
-        </button>
-
-        <button
-          onClick={() => navigate(modules[4].path)}
-          className="border border-[#474747] rounded-lg p-5 text-left hover:bg-[#474747] hover:bg-opacity-20 transition-all h-24 flex justify-between items-start"
-        >
-          <div>
-            <h3 className="text-lg font-bold text-[#91ed91] mb-1">
-              {modules[4].title}
-            </h3>
-            <p className="text-[10px] text-[#a7a7a7] leading-tight max-w-[130px]">
-              {modules[4].description}
-            </p>
-          </div>
-          <p className="text-2xl text-[#a7a7a7] font-normal">
-            {stats.shipment}
-          </p>
-        </button>
-      </div>
-
-      {/* Нижняя секция */}
-      <div className="border border-[#474747] rounded-lg p-5">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-[#ba8f8e] mb-1">
-              {modules[5].title}
-            </h3>
-            <p className="text-[10px] text-[#a7a7a7] leading-tight">
-              {modules[5].description}
-            </p>
-          </div>
-          <button
-            onClick={() => navigate(modules[5].path)}
-            className="text-2xl text-[#a7a7a7] font-normal hover:text-white transition-colors"
-          >
-            {stats.return}
-          </button>
         </div>
-      </div>
-
-      {/* Перемещения */}
-      <div>
-        <h3 className="text-xl text-[grey] mb-4">Перемещения</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="border border-[#474747] rounded-lg p-5 h-32 flex flex-col justify-between">
-            <div>
-              <h4 className="text-base font-bold text-[#f0e78d] mb-2">По складам</h4>
-              <p className="text-[10px] text-[#a7a7a7] leading-tight max-w-[130px]">
-                Перемещение товаров между складами
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl text-[#a7a7a7] font-normal">72</p>
-            </div>
-          </div>
-
-          <div className="border border-[#474747] rounded-lg p-5 h-32 flex flex-col justify-between">
-            <div>
-              <h4 className="text-base font-bold text-[burlywood] mb-2">По ячейкам</h4>
-              <p className="text-[10px] text-[#a7a7a7] leading-tight max-w-[130px]">
-                Перемещение товаров между ячейками
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl text-[#a7a7a7] font-normal">1</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -166,6 +166,51 @@ class ApiService {
   async getTemplates() {
     return this.get('/templates');
   }
+
+  // ============================================================
+  // OData API Methods (Cleverence Mobile SMARTS)
+  // ============================================================
+
+  /**
+   * Get all document types
+   * GET /api/v1/DocTypes
+   */
+  async getDocTypes() {
+    return this.get('/DocTypes');
+  }
+
+  /**
+   * Get documents by type
+   * GET /api/v1/Docs/{DocType.uni}/
+   * @param docTypeUni - Document type unique identifier
+   */
+  async getDocsByType(docTypeUni: string) {
+    return this.get(`/Docs/${docTypeUni}`);
+  }
+
+  /**
+   * Get single document by ID
+   * GET /api/v1/Docs/{docId}
+   */
+  async getDocById(docId: string) {
+    return this.get(`/Docs/${docId}`);
+  }
+
+  /**
+   * Get products
+   * GET /api/v1/Products
+   */
+  async getProducts(params?: any) {
+    return this.get('/Products', params);
+  }
+
+  /**
+   * Get cells (storage locations)
+   * GET /api/v1/Cells
+   */
+  async getCells(params?: any) {
+    return this.get('/Cells', params);
+  }
 }
 
 export const api = new ApiService();

@@ -29,6 +29,7 @@ import {
 import { BarcodeRecord } from '@/types/barcode';
 import { LabelTemplate, PrintTask } from '@/types/label';
 import { Employee, PartnerSession } from '@/types/partner';
+import { ODataDocumentType, ODataDocument } from '@/types/odata';
 
 export interface SyncAction {
   id?: number;
@@ -46,6 +47,13 @@ export interface ErrorLog {
   error: string;
   timestamp: number;
   resolved: boolean;
+}
+
+// Cache metadata for tracking freshness
+export interface CacheMetadata {
+  key: string;
+  lastUpdated: number;
+  expiresAt: number;
 }
 
 export class WarehouseDatabase extends Dexie {
@@ -91,6 +99,11 @@ export class WarehouseDatabase extends Dexie {
   // Reference data (справочники)
   products!: Table<any, string>;
   cells!: Table<any, string>;
+
+  // OData cache tables
+  odataDocTypes!: Table<ODataDocumentType, string>;
+  odataDocuments!: Table<ODataDocument, string>;
+  cacheMetadata!: Table<CacheMetadata, string>;
 
   constructor() {
     super('WarehouseDB');
@@ -145,6 +158,14 @@ export class WarehouseDatabase extends Dexie {
       // Reference data
       products: 'id, name, sku, barcode',
       cells: 'id, name, zone, type',
+    });
+
+    // Version 4 - Added OData cache tables for API integration
+    this.version(4).stores({
+      // OData cache
+      odataDocTypes: 'uni, name, displayName',
+      odataDocuments: 'id, documentTypeName, finished, inProcess, createDate',
+      cacheMetadata: 'key, lastUpdated, expiresAt',
     });
   }
 }
