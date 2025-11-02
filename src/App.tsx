@@ -22,6 +22,7 @@ import Statistics from './pages/Statistics';
 import Diagnostics from './pages/Diagnostics';
 import About from './pages/About';
 import Feedback from './pages/Feedback';
+import SoundTest from './pages/SoundTest';
 import { MenuProvider } from './modules/menu';
 import { AuthProvider } from './contexts/AuthContext';
 import { DocumentHeaderProvider } from './contexts/DocumentHeaderContext';
@@ -75,6 +76,7 @@ function App() {
               <Route path="diagnostics" element={<Diagnostics />} />
               <Route path="about" element={<About />} />
               <Route path="feedback" element={<Feedback />} />
+              <Route path="sound-test" element={<SoundTest />} />
             </Route>
 
             {/* Redirect unknown routes */}

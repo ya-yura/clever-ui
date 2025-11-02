@@ -5,12 +5,14 @@ import { playSound, SoundType } from './sound';
 import { vibrate, VibrationType } from './vibration';
 import { speak } from './voice';
 
-export type FeedbackType = 'success' | 'error' | 'warning';
+export type FeedbackType = 'success' | 'error' | 'warning' | 'scan' | 'notification';
 
 const messages: Record<FeedbackType, string> = {
   success: 'Успешно',
   error: 'Ошибка',
   warning: 'Внимание',
+  scan: 'Отсканировано',
+  notification: 'Уведомление',
 };
 
 export const provideFeedback = (
@@ -47,7 +49,7 @@ export const provideFeedback = (
 
 export const scanFeedback = (success: boolean, message?: string) => {
   if (success) {
-    provideFeedback('success', message || 'Товар добавлен', { voice: !!message });
+    provideFeedback('scan', message || 'Товар добавлен', { voice: !!message });
   } else {
     provideFeedback('error', message || 'Товар не найден', { voice: true });
   }
@@ -58,4 +60,6 @@ export const feedback = {
   success: (message?: string) => provideFeedback('success', message, { voice: true }),
   error: (message?: string) => provideFeedback('error', message, { voice: true }),
   warning: (message?: string) => provideFeedback('warning', message, { voice: true }),
+  scan: (message?: string) => provideFeedback('scan', message, { voice: false }),
+  notification: (message?: string) => provideFeedback('notification', message, { voice: false }),
 };

@@ -308,6 +308,29 @@ const Home: React.FC = () => {
         </div>
       </button>
 
+      {/* Кнопка тестирования звуков */}
+      <button
+        onClick={() => navigate('/sound-test')}
+        className="w-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-left hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+              <span className="text-3xl">🔊</span>
+              Тест звуков
+            </h2>
+            <p className="text-sm text-purple-100 opacity-90">
+              Проверка звуковых эффектов системы
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-4xl font-bold text-white">
+              ♪
+            </div>
+          </div>
+        </div>
+      </button>
+
       {/* Dynamic Document Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {console.log('🎨 [RENDER] Rendering docTypes grid, count:', docTypes.length)}
