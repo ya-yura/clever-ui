@@ -132,6 +132,16 @@ const Header: React.FC = () => {
               <span className="text-sm hidden sm:inline">{isOnline ? 'Онлайн' : 'Оффлайн'}</span>
             </div>
 
+            {/* Partner quick access (service icon) */}
+            <button
+              onClick={() => navigate('/partner')}
+              className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
+              aria-label="Напарник"
+              title="Напарник"
+            >
+              <span className="text-lg" role="img" aria-label="partner">🤝</span>
+            </button>
+
             {/* User menu */}
             {user && (
               <div className="relative">

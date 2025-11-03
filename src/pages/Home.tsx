@@ -17,6 +17,53 @@ interface DocTypeCard {
   docsCount: number;
 }
 
+// Short titles mapping for concise labels on tiles
+const SHORT_TITLE_BY_UNI: Record<string, string> = {
+  PrihodNaSklad: 'Приход',
+  PodborZakaza: 'Подбор',
+  Otgruzka: 'Отгрузка',
+  Inventarizaciya: 'Инвентаризация',
+  RazmeshhenieVYachejki: 'Размещение',
+  Vozvrat: 'Возврат',
+  Peremeshenie: 'Перемещение',
+  Markirovka: 'Маркировка',
+};
+
+// Fallback: derive short Russian label from raw/camel-cased name
+const toShortTitle = (raw: string): string => {
+  if (!raw) return 'Документ';
+  // Insert spaces between Camel/PascalCase chunks (Latin or Cyrillic)
+  const spaced = raw
+    .replace(/([A-Z])([a-z]+)/g, ' $1$2')
+    .replace(/([А-ЯЁ])([а-яё]+)/g, ' $1$2')
+    .trim();
+  const firstWord = spaced.split(/\s+/)[0] || raw;
+  return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+};
+
+const getShortTitleForType = (type: ODataDocumentType): string => {
+  const fromMap = SHORT_TITLE_BY_UNI[type.uni];
+  if (fromMap) return fromMap;
+  const nameRaw = (type.displayName || type.name || type.uni || '').toString();
+  return toShortTitle(nameRaw);
+};
+
+// Concise, helpful one-liners for when to use each operation
+const DESCRIPTION_BY_UNI: Record<string, string> = {
+  PrihodNaSklad: 'Принять товар от поставщика и сверить план/факт.',
+  PodborZakaza: 'Собрать заказ по маршруту ячеек для отгрузки.',
+  Otgruzka: 'Проверить комплектность и оформить отгрузку клиенту.',
+  Inventarizaciya: 'Пересчитать остатки и зафиксировать расхождения.',
+  RazmeshhenieVYachejki: 'Разместить принятый товар по ячейкам хранения.',
+  Vozvrat: 'Оформить возврат или списание с указанием причины.',
+  Peremeshenie: 'Переместить товар между ячейками или зонами.',
+  Markirovka: 'Нанести или перепечатать этикетки и коды.',
+};
+
+const getDescriptionForType = (type: ODataDocumentType): string => {
+  return DESCRIPTION_BY_UNI[type.uni] || `Выполнить операцию: ${getShortTitleForType(type)}.`;
+};
+
 // Icon mapping based on document type name
 const getIconForDocType = (name: string): string => {
   const lowerName = name.toLowerCase();
@@ -127,8 +174,8 @@ const Home: React.FC = () => {
 
           const result = {
             uni: type.uni,
-            displayName: type.displayName || type.name,
-            description: `Работа с документами типа "${type.displayName || type.name}"`,
+            displayName: getShortTitleForType(type),
+            description: getDescriptionForType(type),
             color: bgClass,
             backgroundColor: bgStyle,
             icon: getIconForDocType(type.name),
@@ -234,8 +281,36 @@ const Home: React.FC = () => {
     );
   }
 
+  // Prioritization (Android Compact – 22): primary → secondary → tertiary
+  const primaryOrder = ['PrihodNaSklad', 'PodborZakaza', 'Otgruzka', 'Inventarizaciya'];
+  const secondaryOrder = ['RazmeshhenieVYachejki', 'Vozvrat', 'Peremeshenie', 'Markirovka'];
+
+  const included = new Set<string>();
+  const byUni = (uni: string) => docTypes.find((d) => d.uni === uni);
+
+  // Hero-specific tiles
+  const tPrihod = byUni('PrihodNaSklad');
+  const tPodbor = byUni('PodborZakaza');
+  const tOtgruzka = byUni('Otgruzka');
+  const tInvent = byUni('Inventarizaciya');
+  const tVozvrat = byUni('Vozvrat');
+  const tPlacement = byUni('RazmeshhenieVYachejki');
+
+  [tPrihod, tPodbor, tOtgruzka, tInvent, tVozvrat, tPlacement].forEach((t) => {
+    if (t) included.add(t.uni);
+  });
+
+  // Keep secondary/tertiary as before for the rest
+  const secondaryTiles = secondaryOrder
+    .map(byUni)
+    .filter((x): x is DocTypeCard => Boolean(x))
+    .filter((x) => !included.has(x.uni))
+    .map((x) => (included.add(x.uni), x));
+
+  const tertiaryTiles = docTypes.filter((d) => !included.has(d.uni));
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-3 max-w-7xl mx-auto">
       {/* Warning banner if using mock data */}
       {usingMockData && (
         <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
@@ -259,116 +334,156 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Карточка всех документов */}
-      <button
-        onClick={() => navigate('/documents')}
-        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-left hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg"
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <span className="text-3xl">📋</span>
-              Все документы
-            </h2>
-            <p className="text-sm text-blue-100 opacity-90">
-              Просмотр, поиск и фильтрация всех документов склада
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-5xl font-bold text-white">
-              {totalDocs}
-            </div>
-            <div className="text-xs text-blue-100 opacity-80 mt-1">
-              документов
-            </div>
-          </div>
-        </div>
-      </button>
-
-      {/* Карточка напарника */}
-      <button
-        onClick={() => navigate('/partner')}
-        className="w-full bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-left hover:from-green-600 hover:to-green-700 transition-all shadow-lg"
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <span className="text-3xl">🤝</span>
-              Работа с напарником
-            </h2>
-            <p className="text-sm text-green-100 opacity-90">
-              Выберите напарника для совместной работы
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-4xl font-bold text-white">
-              ✓
-            </div>
-          </div>
-        </div>
-      </button>
-
-      {/* Кнопка тестирования звуков */}
-      <button
-        onClick={() => navigate('/sound-test')}
-        className="w-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-left hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg"
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-              <span className="text-3xl">🔊</span>
-              Тест звуков
-            </h2>
-            <p className="text-sm text-purple-100 opacity-90">
-              Проверка звуковых эффектов системы
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-4xl font-bold text-white">
-              ♪
-            </div>
-          </div>
-        </div>
-      </button>
-
-      {/* Dynamic Document Type Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {console.log('🎨 [RENDER] Rendering docTypes grid, count:', docTypes.length)}
-        {console.log('🎨 [RENDER] Full docTypes array:', JSON.stringify(docTypes, null, 2))}
-        {docTypes.map((docType, index) => {
-          console.log(`🎨 [MAP] Rendering tile [${index}]:`, {
-            uni: docType.uni,
-            displayName: docType.displayName,
-            color: docType.color,
-            icon: docType.icon,
-            className: `${docType.color} rounded-lg p-6 text-left hover:opacity-90 transition-all relative overflow-hidden flex flex-col justify-between min-h-[180px]`
-          });
-          return (
+      {/* Hero layout: 4-column grid */}
+      <div className="grid grid-cols-4 gap-1.5 md:gap-2">
+        {tPrihod && (
           <button
-            key={docType.uni}
-            onClick={() => navigate(`/docs/${docType.uni}`)}
-            className={`${docType.color} rounded-lg p-6 text-left hover:opacity-90 transition-all relative overflow-hidden flex flex-col justify-between min-h-[180px]`}
-            style={docType.backgroundColor ? { backgroundColor: docType.backgroundColor } : undefined}
+            key={tPrihod.uni}
+            onClick={() => navigate(`/docs/${tPrihod.uni}`)}
+            className="tile-primary tone-strong col-span-2 row-span-2"
+            style={{ backgroundColor: '#DAA420' }}
           >
             <div>
-              <h2 className="text-2xl font-bold text-[#343436] mb-2 flex items-center gap-2">
-                <span className="text-3xl">{docType.icon}</span>
-                {docType.displayName}
-              </h2>
-              <p className="text-xs text-[#343436] opacity-80 leading-relaxed">
-                {docType.description}
-              </p>
+              <h2 className="tile-title-lg text-[#343436]">{tPrihod.displayName}</h2>
+              <p className="tile-subtext text-[#343436]">{tPrihod.description}</p>
             </div>
-            <div className="flex justify-between items-end mt-4">
-              <p className="text-xs text-[#343436] opacity-70">Документов:</p>
-              <p className="text-4xl font-normal text-white tracking-tight">
-                {docType.docsCount}
-              </p>
+            <div className="tile-footer">
+              <span className="tile-count-dark">{tPrihod.docsCount}</span>
             </div>
           </button>
-          );
-        })}
+        )}
+
+        {tPodbor && (
+          <button
+            key={tPodbor.uni}
+            onClick={() => navigate(`/docs/${tPodbor.uni}`)}
+            className="tile-primary tone-strong col-span-2"
+            style={{ backgroundColor: '#FEA079' }}
+          >
+            <div>
+              <h2 className="tile-title-lg text-[#343436]">{tPodbor.displayName}</h2>
+              <p className="tile-subtext text-[#343436]">{tPodbor.description}</p>
+            </div>
+            <div className="tile-footer">
+              <span className="tile-count-dark">{tPodbor.docsCount}</span>
+            </div>
+          </button>
+        )}
+
+        {tOtgruzka && (
+          <button
+            key={tOtgruzka.uni}
+            onClick={() => navigate(`/docs/${tOtgruzka.uni}`)}
+            className="tile-primary tone-strong col-span-2"
+            style={{ backgroundColor: '#F3A361' }}
+          >
+            <div>
+              <h2 className="tile-title-lg text-[#343436]">{tOtgruzka.displayName}</h2>
+              <p className="tile-subtext text-[#343436]">{tOtgruzka.description}</p>
+            </div>
+            <div className="tile-footer">
+              <span className="tile-count-dark">{tOtgruzka.docsCount}</span>
+            </div>
+          </button>
+        )}
       </div>
+
+      {/* Row: Return and Placement (2 columns each), smaller titles */}
+      <div className="grid grid-cols-4 gap-1.5 md:gap-2 mt-3">
+        {tVozvrat && (
+          <button
+            key={`${tVozvrat.uni}-small`}
+            onClick={() => navigate(`/docs/${tVozvrat.uni}`)}
+            className="tile-secondary tone-medium col-span-2 bg-palette-5"
+          >
+            <div>
+              <h2 className="tile-title-sm text-white">{tVozvrat.displayName}</h2>
+              <p className="tile-subtext text-white">{tVozvrat.description}</p>
+            </div>
+            <div className="tile-footer">
+              <span className="text-white">{tVozvrat.docsCount}</span>
+            </div>
+          </button>
+        )}
+
+        {tPlacement && (
+          <button
+            key={`${tPlacement.uni}-small`}
+            onClick={() => navigate(`/docs/${tPlacement.uni}`)}
+            className="tile-secondary tone-medium col-span-2 bg-palette-4"
+          >
+            <div>
+              <h2 className="tile-title-sm text-white">{tPlacement.displayName}</h2>
+              <p className="tile-subtext text-white">{tPlacement.description}</p>
+            </div>
+            <div className="tile-footer">
+              <span className="text-white">{tPlacement.docsCount}</span>
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Full-width: Inventory */}
+      {tInvent && (
+        <div className="grid grid-cols-4 gap-1.5 md:gap-2 mt-3">
+          <button
+            key={`${tInvent.uni}-full`}
+            onClick={() => navigate(`/docs/${tInvent.uni}`)}
+            className="tile-secondary tone-medium col-span-4 bg-palette-3"
+          >
+            <div>
+              <h2 className="tile-title-md text-white">{tInvent.displayName}</h2>
+              <p className="tile-subtext text-white">{tInvent.description}</p>
+            </div>
+            <div className="tile-footer">
+              <span className="text-white">{tInvent.docsCount}</span>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Secondary tiles */}
+      {secondaryTiles.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-2">
+          {secondaryTiles.map((docType, idx) => (
+            <button
+              key={docType.uni}
+              onClick={() => navigate(`/docs/${docType.uni}`)}
+              className={`tile-secondary tone-medium ${['bg-palette-3','bg-palette-4','bg-palette-3'][idx % 3]}`}
+            >
+              <div>
+                <h2 className="tile-title-md text-[#343436]">{docType.displayName}</h2>
+                <p className="tile-subtext text-[#343436]">
+                  {docType.description}
+                </p>
+              </div>
+              <div className="tile-footer">
+                <span className="tile-count-dark">{docType.docsCount}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tertiary tiles */}
+      {tertiaryTiles.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 md:gap-2">
+          {tertiaryTiles.map((docType) => (
+            <button
+              key={docType.uni}
+              onClick={() => navigate(`/docs/${docType.uni}`)}
+              className={`tile-tertiary tone-muted tile-outline`}
+            >
+              <div>
+                <h2 className="text-base md:text-lg font-semibold tile-title-light">{docType.displayName}</h2>
+              </div>
+              <div className="tile-footer">
+                <span className="tile-count-light">{docType.docsCount}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Empty state */}
       {docTypes.length === 0 && (
