@@ -47,6 +47,22 @@ const Header: React.FC = () => {
   
   // Get dynamic page title
   const pageInfo = useMemo(() => getPageTitle(location.pathname), [location.pathname]);
+
+  const parentPath = useMemo(() => {
+    const sanitized = location.pathname.replace(/\/$/, '');
+    if (!sanitized || sanitized === '/') {
+      return '/';
+    }
+
+    const segments = sanitized.split('/').filter(Boolean);
+    if (segments.length === 0) {
+      return '/';
+    }
+
+    segments.pop();
+    const next = `/${segments.join('/')}`;
+    return next === sanitized ? '/' : next || '/';
+  }, [location.pathname]);
   
   // Calculate progress percentage
   const progress = documentInfo && documentInfo.total > 0 
@@ -67,7 +83,7 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-2.5">
             {!isHome && (
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(parentPath, { replace: false })}
                 className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
                 aria-label="Назад"
               >
@@ -141,61 +157,6 @@ const Header: React.FC = () => {
             >
               <span className="text-lg" role="img" aria-label="partner">🤝</span>
             </button>
-
-            {/* User menu */}
-            {user && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 p-2 hover:bg-[#474747] rounded-lg transition-colors"
-                  aria-label="Меню пользователя"
-                >
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
-                    {user.name?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                  <span className="text-sm hidden md:inline">{user.name}</span>
-                </button>
-
-                {/* Dropdown menu */}
-                {showUserMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowUserMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-56 bg-[#474747] rounded-lg shadow-lg border border-[#555] z-50">
-                      <div className="p-4 border-b border-[#555]">
-                        <p className="text-sm text-[#e3e3dd] font-medium">{user.name}</p>
-                        <p className="text-xs text-[#a7a7a7]">@{user.username}</p>
-                        {user.role && (
-                          <p className="text-xs text-[#a7a7a7] mt-1">Роль: {user.role}</p>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <button
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            navigate('/settings');
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-[#e3e3dd] hover:bg-[#525252] rounded transition-colors"
-                        >
-                          ⚙️ Настройки
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            handleLogout();
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#525252] rounded transition-colors"
-                        >
-                          🚪 Выйти
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
