@@ -87,7 +87,7 @@ const Layout: React.FC = () => {
       {/* QR Scanner Modal for Interface Installation */}
       {showQRScanner && (
         <QRScanner 
-          onScanSuccess={handleQRScan}
+          onScan={handleQRScan}
           onClose={() => setShowQRScanner(false)}
         />
       )}
