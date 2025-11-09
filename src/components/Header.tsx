@@ -1,13 +1,13 @@
 // === 📁 src/components/Header.tsx ===
 // Header component with navigation and sync status
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useMenu } from '@/modules/menu';
-import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Route to title mapping
 const getPageTitle = (pathname: string): { title: string; subtitle?: string } => {
@@ -39,9 +39,8 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { isOnline } = useOfflineStorage('app');
   const { openMenu } = useMenu();
-  const { user, logout } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const { documentInfo, listInfo } = useDocumentHeader();
+  const { theme, toggleTheme } = useTheme();
 
   const isHome = location.pathname === '/';
   
@@ -68,13 +67,6 @@ const Header: React.FC = () => {
   const progress = documentInfo && documentInfo.total > 0 
     ? (documentInfo.completed / documentInfo.total) * 100 
     : 0;
-
-  const handleLogout = () => {
-    if (confirm('Выйти из системы?')) {
-      logout();
-      navigate('/login');
-    }
-  };
 
   return (
     <header className="bg-[#343436] text-[#e3e3dd] shadow-lg sticky top-0 z-50 border-b border-[#474747]">
@@ -147,6 +139,18 @@ const Header: React.FC = () => {
               <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
               <span className="text-sm hidden sm:inline">{isOnline ? 'Онлайн' : 'Оффлайн'}</span>
             </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
+              aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+              title={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+            >
+              <span className="text-lg" role="img" aria-label="theme">
+                {theme === 'light' ? '🌙' : '🌞'}
+              </span>
+            </button>
 
             {/* Partner quick access (service icon) */}
             <button

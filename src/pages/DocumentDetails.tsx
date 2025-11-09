@@ -63,6 +63,33 @@ const DocumentDetails: React.FC = () => {
     };
   }, [document, docTypeUni, setListInfo]);
 
+  const extractDocument = (data: any): DocumentData | null => {
+    if (!data) return null;
+    if (Array.isArray(data?.value)) {
+      return data.value[0] || null;
+    }
+    return data as DocumentData;
+  };
+
+  const fetchDocument = async (withProducts: boolean) => {
+    const expandBase = ['declaredItems', 'currentItems', 'combinedItems'];
+    const expand = withProducts
+      ? expandBase.map((path) => `${path}($expand=product)`)
+      : expandBase;
+
+    const response = await api.getDocumentById(docId!, expand);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Не удалось загрузить документ');
+    }
+
+    const doc = extractDocument(response.data);
+    if (!doc) {
+      throw new Error('Документ не найден');
+    }
+
+    return doc;
+  };
+
   const loadDocument = async () => {
     if (!docId) return;
 
@@ -71,19 +98,15 @@ const DocumentDetails: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Fetch document with expanded items
-      const response = await api.getDocumentById(docId, [
-        'declaredItems($expand=product)',
-        'currentItems($expand=product)',
-        'combinedItems($expand=product)',
-      ]);
-      
-      if (response.success && response.data) {
-        console.log(`📄 [DOC] Loaded document:`, response.data);
-        setDocument(response.data);
-      } else {
-        throw new Error(response.error || 'Не удалось загрузить документ');
+      try {
+        const doc = await fetchDocument(true);
+        console.log(`📄 [DOC] Loaded document with products`, doc);
+        setDocument(doc);
+      } catch (primaryError) {
+        console.warn('⚠️ [DOC] Failed to load with product expand, retrying without product details', primaryError);
+        const doc = await fetchDocument(false);
+        console.log(`📄 [DOC] Loaded document without product expand`, doc);
+        setDocument(doc);
       }
     } catch (error: any) {
       console.error('❌ [DOC] Error loading document:', error);

@@ -24,9 +24,11 @@ import Diagnostics from './pages/Diagnostics';
 import About from './pages/About';
 import Feedback from './pages/Feedback';
 import SoundTest from './pages/SoundTest';
+import { DynamicGridInterface } from './components/DynamicGridInterface';
 import { MenuProvider } from './modules/menu';
 import { AuthProvider } from './contexts/AuthContext';
 import { DocumentHeaderProvider } from './contexts/DocumentHeaderContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   // Initial data loading disabled - using API server data
@@ -38,56 +40,59 @@ function App() {
   // }, []);
 
   return (
-    <AuthProvider>
-      <MenuProvider>
-        <DocumentHeaderProvider>
-          <BrowserRouter>
-            <Routes>
-            {/* Public routes */}
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <MenuProvider>
+          <DocumentHeaderProvider>
+            <BrowserRouter>
+              <Routes>
+              {/* Public routes */}
+              <Route path="/setup" element={<Setup />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Home />} />
-              <Route path="documents" element={<Documents />} />
-              <Route path="docs/:docTypeUni" element={<DocumentsByType />} />
-              <Route path="docs/:docTypeUni/:docId" element={<DocumentDetails />} />
-              <Route path="partner" element={<PartnerManagement />} />
-              <Route path="receiving" element={<Receiving />} />
-              <Route path="receiving/:id" element={<Receiving />} />
-              <Route path="placement" element={<Placement />} />
-              <Route path="placement/:id" element={<Placement />} />
-              <Route path="picking" element={<Picking />} />
-              <Route path="picking/:id" element={<Picking />} />
-              <Route path="shipment" element={<Shipment />} />
-              <Route path="shipment/:id" element={<Shipment />} />
-              <Route path="return" element={<Return />} />
-              <Route path="return/:id" element={<Return />} />
-              <Route path="inventory" element={<Inventory />} />
-              <Route path="inventory/:id" element={<Inventory />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="statistics" element={<Statistics />} />
-              <Route path="diagnostics" element={<Diagnostics />} />
-              <Route path="about" element={<About />} />
-              <Route path="feedback" element={<Feedback />} />
-              <Route path="sound-test" element={<SoundTest />} />
-            </Route>
+              {/* Protected routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Home />} />
+                <Route path="documents" element={<Documents />} />
+                <Route path="docs/:docTypeUni" element={<DocumentsByType />} />
+                <Route path="docs/:docTypeUni/:docId" element={<DocumentDetails />} />
+                <Route path="partner" element={<PartnerManagement />} />
+                <Route path="receiving" element={<Receiving />} />
+                <Route path="receiving/:id" element={<Receiving />} />
+                <Route path="placement" element={<Placement />} />
+                <Route path="placement/:id" element={<Placement />} />
+                <Route path="picking" element={<Picking />} />
+                <Route path="picking/:id" element={<Picking />} />
+                <Route path="shipment" element={<Shipment />} />
+                <Route path="shipment/:id" element={<Shipment />} />
+                <Route path="return" element={<Return />} />
+                <Route path="return/:id" element={<Return />} />
+                <Route path="inventory" element={<Inventory />} />
+                <Route path="inventory/:id" element={<Inventory />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="statistics" element={<Statistics />} />
+                <Route path="diagnostics" element={<Diagnostics />} />
+                <Route path="about" element={<About />} />
+                <Route path="feedback" element={<Feedback />} />
+                <Route path="sound-test" element={<SoundTest />} />
+                <Route path="custom-interface" element={<DynamicGridInterface />} />
+              </Route>
 
-            {/* Redirect unknown routes */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </DocumentHeaderProvider>
-      </MenuProvider>
-    </AuthProvider>
+              {/* Redirect unknown routes */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </DocumentHeaderProvider>
+        </MenuProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

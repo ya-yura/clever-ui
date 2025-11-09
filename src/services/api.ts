@@ -41,18 +41,39 @@ class ApiService {
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor
+    // Response interceptor with auto-refresh
     this.client.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized - trigger logout
-          console.warn('⚠️ Unauthorized (401) - clearing auth');
+      async (error: AxiosError) => {
+        const originalRequest = error.config as any;
+
+        // If 401 and not already retrying
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            console.log('🔄 401 Unauthorized - attempting token refresh');
+            
+            // Dynamic import to avoid circular dependency
+            const { authService } = await import('./authService');
+            const result = await authService.refreshAccessToken();
+
+            if (result.success && result.token) {
+              // Update token and retry request
+              this.setToken(result.token);
+              originalRequest.headers.Authorization = `Bearer ${result.token}`;
+              return this.client(originalRequest);
+            }
+          } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
+          }
+
+          // If refresh failed, trigger logout
+          console.warn('⚠️ Token refresh failed - clearing auth');
           this.clearToken();
-          
-          // Trigger logout event for AuthContext
           window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         }
+
         return Promise.reject(error);
       }
     );
@@ -290,9 +311,19 @@ class ApiService {
    * GET /api/v1/Docs('id')?$expand=declaredItems,currentItems
    */
   async getDocumentById(docId: string, expand?: string[]) {
-    const expandParam = expand && expand.length > 0 ? `?$expand=${expand.join(',')}` : '';
-    return this.get(`/Docs('${docId}')${expandParam}`);
-  }
+     if (!docId) {
+       return { success: false, error: 'Document ID is required' };
+     }
+ 
+    const sanitizedId = docId.replace(/'/g, "''");
+    const keySegment = `('${sanitizedId}')`;
+ 
+    const params = expand && expand.length > 0
+      ? { $expand: expand.join(',') }
+      : undefined;
+ 
+     return this.get(`/Docs${keySegment}`, params);
+   }
 
   /**
    * Get documents by type - tries multiple approaches

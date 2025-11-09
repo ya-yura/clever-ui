@@ -1,29 +1,71 @@
 // === 📁 src/pages/Login.tsx ===
-// Login page for user authentication
+// Login page for user authentication with OAuth2 support
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { configService } from '@/services/configService';
+import { authService } from '@/services/authService';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { login, checkNoAuth } = useAuth();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLogging, setIsLogging] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const serverUrl = configService.getServerUrl();
+
+  // Check for temp token in URL and no-auth mode
+  useEffect(() => {
+    const checkAuthRequirements = async () => {
+      try {
+        // Check for temporary token (?tempuid=<token>)
+        const tempUid = searchParams.get('tempuid');
+        if (tempUid) {
+          console.log('🔑 Temporary token detected');
+          setIsLogging(true);
+          const result = await authService.loginWithTempToken(tempUid);
+          if (result.success) {
+            console.log('✅ Temp token login successful, navigating...');
+            navigate('/');
+            return;
+          } else {
+            setError('Недействительный временный токен');
+          }
+          setIsLogging(false);
+        }
+
+        // Check if authentication is required
+        const noAuthRequired = await checkNoAuth();
+        if (noAuthRequired) {
+          console.log('✅ No authentication required, auto-login');
+          // Auto-login without credentials
+          await login({ username: 'auto', password: 'auto' });
+          navigate('/');
+          return;
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuthRequirements();
+  }, [searchParams, checkNoAuth, login, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!username.trim() || !password.trim()) {
-      setError('Заполните все поля');
+      setError('Имя пользователя или пароль не могут быть пустыми');
       return;
     }
 
@@ -41,10 +83,10 @@ const Login: React.FC = () => {
           navigate('/');
         }, 300);
       } else {
-        setError(result.error || 'Ошибка авторизации');
+        setError(result.error || 'Неверное имя пользователя или пароль');
       }
     } catch (err: any) {
-      setError(err.message || 'Ошибка подключения');
+      setError(err.message || 'Ошибка подключения к серверу');
     } finally {
       setIsLogging(false);
     }
@@ -56,6 +98,18 @@ const Login: React.FC = () => {
       navigate('/setup');
     }
   };
+
+  // Show loading while checking auth requirements
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#343436] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">🔐</div>
+          <p className="text-xl text-[#a7a7a7]">Проверка требований аутентификации...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#343436] flex items-center justify-center px-4">
@@ -73,7 +127,7 @@ const Login: React.FC = () => {
           {/* Server Info */}
           <div className="bg-[#474747] rounded-lg p-3 inline-block">
             <p className="text-xs text-[#a7a7a7]">Сервер:</p>
-            <p className="text-sm text-[#e3e3dd] font-mono">{serverUrl}</p>
+            <p className="text-sm text-[#e3e3dd] font-mono break-all">{serverUrl}</p>
           </div>
         </div>
 
@@ -141,13 +195,6 @@ const Login: React.FC = () => {
                 <p className="text-sm text-red-400">⚠️ {error}</p>
               </div>
             )}
-
-            {/* Dev Mode Hint */}
-            <div className="bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg p-3">
-              <p className="text-xs text-yellow-400">
-                💡 Режим разработки: любые учетные данные будут приняты
-              </p>
-            </div>
           </div>
 
           {/* Buttons */}

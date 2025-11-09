@@ -1,21 +1,22 @@
 // === 📁 src/contexts/AuthContext.tsx ===
-// Authentication context and provider
+// Authentication context and provider with OAuth2 support
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { AuthState, User, LoginCredentials } from '@/types/auth';
 import { api } from '@/services/api';
+import { authService } from '@/services/authService';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateUser: (user: User) => void;
   isLoading: boolean;
+  checkNoAuth: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = 'auth_state';
-const TOKEN_STORAGE_KEY = 'auth_token';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
@@ -32,11 +33,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
           user: state.user,
         }));
-        localStorage.setItem(TOKEN_STORAGE_KEY, state.token);
+        authService.setToken(state.token);
         api.setToken(state.token);
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY);
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        authService.clearTokens();
         api.clearToken();
       }
     } catch (error) {
@@ -78,10 +79,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [logout]);
 
+  // Check if no authentication is required
+  const checkNoAuth = async (): Promise<boolean> => {
+    const result = await authService.checkNoLogin();
+    return !result.requiresAuth;
+  };
+
   const loadAuthState = () => {
     try {
       const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-      const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const storedToken = authService.getToken();
 
       if (storedAuth && storedToken) {
         const parsed = JSON.parse(storedAuth);
@@ -90,7 +97,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!parsed.user || !parsed.user.id) {
           console.warn('⚠️ Invalid auth data in storage, clearing');
           localStorage.removeItem(AUTH_STORAGE_KEY);
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          authService.clearTokens();
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if token is expired
+        if (authService.isTokenExpired(storedToken)) {
+          console.warn('⚠️ Token expired, attempting refresh');
+          // Attempt to refresh token
+          authService.refreshAccessToken().then((result) => {
+            if (result.success && result.token) {
+              setAuthState({
+                isAuthenticated: true,
+                user: parsed.user,
+                token: result.token,
+              });
+              api.setToken(result.token);
+              console.log('✅ Token refreshed on load');
+            } else {
+              console.warn('⚠️ Token refresh failed, clearing auth');
+              logout();
+            }
+          });
           setIsLoading(false);
           return;
         }
@@ -112,7 +141,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('❌ Error loading auth state:', error);
       // Clear potentially corrupted data
       localStorage.removeItem(AUTH_STORAGE_KEY);
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      authService.clearTokens();
     } finally {
       setIsLoading(false);
     }
@@ -126,83 +155,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!credentials.username || !credentials.password) {
         return {
           success: false,
-          error: 'Введите имя пользователя и пароль',
+          error: 'Имя пользователя или пароль не могут быть пустыми',
         };
       }
 
-      // Try API call
-      console.log('🔐 Attempting login for:', credentials.username);
-      const response = await api.post<any>('/auth/login', credentials);
+      // Try OAuth2 authentication
+      console.log('🔐 Attempting OAuth2 login for:', credentials.username);
+      const response = await authService.login(credentials);
 
-      // If API returns success with token and user
-      if (response.success && response.data && response.data.token) {
-        const { token, user } = response.data;
-
+      if (response.success && response.token && response.user) {
         const newAuthState: AuthState = {
           isAuthenticated: true,
-          user: user || {
-            id: credentials.username,
-            name: credentials.username,
-            username: credentials.username,
-          },
-          token: token,
+          user: response.user,
+          token: response.token,
         };
 
         setAuthState(newAuthState);
         saveAuthState(newAuthState);
 
-        console.log('✅ Login successful (API):', newAuthState.user?.name);
+        console.log('✅ Login successful (OAuth2):', newAuthState.user?.name);
         return { success: true };
       }
 
-      // If API returned error or no data - use DEV MODE
-      console.warn('⚠️ API login failed or not implemented, using DEV MODE');
-      
-      const newAuthState: AuthState = {
-        isAuthenticated: true,
-        user: {
-          id: credentials.username,
-          name: credentials.username.split('@')[0], // Extract name from email if possible
-          username: credentials.username,
-          role: 'user',
-        },
-        token: 'dev_token_' + Date.now(),
+      // Return error from OAuth2
+      return {
+        success: false,
+        error: response.error || 'Ошибка авторизации',
       };
-
-      setAuthState(newAuthState);
-      saveAuthState(newAuthState);
-
-      console.log('✅ Login successful (DEV MODE):', newAuthState.user?.name);
-      return { success: true };
 
     } catch (error: any) {
       console.error('❌ Login error:', error);
       
-      // For development: ALWAYS allow any credentials if they're provided
-      console.warn('⚠️ Login exception, using DEV MODE fallback');
-      
-      if (credentials.username && credentials.password) {
-        const newAuthState: AuthState = {
-          isAuthenticated: true,
-          user: {
-            id: credentials.username,
-            name: credentials.username.split('@')[0], // Extract name from email
-            username: credentials.username,
-            role: 'user',
-          },
-          token: 'dev_token_' + Date.now(),
-        };
-
-        setAuthState(newAuthState);
-        saveAuthState(newAuthState);
-
-        console.log('✅ Login successful (DEV MODE - Exception):', newAuthState.user?.name);
-        return { success: true };
-      }
-
       return {
         success: false,
-        error: 'Введите имя пользователя и пароль',
+        error: error.message || 'Ошибка подключения',
       };
     } finally {
       setIsLoading(false);
@@ -228,6 +214,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         updateUser,
         isLoading,
+        checkNoAuth,
       }}
     >
       {children}
