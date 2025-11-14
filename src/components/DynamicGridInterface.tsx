@@ -324,6 +324,7 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                     fontWeight: 700,
                     fontSize: '24px',
                     lineHeight: '22px',
+                    letterSpacing: '0',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -335,7 +336,7 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                   }}
                   onMouseDown={(e) => {
-                    e.currentTarget.style.transform = 'scale(0.97)';
+                    e.currentTarget.style.transform = 'scale(0.98)';
                     e.currentTarget.style.opacity = '0.9';
                   }}
                   onMouseUp={(e) => {
@@ -353,9 +354,11 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                   {count !== undefined && count > 0 && (
                     <span style={{
                       alignSelf: 'flex-end',
-                      fontSize: '20px',
+                      color: '#FFFFFF',
+                      fontFamily: "'Atkinson Hyperlegible', sans-serif",
                       fontWeight: 700,
-                      opacity: 0.8,
+                      fontSize: '20px',
+                      lineHeight: '1',
                       marginTop: 'auto',
                     }}>
                       {count}
