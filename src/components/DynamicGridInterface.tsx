@@ -13,15 +13,33 @@ interface DynamicGridInterfaceProps {
 }
 
 export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ schemaName = 'default' }) => {
-  const [schema, setSchema] = useState<UISchema | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Ленивая инициализация схемы - загружаем сразу синхронно
+  const [schema, setSchema] = useState<UISchema | null>(() => {
+    const loadedSchema = SchemaLoader.loadFromLocalStorage(schemaName);
+    if (loadedSchema) {
+      console.log(`✅ Initial load: schema "${schemaName}" from localStorage`);
+      return loadedSchema;
+    }
+    return null;
+  });
   const [showScanner, setShowScanner] = useState(false);
   const [documentCounts, setDocumentCounts] = useState<Map<ButtonAction, number>>(new Map());
   const navigate = useNavigate();
   const actionRegistry = new ActionRegistry(navigate);
 
   useEffect(() => {
-    loadSchema();
+    // Загружаем схему только если её нет
+    if (!schema) {
+      loadSchema();
+    } else {
+      // Track custom interface loaded только при первой загрузке
+      analytics.trackCustomInterfaceLoaded({
+        id: schema.metadata?.name || schemaName,
+        version: '1.0.0',
+        buttonsCount: schema.buttons?.length || 0,
+        source: 'localStorage',
+      });
+    }
   }, [schemaName]);
 
   // Загрузка количества документов
@@ -68,28 +86,16 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
   }, [schema]);
 
   const loadSchema = () => {
-    setLoading(true);
-    
     // Попытка загрузить схему из LocalStorage
     const loadedSchema = SchemaLoader.loadFromLocalStorage(schemaName);
     
     if (loadedSchema) {
       console.log(`✅ Loaded schema "${schemaName}" from localStorage:`, loadedSchema);
       setSchema(loadedSchema);
-      
-      // Track custom interface loaded
-      analytics.trackCustomInterfaceLoaded({
-        id: loadedSchema.metadata?.name || schemaName,
-        version: '1.0.0',
-        buttonsCount: loadedSchema.buttons?.length || 0,
-        source: 'localStorage',
-      });
     } else {
       console.log('ℹ️ No schema found, using default');
       setSchema(SchemaLoader.getDefaultSchema());
     }
-    
-    setLoading(false);
   };
 
   const handleScanComplete = (data: string) => {
@@ -170,24 +176,7 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
     setShowScanner(false);
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚙️</div>
-          <p style={{ fontSize: '18px', color: '#a7a7a7' }}>
-            Загрузка интерфейса...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // Если нет схемы или она пустая - показываем экран настройки
   if (!schema || schema.buttons.length === 0) {
     return (
       <div style={{
@@ -292,11 +281,6 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                * - Показывается только если count > 0
                */
               const count = documentCounts.get(button.action as ButtonAction) ?? button.documentCount;
-              
-              // Debug: показываем откуда берется count
-              if (button.action !== 'none') {
-                console.log(`📊 Button "${button.label}" (${button.action}): count =`, count);
-              }
               
               return (
                 <button
