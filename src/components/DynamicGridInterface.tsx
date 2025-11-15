@@ -227,12 +227,15 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
   return (
     <>
       <div style={{
-        width: '100%',
-        height: '100%',
+        width: '100vw',
+        height: '100vh',
         display: 'grid',
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
         gridTemplateRows: `repeat(${rows}, 1fr)`,
         gap: '4px',
+        padding: '0',
+        margin: '0',
+        boxSizing: 'border-box',
       }}>
             {schema.buttons.map((button) => {
               const isDark = button.style === 'dark';
@@ -262,8 +265,9 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                     flexDirection: 'column',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
-                    padding: '10px 14px',
+                    padding: '16px 20px',
                     textAlign: 'left',
+                    minHeight: '100%',
                     cursor: 'pointer',
                     transition: 'transform 0.15s ease, opacity 0.15s ease',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
@@ -281,18 +285,24 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                     e.currentTarget.style.opacity = '1';
                   }}
                 >
-                  <span style={{ flex: '0 0 auto' }}>
+                  <span style={{ 
+                    flex: '0 0 auto',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
                     {button.label}
                   </span>
-                  {count !== undefined && count > 0 && (
+                  {(count !== undefined && count > 0) && (
                     <span style={{
                       alignSelf: 'flex-end',
                       color: '#FFFFFF',
                       fontFamily: "'Atkinson Hyperlegible', sans-serif",
                       fontWeight: 700,
-                      fontSize: '18px',
+                      fontSize: '28px',
                       lineHeight: '1',
                       marginTop: 'auto',
+                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
                     }}>
                       {count}
                     </span>
