@@ -227,30 +227,13 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
   return (
     <>
       <div style={{
-        padding: '16px',
-        maxWidth: '1200px',
-        margin: '0 auto',
+        width: '100%',
+        height: '100%',
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gridTemplateRows: `repeat(${rows}, 1fr)`,
+        gap: '4px',
       }}>
-        {/* Grid */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          paddingBottom: `${(rows / columns) * 100}%`,
-          background: '#3D4247',
-          borderRadius: '12px',
-        }}>
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'grid',
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
-            gap: '8px',
-            padding: '8px',
-          }}>
             {schema.buttons.map((button) => {
               const isDark = button.style === 'dark';
               // Получаем количество документов из state или из самой кнопки
@@ -317,8 +300,6 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({ sche
                 </button>
               );
             })}
-          </div>
-        </div>
       </div>
 
       {showScanner && (
