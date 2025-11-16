@@ -314,24 +314,23 @@ html[data-theme='light'] .tile-outline {
   border-width: 2px !important;
 }
 
-/* Color adjustments for tile headers in light theme */
-html[data-theme='light'] .tile-outline .text-\[\#86E0CB\] {
-  color: #2d7a6b !important;
+/* Override ALL text colors in tile-outline for light theme */
+html[data-theme='light'] .tile-outline h2 {
+  color: #1f2933 !important;
 }
 
-html[data-theme='light'] .tile-outline .text-\[\#91ED91\] {
-  color: #2d6b2d !important;
-}
-
-html[data-theme='light'] .tile-outline .text-\[\#BA8F8E\] {
-  color: #6b3d3c !important;
-}
-
-/* Fix text-white in tiles for light theme - make it dark */
-html[data-theme='light'] .tile-outline .text-white,
-html[data-theme='light'] .tile-outline p.text-white,
-html[data-theme='light'] .tile-outline span.text-white {
+html[data-theme='light'] .tile-outline p {
   color: #52606d !important;
+}
+
+html[data-theme='light'] .tile-outline span {
+  color: #1f2933 !important;
+}
+
+html[data-theme='light'] .tile-outline .tile-title-sm,
+html[data-theme='light'] .tile-outline .tile-title-md,
+html[data-theme='light'] .tile-outline .tile-title-lg {
+  color: #1f2933 !important;
 }
 
 html[data-theme='light'] .tile-outline .tile-subtext {
