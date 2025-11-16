@@ -300,11 +300,15 @@ html[data-theme='light'] .chip-active {
 }
 
 /* Tile styles for light theme */
-html[data-theme='light'] .tile-base {
-  border-color: #94a3b8 !important;
+
+/* Colored tiles (orange/yellow) - darker border */
+html[data-theme='light'] .tile-primary:not(.tile-outline),
+html[data-theme='light'] .tile-secondary:not(.tile-outline) {
+  border-color: rgba(0, 0, 0, 0.25) !important;
   border-width: 2px !important;
 }
 
+/* Gray tiles (tile-outline) - light gray background with visible border */
 html[data-theme='light'] .tile-secondary.tile-outline,
 html[data-theme='light'] .tile-primary.tile-outline,
 html[data-theme='light'] .tile-tertiary.tile-outline,
