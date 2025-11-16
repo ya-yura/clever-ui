@@ -300,7 +300,21 @@ html[data-theme='light'] .chip-active {
 }
 
 html[data-theme='light'] .tile-outline {
-  border-color: #d1d5db !important;
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  border-width: 2px !important;
+}
+
+html[data-theme='light'] .tile-outline .text-\[\#86E0CB\] {
+  color: #2d7a6b !important;
+}
+
+html[data-theme='light'] .tile-outline .text-\[\#91ED91\] {
+  color: #2d6b2d !important;
+}
+
+html[data-theme='light'] .tile-outline .text-\[\#BA8F8E\] {
+  color: #6b3d3c !important;
 }
 
 html[data-theme='light'] .bg-gray-700 {
