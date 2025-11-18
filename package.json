@@ -1,7 +1,7 @@
 {
   "name": "warehouse-proto-3",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "PWA-приложение для управления складом Cleverence - Склад-15",
   "scripts": {
