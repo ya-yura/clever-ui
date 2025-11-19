@@ -1,7 +1,7 @@
 // === 📁 src/pages/Login.tsx ===
 // Login page for user authentication with OAuth2 support
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { configService } from '@/services/configService';
