@@ -1,0 +1,76 @@
+{
+  "name": "Cleverence Mobile Proto",
+  "version": "1.0.0",
+  "dna": {
+    "colors": {
+      "surface": {
+        "primary": "#242424",
+        "secondary": "#343436",
+        "tertiary": "#474747",
+        "inverse": "#ffffff"
+      },
+      "content": {
+        "primary": "#ffffff",
+        "secondary": "#e3e3dd",
+        "tertiary": "#a7a7a7",
+        "inverse": "#242424"
+      },
+      "brand": {
+        "primary": "#daa420",
+        "primaryDark": "#725a1e",
+        "secondary": "#86e0cb"
+      },
+      "status": {
+        "success": "#91ed91",
+        "warning": "#f3a361",
+        "error": "#ba8f8e",
+        "info": "#86e0cb"
+      }
+    },
+    "typography": {
+      "family": {
+        "primary": "\"Atkinson Hyperlegible\", sans-serif"
+      },
+      "weights": {
+        "regular": 400,
+        "bold": 700
+      },
+      "sizes": {
+        "xs": "10px",
+        "sm": "12px",
+        "base": "16px",
+        "lg": "20px",
+        "xl": "24px",
+        "2xl": "32px",
+        "3xl": "36px"
+      },
+      "lineHeights": {
+        "tight": 1.1,
+        "base": 1.4,
+        "relaxed": 1.6
+      }
+    },
+    "spacing": {
+      "scale": {
+        "1": "4px",
+        "2": "8px",
+        "3": "12px",
+        "4": "16px",
+        "6": "24px",
+        "8": "32px"
+      }
+    },
+    "borderRadius": {
+      "sm": "4px",
+      "md": "8px",
+      "lg": "18px",
+      "full": "9999px"
+    },
+    "shadows": {
+      "sm": "0 1px 2px rgba(0, 0, 0, 0.3)",
+      "md": "0 2px 3px rgba(0, 0, 0, 0.5)",
+      "lg": "0 4px 6px rgba(0, 0, 0, 0.5)"
+    }
+  }
+}
+
