@@ -71,17 +71,17 @@ const Documents: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-surface-primary flex flex-col">
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 m-4">
+        <div className="bg-error/10 border-l-4 border-error p-4 m-4 rounded-r">
           <div className="flex items-center">
             <span className="text-2xl mr-3">⚠️</span>
             <div>
-              <p className="text-red-800 font-medium">{error}</p>
+              <p className="text-error font-medium">{error}</p>
               <button
                 onClick={handleRefresh}
-                className="text-sm text-red-600 underline mt-1"
+                className="text-sm text-error underline mt-1 hover:text-error/80"
               >
                 Попробовать снова
               </button>
@@ -111,38 +111,38 @@ const Documents: React.FC = () => {
 
       {/* Quick Stats Footer (Optional) */}
       {!loading && allDocuments.length > 0 && (
-        <div className="bg-white border-t border-gray-200 px-4 py-3">
+        <div className="bg-surface-secondary border-t border-surface-tertiary px-4 py-3 sticky bottom-0 z-10 shadow-lg">
           <div className="flex items-center justify-around text-center text-xs">
             <div>
-              <div className="text-gray-500">Всего</div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-content-tertiary">Всего</div>
+              <div className="text-lg font-bold text-content-primary">
                 {allDocuments.length}
               </div>
             </div>
             
-            <div className="h-8 w-px bg-gray-300"></div>
+            <div className="h-8 w-px bg-surface-tertiary"></div>
             
             <div>
-              <div className="text-gray-500">В работе</div>
-              <div className="text-lg font-bold text-blue-600">
+              <div className="text-content-tertiary">В работе</div>
+              <div className="text-lg font-bold text-brand-secondary">
                 {allDocuments.filter(d => d.status === 'in_progress').length}
               </div>
             </div>
             
-            <div className="h-8 w-px bg-gray-300"></div>
+            <div className="h-8 w-px bg-surface-tertiary"></div>
             
             <div>
-              <div className="text-gray-500">Завершено</div>
-              <div className="text-lg font-bold text-green-600">
+              <div className="text-content-tertiary">Завершено</div>
+              <div className="text-lg font-bold text-success">
                 {allDocuments.filter(d => d.status === 'completed').length}
               </div>
             </div>
             
-            <div className="h-8 w-px bg-gray-300"></div>
+            <div className="h-8 w-px bg-surface-tertiary"></div>
             
             <div>
-              <div className="text-gray-500">Новые</div>
-              <div className="text-lg font-bold text-gray-600">
+              <div className="text-content-tertiary">Новые</div>
+              <div className="text-lg font-bold text-content-secondary">
                 {allDocuments.filter(d => d.status === 'draft').length}
               </div>
             </div>
@@ -154,4 +154,3 @@ const Documents: React.FC = () => {
 };
 
 export default Documents;
-

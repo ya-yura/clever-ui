@@ -100,31 +100,12 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({
 
   if (!schema || !schema.buttons || schema.buttons.length === 0) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        padding: '20px',
-        textAlign: 'center',
-        fontFamily: "'Atkinson Hyperlegible', sans-serif",
-      }}>
-        <div style={{ fontSize: '64px', marginBottom: '24px' }}>📱</div>
-        <h2 style={{ 
-          fontSize: '24px', 
-          fontWeight: 700, 
-          color: '#FFFFFF',
-          marginBottom: '12px',
-        }}>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-5 text-center font-sans">
+        <div className="text-6xl mb-6">📱</div>
+        <h2 className="text-2xl font-bold text-content-primary mb-3">
           Интерфейс не настроен
         </h2>
-        <p style={{ 
-          fontSize: '16px', 
-          color: 'rgba(255, 255, 255, 0.7)',
-          marginBottom: '32px',
-          maxWidth: '400px',
-        }}>
+        <p className="text-base text-content-secondary mb-8 max-w-md">
           Загрузите интерфейс через меню → Установить интерфейс
         </p>
       </div>
@@ -152,64 +133,41 @@ export const DynamicGridInterface: React.FC<DynamicGridInterfaceProps> = ({
         const isDark = button.style === 'dark';
         const count = documentCounts.get(button.action as ButtonAction) ?? button.documentCount;
         
+        // Determine colors based on style or explicit override
+        let bg = isDark ? 'bg-surface-tertiary' : 'bg-brand-primary';
+        let text = isDark ? 'text-content-primary' : 'text-brand-dark';
+        let border = isDark ? 'border-surface-tertiary/50' : 'border-transparent';
+
+        // Inline style overrides if provided in schema
+        const styleOverrides: React.CSSProperties = {
+          gridColumn: `${button.position.startCol + 1} / ${button.position.endCol + 2}`,
+          gridRow: `${button.position.startRow + 1} / ${button.position.endRow + 2}`,
+        };
+
+        // If custom color provided, use it (fallback logic if needed)
+        if (button.color) {
+          styleOverrides.backgroundColor = button.color;
+        }
+
         return (
           <button
             key={button.id}
             onClick={() => handleButtonClick(button)}
-            style={{
-              gridColumn: `${button.position.startCol + 1} / ${button.position.endCol + 2}`,
-              gridRow: `${button.position.startRow + 1} / ${button.position.endRow + 2}`,
-              background: isDark ? '#3E515C' : '#F3A36A',
-              color: isDark ? '#FFFFFF' : '#8B5931',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
-              borderRadius: '12px',
-              fontFamily: "'Atkinson Hyperlegible', sans-serif",
-              fontWeight: 700,
-              fontSize: '20px',
-              lineHeight: '1.1',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              textAlign: 'left',
-              minHeight: '100%',
-              cursor: 'pointer',
-              transition: 'transform 0.15s ease, opacity 0.15s ease',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
-              e.currentTarget.style.opacity = '0.9';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.opacity = '1';
-            }}
+            className={`
+              ${bg} ${text} border ${border}
+              rounded-xl font-bold text-xl leading-tight
+              flex flex-col items-start justify-between
+              p-4 md:p-5 text-left min-h-full cursor-pointer
+              transition-all duration-150 ease-out shadow-soft
+              active:scale-[0.98] active:opacity-90 hover:brightness-110
+            `}
+            style={styleOverrides}
           >
-            <span style={{ 
-              flex: '0 0 auto',
-              maxWidth: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
+            <span className="flex-none max-w-full overflow-hidden text-ellipsis font-sans">
               {button.label}
             </span>
             {count !== undefined && count > 0 && (
-              <span style={{
-                alignSelf: 'flex-end',
-                color: '#FFFFFF',
-                fontFamily: "'Atkinson Hyperlegible', sans-serif",
-                fontWeight: 700,
-                fontSize: '28px',
-                lineHeight: '1',
-                marginTop: 'auto',
-                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-              }}>
+              <span className="self-end text-white font-bold text-[28px] leading-none mt-auto drop-shadow-md font-sans">
                 {count}
               </span>
             )}

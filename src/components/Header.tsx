@@ -69,14 +69,14 @@ const Header: React.FC = () => {
     : 0;
 
   return (
-    <header className="bg-[#343436] text-[#e3e3dd] shadow-lg sticky top-0 z-50 border-b border-[#474747]">
+    <header className="bg-surface-secondary text-content-secondary shadow-lg sticky top-0 z-50 border-b border-surface-tertiary">
       <div className="container mx-auto px-3 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             {!isHome && (
               <button
                 onClick={() => navigate(parentPath, { replace: false })}
-                className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
+                className="p-2 hover:bg-surface-tertiary rounded-lg transition-colors text-content-secondary"
                 aria-label="Назад"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +87,7 @@ const Header: React.FC = () => {
             {isHome && (
               <button
                 onClick={openMenu}
-                className="p-2 hover:bg-[#474747] rounded-lg transition-colors touch-manipulation"
+                className="p-2 hover:bg-surface-tertiary rounded-lg transition-colors touch-manipulation text-content-secondary"
                 aria-label="Открыть меню"
               >
                 <Menu className="w-6 h-6" />
@@ -98,34 +98,34 @@ const Header: React.FC = () => {
               onClick={() => navigate('/')}
             >
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-medium tracking-wide">
+                <h1 className="text-lg font-medium tracking-wide text-content-primary">
                   {listInfo ? listInfo.title : pageInfo.title}
                 </h1>
                 {documentInfo && (
-                  <span className="text-sm text-[#a7a7a7]">
+                  <span className="text-sm text-content-tertiary">
                     {documentInfo.documentId}
                   </span>
                 )}
               </div>
               {documentInfo ? (
                 <div className="flex items-center gap-1.5 mt-1">
-                  <div className="flex-1 max-w-[200px] bg-gray-700 rounded-full h-1">
+                  <div className="flex-1 max-w-[200px] bg-surface-tertiary rounded-full h-1">
                     <div
-                      className="bg-[#86e0cb] h-1 rounded-full transition-all"
+                      className="bg-brand-secondary h-1 rounded-full transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-[#a7a7a7] min-w-[50px]">
+                  <span className="text-xs text-content-tertiary min-w-[50px]">
                     {documentInfo.completed}/{documentInfo.total}
                   </span>
                 </div>
               ) : listInfo ? (
-                <p className="text-[11px] text-[#a7a7a7] mt-0.5">
+                <p className="text-[11px] text-content-tertiary mt-0.5">
                   Всего: {listInfo.count}
                 </p>
               ) : (
                 pageInfo.subtitle && (
-                  <p className="text-[11px] text-[#a7a7a7] mt-0.5">
+                  <p className="text-[11px] text-content-tertiary mt-0.5">
                     {pageInfo.subtitle}
                   </p>
                 )
@@ -136,14 +136,14 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Online/Offline status */}
             <div className="flex items-center gap-1.5">
-              <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-sm hidden sm:inline">{isOnline ? 'Онлайн' : 'Оффлайн'}</span>
+              <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-success' : 'bg-error'}`} />
+              <span className="text-sm hidden sm:inline text-content-secondary">{isOnline ? 'Онлайн' : 'Оффлайн'}</span>
             </div>
 
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-tertiary rounded-lg transition-colors text-content-secondary"
               aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
               title={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
             >
@@ -171,7 +171,7 @@ const Header: React.FC = () => {
             {/* Partner quick access (service icon) */}
             <button
               onClick={() => navigate('/partner')}
-              className="p-2 hover:bg-[#474747] rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-tertiary rounded-lg transition-colors text-content-secondary"
               aria-label="Напарник"
               title="Напарник"
             >
@@ -191,4 +191,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-

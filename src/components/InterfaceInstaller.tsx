@@ -196,15 +196,7 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
   // If scanner is active, show it
   if (showScanner) {
     return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#1C1E21',
-        zIndex: 10000,
-      }}>
+      <div className="fixed inset-0 z-[10000] bg-black">
         <QRScanner
           onScan={handleQRScan}
           onClose={() => setShowScanner(false)}
@@ -214,128 +206,52 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px',
-    }}>
-      <div style={{
-        background: '#2A2A2C',
-        borderRadius: '16px',
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        position: 'relative',
-      }}>
+    <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-5 backdrop-blur-sm">
+      <div className="bg-surface-secondary rounded-2xl w-full max-w-[600px] max-h-[90vh] overflow-auto relative border border-surface-tertiary shadow-2xl">
         {/* Header */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid #3D4247',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <h2 style={{
-            margin: 0,
-            fontSize: '24px',
-            fontWeight: 700,
-            color: '#FFFFFF',
-          }}>
+        <div className="p-6 border-b border-surface-tertiary flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-content-primary m-0">
             Установить интерфейс
           </h2>
           <button
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: '8px',
-              cursor: 'pointer',
-              color: '#A7A7A7',
-            }}
+            className="bg-transparent border-none p-2 cursor-pointer text-content-tertiary hover:text-content-primary transition-colors"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* Method tabs */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          padding: '16px 24px',
-          borderBottom: '1px solid #3D4247',
-          overflowX: 'auto',
-        }}>
+        <div className="flex gap-2 p-4 px-6 border-b border-surface-tertiary overflow-x-auto">
           <button
             onClick={() => setActiveMethod('qr')}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              background: activeMethod === 'qr' ? '#F3A36A' : '#3D4247',
-              color: activeMethod === 'qr' ? '#8B5931' : '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-            }}
+            className={`flex-1 py-3 px-4 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${
+              activeMethod === 'qr' 
+                ? 'bg-brand-primary text-brand-dark' 
+                : 'bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80'
+            }`}
           >
             <QrCode size={18} />
             QR-код
           </button>
           <button
             onClick={() => setActiveMethod('file')}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              background: activeMethod === 'file' ? '#F3A36A' : '#3D4247',
-              color: activeMethod === 'file' ? '#8B5931' : '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-            }}
+            className={`flex-1 py-3 px-4 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${
+              activeMethod === 'file'
+                ? 'bg-brand-primary text-brand-dark'
+                : 'bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80'
+            }`}
           >
             <Upload size={18} />
             Файл
           </button>
           <button
             onClick={() => setActiveMethod('text')}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              background: activeMethod === 'text' ? '#F3A36A' : '#3D4247',
-              color: activeMethod === 'text' ? '#8B5931' : '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-            }}
+            className={`flex-1 py-3 px-4 border-none rounded-lg font-bold text-sm cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${
+              activeMethod === 'text'
+                ? 'bg-brand-primary text-brand-dark'
+                : 'bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80'
+            }`}
           >
             <FileJson size={18} />
             Текст
@@ -343,45 +259,24 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
         </div>
 
         {/* Content */}
-        <div style={{ padding: '24px' }}>
+        <div className="p-6">
           {/* QR Code method */}
           {activeMethod === 'qr' && (
             <div>
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-              }}>
-                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📱</div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  marginBottom: '8px',
-                }}>
+              <div className="text-center py-10 px-5">
+                <div className="text-6xl mb-4">📱</div>
+                <h3 className="text-lg font-bold text-content-primary mb-2">
                   Сканирование QR-кода
                 </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#A7A7A7',
-                  marginBottom: '24px',
-                  lineHeight: '1.5',
-                }}>
+                <p className="text-sm text-content-tertiary mb-6 leading-relaxed">
                   Отсканируйте QR-код с конфигурацией интерфейса из приложения Constructor
                 </p>
                 <button
                   onClick={() => setShowScanner(true)}
                   disabled={loading}
-                  style={{
-                    padding: '16px 32px',
-                    background: '#F3A36A',
-                    color: '#8B5931',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
-                  }}
+                  className={`py-4 px-8 bg-brand-primary text-brand-dark border-none rounded-xl text-base font-bold cursor-pointer transition-opacity ${
+                    loading ? 'opacity-60 cursor-not-allowed' : 'opacity-100 hover:brightness-110'
+                  }`}
                 >
                   {loading ? 'Загрузка...' : 'Открыть сканер'}
                 </button>
@@ -392,45 +287,24 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
           {/* File upload method */}
           {activeMethod === 'file' && (
             <div>
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-              }}>
-                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📁</div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  marginBottom: '8px',
-                }}>
+              <div className="text-center py-10 px-5">
+                <div className="text-6xl mb-4">📁</div>
+                <h3 className="text-lg font-bold text-content-primary mb-2">
                   Загрузка JSON-файла
                 </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#A7A7A7',
-                  marginBottom: '24px',
-                  lineHeight: '1.5',
-                }}>
+                <p className="text-sm text-content-tertiary mb-6 leading-relaxed">
                   Выберите файл с конфигурацией интерфейса (.json)
                 </p>
-                <label style={{
-                  display: 'inline-block',
-                  padding: '16px 32px',
-                  background: '#F3A36A',
-                  color: '#8B5931',
-                  borderRadius: '12px',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                }}>
+                <label className={`inline-block py-4 px-8 bg-brand-primary text-brand-dark rounded-xl text-base font-bold cursor-pointer transition-opacity ${
+                  loading ? 'opacity-60 cursor-not-allowed' : 'opacity-100 hover:brightness-110'
+                }`}>
                   {loading ? 'Загрузка...' : 'Выбрать файл'}
                   <input
                     type="file"
                     accept=".json,application/json"
                     onChange={handleFileUpload}
                     disabled={loading}
-                    style={{ display: 'none' }}
+                    className="hidden"
                   />
                 </label>
               </div>
@@ -440,20 +314,10 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
           {/* Text paste method */}
           {activeMethod === 'text' && (
             <div>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                marginBottom: '12px',
-              }}>
+              <h3 className="text-base font-bold text-content-primary mb-3">
                 Вставьте JSON-код или сжатую строку
               </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#A7A7A7',
-                marginBottom: '16px',
-                lineHeight: '1.5',
-              }}>
+              <p className="text-sm text-content-tertiary mb-4 leading-relaxed">
                 Скопируйте JSON-конфигурацию или сжатую строку из приложения Constructor и вставьте ниже
               </p>
               <textarea
@@ -461,35 +325,14 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
                 onChange={(e) => setJsonText(e.target.value)}
                 placeholder='{"id":"my-interface","version":"1.0.0",...}'
                 disabled={loading}
-                style={{
-                  width: '100%',
-                  minHeight: '200px',
-                  padding: '12px',
-                  background: '#1C1E21',
-                  border: '1px solid #3D4247',
-                  borderRadius: '8px',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontFamily: 'monospace',
-                  resize: 'vertical',
-                  marginBottom: '16px',
-                }}
+                className="w-full min-h-[200px] p-3 bg-surface-primary border border-surface-tertiary rounded-lg text-content-primary text-sm font-mono resize-y mb-4 focus:border-brand-secondary outline-none"
               />
               <button
                 onClick={handleTextPaste}
                 disabled={loading || !jsonText.trim()}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: '#F3A36A',
-                  color: '#8B5931',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  cursor: loading || !jsonText.trim() ? 'not-allowed' : 'pointer',
-                  opacity: loading || !jsonText.trim() ? 0.6 : 1,
-                }}
+                className={`w-full py-3.5 bg-brand-primary text-brand-dark border-none rounded-lg text-base font-bold cursor-pointer transition-opacity ${
+                  loading || !jsonText.trim() ? 'opacity-60 cursor-not-allowed' : 'opacity-100 hover:brightness-110'
+                }`}
               >
                 {loading ? 'Загрузка...' : 'Установить интерфейс'}
               </button>
@@ -498,38 +341,16 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
 
           {/* Error message */}
           {error && (
-            <div style={{
-              marginTop: '16px',
-              padding: '12px',
-              background: 'rgba(255, 59, 48, 0.1)',
-              border: '1px solid rgba(255, 59, 48, 0.3)',
-              borderRadius: '8px',
-              color: '#FF3B30',
-              fontSize: '14px',
-            }}>
+            <div className="mt-4 p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm">
               {error}
             </div>
           )}
 
           {/* Clear interface button */}
-          <div style={{
-            marginTop: '32px',
-            paddingTop: '24px',
-            borderTop: '1px solid #3D4247',
-          }}>
+          <div className="mt-8 pt-6 border-t border-surface-tertiary">
             <button
               onClick={handleClearInterface}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'transparent',
-                border: '1px solid rgba(255, 59, 48, 0.5)',
-                borderRadius: '8px',
-                color: '#FF3B30',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="w-full p-3 bg-transparent border border-error/50 rounded-lg text-error text-sm font-semibold cursor-pointer hover:bg-error/10 transition-colors"
             >
               Сбросить интерфейс (вернуться к стандартному)
             </button>
@@ -539,4 +360,3 @@ export const InterfaceInstaller: React.FC<InterfaceInstallerProps> = ({
     </div>
   );
 };
-

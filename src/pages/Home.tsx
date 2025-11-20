@@ -191,7 +191,7 @@ const Home: React.FC = () => {
                 console.log(`✅ [API] Type "${type.uni}": ${docsCount} documents (count fallback)`);
               } catch (countErr: any) {
                 console.error(`❌ [API] Failed to load docs count for "${type.uni}":`, countErr?.message || countErr);
-                docsCount = 0;
+              docsCount = 0;
               }
             }
           }
@@ -289,7 +289,7 @@ const Home: React.FC = () => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">📦</div>
-          <p className="text-xl text-[#a7a7a7]">Загрузка типов документов...</p>
+          <p className="text-xl text-content-tertiary">Загрузка типов документов...</p>
         </div>
       </div>
     );
@@ -301,8 +301,8 @@ const Home: React.FC = () => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-2xl px-4">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-red-500 mb-2">Ошибка загрузки</h2>
-          <pre className="text-[#a7a7a7] mb-6 text-left bg-[#2a2a2c] p-4 rounded-lg whitespace-pre-wrap text-sm">{error}</pre>
+          <h2 className="text-2xl font-bold text-error mb-2">Ошибка загрузки</h2>
+          <pre className="text-content-tertiary mb-6 text-left bg-surface-primary p-4 rounded-lg whitespace-pre-wrap text-sm">{error}</pre>
           <div className="flex gap-4 justify-center flex-wrap">
             <button
               onClick={loadDocTypes}
@@ -387,12 +387,11 @@ const Home: React.FC = () => {
           <button
             key={tPrihod.uni}
             onClick={() => navigate(`/docs/${tPrihod.uni}`)}
-            className="tile-primary tone-strong col-span-2 row-span-2"
-            style={{ backgroundColor: '#DAA420' }}
+            className="tile-primary tone-strong col-span-2 row-span-2 bg-brand-primary text-brand-dark"
           >
             <div>
-              <h2 className="tile-title-lg text-[#343436]">{tPrihod.displayName}</h2>
-              <p className="tile-subtext text-[#343436]">{tPrihod.description}</p>
+              <h2 className="tile-title-lg">{tPrihod.displayName}</h2>
+              <p className="tile-subtext opacity-80">{tPrihod.description}</p>
             </div>
             <div className="tile-footer">
               <span className="tile-count-hero">{tPrihod.docsCount}</span>
@@ -404,12 +403,11 @@ const Home: React.FC = () => {
           <button
             key={tPodbor.uni}
             onClick={() => navigate(`/docs/${tPodbor.uni}`)}
-            className="tile-primary tone-strong col-span-2"
-            style={{ backgroundColor: '#FEA079' }}
+            className="tile-primary tone-strong col-span-2 bg-modules-inventory-bg text-surface-secondary"
           >
             <div>
-              <h2 className="tile-title-lg text-[#343436]">{tPodbor.displayName}</h2>
-              <p className="tile-subtext text-[#343436]">{tPodbor.description}</p>
+              <h2 className="tile-title-lg">{tPodbor.displayName}</h2>
+              <p className="tile-subtext opacity-80">{tPodbor.description}</p>
             </div>
             <div className="tile-footer">
               <span className="tile-count-hero">{tPodbor.docsCount}</span>
@@ -421,12 +419,11 @@ const Home: React.FC = () => {
           <button
             key={tOtgruzka.uni}
             onClick={() => navigate(`/docs/${tOtgruzka.uni}`)}
-            className="tile-primary tone-strong col-span-2"
-            style={{ backgroundColor: '#F3A361' }}
+            className="tile-primary tone-strong col-span-2 bg-modules-picking-bg text-surface-secondary"
           >
             <div>
-              <h2 className="tile-title-lg text-[#343436]">{tOtgruzka.displayName}</h2>
-              <p className="tile-subtext text-[#343436]">{tOtgruzka.description}</p>
+              <h2 className="tile-title-lg">{tOtgruzka.displayName}</h2>
+              <p className="tile-subtext opacity-80">{tOtgruzka.description}</p>
             </div>
             <div className="tile-footer">
               <span className="tile-count-hero">{tOtgruzka.docsCount}</span>
@@ -444,11 +441,11 @@ const Home: React.FC = () => {
             className="tile-secondary tone-medium tile-outline col-span-2"
           >
             <div>
-              <h2 className="tile-title-sm text-[#86E0CB]">{tVozvrat.displayName}</h2>
-              <p className="tile-subtext text-white">{tVozvrat.description}</p>
+              <h2 className="tile-title-sm text-brand-secondary">{tVozvrat.displayName}</h2>
+              <p className="tile-subtext text-content-primary">{tVozvrat.description}</p>
             </div>
             <div className="tile-footer">
-              <span className="text-white">{tVozvrat.docsCount}</span>
+              <span className="text-content-primary">{tVozvrat.docsCount}</span>
             </div>
           </button>
         )}
@@ -460,11 +457,11 @@ const Home: React.FC = () => {
             className="tile-secondary tone-medium tile-outline col-span-2"
           >
             <div>
-              <h2 className="tile-title-sm text-[#91ED91]">{tPlacement.displayName}</h2>
-              <p className="tile-subtext text-white">{tPlacement.description}</p>
+              <h2 className="tile-title-sm text-success">{tPlacement.displayName}</h2>
+              <p className="tile-subtext text-content-primary">{tPlacement.description}</p>
             </div>
             <div className="tile-footer">
-              <span className="text-white">{tPlacement.docsCount}</span>
+              <span className="text-content-primary">{tPlacement.docsCount}</span>
             </div>
           </button>
         )}
@@ -479,11 +476,11 @@ const Home: React.FC = () => {
             className="tile-secondary tone-medium tile-outline col-span-4"
           >
             <div>
-              <h2 className="tile-title-md text-[#BA8F8E]">{tInvent.displayName}</h2>
-              <p className="tile-subtext text-white">{tInvent.description}</p>
+              <h2 className="tile-title-md text-error">{tInvent.displayName}</h2>
+              <p className="tile-subtext text-content-primary">{tInvent.description}</p>
             </div>
             <div className="tile-footer">
-              <span className="text-white">{tInvent.docsCount}</span>
+              <span className="text-content-primary">{tInvent.docsCount}</span>
             </div>
           </button>
         </div>
@@ -499,8 +496,8 @@ const Home: React.FC = () => {
               className={`tile-secondary tone-medium ${['bg-palette-3','bg-palette-4','bg-palette-3'][idx % 3]}`}
             >
               <div>
-                <h2 className="tile-title-md text-[#343436]">{docType.displayName}</h2>
-                <p className="tile-subtext text-[#343436]">
+                <h2 className="tile-title-md text-surface-secondary">{docType.displayName}</h2>
+                <p className="tile-subtext text-surface-secondary">
                   {docType.description}
                 </p>
               </div>
@@ -522,10 +519,10 @@ const Home: React.FC = () => {
               className={`tile-tertiary tone-muted tile-outline`}
             >
               <div>
-                <h2 className="text-base md:text-lg font-semibold tile-title-light">{docType.displayName}</h2>
+                <h2 className="text-base md:text-lg font-semibold tile-title-light text-content-primary">{docType.displayName}</h2>
               </div>
               <div className="tile-footer">
-                <span className="tile-count-light">{docType.docsCount}</span>
+                <span className="tile-count-light text-content-primary">{docType.docsCount}</span>
               </div>
             </button>
           ))}
@@ -536,8 +533,8 @@ const Home: React.FC = () => {
       {docTypes.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📋</div>
-          <h3 className="text-xl text-[#a7a7a7] mb-2">Нет доступных типов документов</h3>
-          <p className="text-sm text-[#a7a7a7] opacity-80">
+          <h3 className="text-xl text-content-tertiary mb-2">Нет доступных типов документов</h3>
+          <p className="text-sm text-content-tertiary opacity-80">
             Проверьте настройки подключения к серверу
           </p>
         </div>
@@ -547,4 +544,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-

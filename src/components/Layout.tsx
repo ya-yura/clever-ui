@@ -57,7 +57,7 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#343436]">
+    <div className="min-h-screen bg-surface-secondary">
       <Header />
       <main className="container mx-auto px-4 py-6 pb-20">
         <Outlet />

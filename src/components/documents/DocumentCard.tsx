@@ -32,17 +32,17 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   return (
     <div
       onClick={handleClick}
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer active:bg-gray-50"
+      className="bg-surface-secondary border border-surface-tertiary rounded-lg p-4 hover:shadow-soft transition-all cursor-pointer active:scale-[0.98] active:bg-surface-tertiary"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{DOCUMENT_TYPE_ICONS[document.type]}</span>
+          <span className="text-2xl filter grayscale-[0.2]">{DOCUMENT_TYPE_ICONS[document.type]}</span>
           <div>
-            <div className="font-semibold text-gray-900">
+            <div className="font-semibold text-content-primary">
               {document.number || document.id.slice(0, 8)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-content-tertiary">
               {DOCUMENT_TYPE_LABELS[document.type]}
             </div>
           </div>
@@ -55,8 +55,8 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
 
       {/* Partner Info */}
       {document.partnerName && (
-        <div className="mb-2 text-sm text-gray-700">
-          <span className="text-gray-500">Контрагент:</span>{' '}
+        <div className="mb-2 text-sm text-content-secondary">
+          <span className="text-content-tertiary">Контрагент:</span>{' '}
           <span className="font-medium">{document.partnerName}</span>
         </div>
       )}
@@ -64,18 +64,18 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       {/* Progress Bar */}
       {document.totalQuantity && document.totalQuantity > 0 && (
         <div className="mb-3">
-          <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+          <div className="flex items-center justify-between text-xs text-content-tertiary mb-1">
             <span>Прогресс</span>
-            <span className="font-medium">{completionPercentage}%</span>
+            <span className="font-medium text-content-primary">{completionPercentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-surface-tertiary rounded-full h-2 overflow-hidden">
             <div
               className={`h-full transition-all ${
                 completionPercentage === 100
-                  ? 'bg-green-500'
+                  ? 'bg-success'
                   : completionPercentage > 0
-                  ? 'bg-blue-500'
-                  : 'bg-gray-300'
+                  ? 'bg-brand-secondary'
+                  : 'bg-surface-tertiary'
               }`}
               style={{ width: `${completionPercentage}%` }}
             />
@@ -86,18 +86,18 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
         {document.totalLines !== undefined && (
-          <div className="bg-gray-50 rounded px-2 py-1">
-            <div className="text-xs text-gray-500">Строк</div>
-            <div className="font-medium">
+          <div className="bg-surface-tertiary/50 rounded px-2 py-1">
+            <div className="text-xs text-content-tertiary">Строк</div>
+            <div className="font-medium text-content-primary">
               {document.completedLines || 0} / {document.totalLines}
             </div>
           </div>
         )}
         
         {document.totalQuantity !== undefined && (
-          <div className="bg-gray-50 rounded px-2 py-1">
-            <div className="text-xs text-gray-500">Количество</div>
-            <div className="font-medium">
+          <div className="bg-surface-tertiary/50 rounded px-2 py-1">
+            <div className="text-xs text-content-tertiary">Количество</div>
+            <div className="font-medium text-content-primary">
               {document.completedQuantity || 0} / {document.totalQuantity}
             </div>
           </div>
@@ -105,38 +105,38 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       </div>
 
       {/* Additional Info */}
-      <div className="space-y-1 text-xs text-gray-500">
+      <div className="space-y-1 text-xs text-content-tertiary">
         {document.route && (
           <div>
             <span className="inline-block w-16">Маршрут:</span>
-            <span className="text-gray-700">{document.route}</span>
+            <span className="text-content-secondary">{document.route}</span>
           </div>
         )}
         
         {document.vehicle && (
           <div>
             <span className="inline-block w-16">ТС:</span>
-            <span className="text-gray-700">{document.vehicle}</span>
+            <span className="text-content-secondary">{document.vehicle}</span>
           </div>
         )}
         
         {document.returnReason && (
           <div>
             <span className="inline-block w-16">Причина:</span>
-            <span className="text-gray-700">{document.returnReason}</span>
+            <span className="text-content-secondary">{document.returnReason}</span>
           </div>
         )}
         
         {document.userName && (
           <div>
             <span className="inline-block w-16">Исполнитель:</span>
-            <span className="text-gray-700">{document.userName}</span>
+            <span className="text-content-secondary">{document.userName}</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-3 pt-3 border-t border-surface-tertiary flex items-center justify-between text-xs text-content-tertiary">
         <div className="flex items-center gap-3">
           <div title={formatDate(document.createdAt)}>
             📅 {formatRelativeTime(document.createdAt)}
@@ -150,7 +150,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         </div>
 
         {isOverdue && (
-          <div className="text-red-600 font-medium">
+          <div className="text-error font-medium">
             ⚠️ Просрочен
           </div>
         )}
@@ -158,11 +158,10 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
 
       {/* Notes Preview */}
       {document.notes && (
-        <div className="mt-2 text-xs text-gray-600 italic truncate">
+        <div className="mt-2 text-xs text-content-secondary italic truncate">
           💬 {document.notes}
         </div>
       )}
     </div>
   );
 };
-

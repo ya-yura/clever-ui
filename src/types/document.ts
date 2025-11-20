@@ -127,14 +127,15 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
 
 /**
  * Document type colors for UI
+ * Updated for Dark Theme design system
  */
 export const DOCUMENT_TYPE_COLORS: Record<DocumentType, string> = {
-  receiving: 'bg-blue-100 text-blue-800',
-  placement: 'bg-purple-100 text-purple-800',
-  picking: 'bg-orange-100 text-orange-800',
-  shipment: 'bg-green-100 text-green-800',
-  return: 'bg-red-100 text-red-800',
-  inventory: 'bg-yellow-100 text-yellow-800',
+  receiving: 'bg-brand-primary/20 text-brand-primary border border-brand-primary/30',
+  placement: 'bg-brand-secondary/20 text-brand-secondary border border-brand-secondary/30',
+  picking: 'bg-modules-picking-bg/20 text-modules-picking-bg border border-modules-picking-bg/30',
+  shipment: 'bg-success/20 text-success border border-success/30',
+  return: 'bg-error/20 text-error border border-error/30',
+  inventory: 'bg-modules-inventory-bg/20 text-modules-inventory-bg border border-modules-inventory-bg/30',
 };
 
 /**
@@ -163,14 +164,15 @@ export const STATUS_LABELS: Record<DocumentStatus, string> = {
 
 /**
  * Status colors for UI
+ * Updated for Dark Theme design system
  */
 export const STATUS_COLORS: Record<DocumentStatus, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-  synced: 'bg-teal-100 text-teal-800',
-  error: 'bg-red-100 text-red-800',
+  draft: 'bg-surface-tertiary text-content-secondary',
+  in_progress: 'bg-brand-secondary/20 text-brand-secondary',
+  completed: 'bg-success/20 text-success',
+  cancelled: 'bg-error/20 text-error',
+  synced: 'bg-info/20 text-info',
+  error: 'bg-error text-brand-dark',
 };
 
 /**
@@ -187,9 +189,8 @@ export const PRIORITY_LABELS: Record<DocumentPriority, string> = {
  * Priority colors for UI
  */
 export const PRIORITY_COLORS: Record<DocumentPriority, string> = {
-  low: 'text-gray-500',
-  normal: 'text-blue-500',
-  high: 'text-orange-500',
-  urgent: 'text-red-500',
+  low: 'text-content-tertiary',
+  normal: 'text-info',
+  high: 'text-warning',
+  urgent: 'text-error',
 };
-
