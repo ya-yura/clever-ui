@@ -1,3 +1,11 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Читаем Design System DNA напрямую из файла источника
+const designSystemPath = join(process.cwd(), 'src/theme/design-system.json');
+const designSystem = JSON.parse(readFileSync(designSystemPath, 'utf-8'));
+const { colors } = designSystem.dna;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -10,48 +18,40 @@ export default {
         sans: ['"Atkinson Hyperlegible"', 'sans-serif'],
       },
       colors: {
-        // Surface Colors
-        surface: {
-          primary: '#242424',
-          secondary: '#343436',
-          tertiary: '#474747',
-          inverse: '#ffffff',
-        },
-        // Content Colors
-        content: {
-          primary: '#ffffff',
-          secondary: '#e3e3dd',
-          tertiary: '#a7a7a7',
-          inverse: '#242424',
-        },
-        // Brand Colors
+        // Подключаем цвета динамически из design-system.json
+        surface: colors.surface,
+        content: colors.content,
         brand: {
-          primary: '#daa420',
-          dark: '#725a1e',
-          secondary: '#86e0cb',
+          ...colors.brand,
+          dark: colors.brand.primaryDark // Mapping для совместимости
         },
-        // Status Colors (Legacy & New)
-        success: '#91ed91',
-        warning: '#f3a361',
-        error: '#ba8f8e',
-        info: '#86e0cb',
+        status: colors.status,
+        
+        // Алиасы для совместимости с легаси кодом, если нужно
+        success: colors.status.success,
+        warning: colors.status.warning,
+        error: colors.status.error,
+        info: colors.status.info,
         
         // Legacy Modules (Preserved but mapped to new palette where possible)
         modules: {
-          receiving: { bg: '#daa420', text: '#725a1e' },
-          inventory: { bg: '#fea079', text: '#8c533b' },
-          picking: { bg: '#f3a361', text: '#8b5931' },
-          placement: { bg: '#86e0cb', text: '#2d7a6b' },
-          shipment: { bg: '#91ed91', text: '#2d6b2d' },
-          return: { bg: '#ba8f8e', text: '#6b3d3c' },
+          receiving: { bg: colors.brand.primary, text: colors.brand.primaryDark },
+          inventory: { bg: '#fea079', text: '#8c533b' }, // Пока оставим, если нет в палитре
+          picking: { bg: colors.status.warning, text: '#8b5931' },
+          placement: { bg: colors.brand.secondary, text: '#2d7a6b' },
+          shipment: { bg: colors.status.success, text: '#2d6b2d' },
+          return: { bg: colors.status.error, text: '#6b3d3c' },
         },
       },
       borderRadius: {
-        DEFAULT: '8px',
-        lg: '18px',
+        DEFAULT: designSystem.dna.borderRadius.md,
+        lg: designSystem.dna.borderRadius.lg,
+        sm: designSystem.dna.borderRadius.sm,
+        full: designSystem.dna.borderRadius.full,
       },
       boxShadow: {
-        soft: '0 2px 3px rgba(0, 0, 0, 0.5)',
+        soft: designSystem.dna.shadows.md,
+        card: designSystem.dna.shadows.lg,
       }
     },
   },
