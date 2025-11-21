@@ -230,7 +230,7 @@ class ODataCacheService {
 
     if (fetched.length > 0) {
       await db.odataDocuments.bulkPut(fetched);
-      await this.updateCacheMetadata(cacheKey);
+          await this.updateCacheMetadata(cacheKey);
       // Invalidate ALL cache to avoid stale data
       await db.cacheMetadata.delete(ALL_DOCS_CACHE_KEY);
       return fetched;

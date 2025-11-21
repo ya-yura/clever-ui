@@ -8,14 +8,27 @@ import {
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_TYPE_ICONS,
   STATUS_LABELS,
-  STATUS_COLORS,
 } from '@/types/document';
+import { DocumentStatus } from '@/types/common';
 import { documentService } from '@/services/documentService';
 import { formatDate, formatRelativeTime } from '@/utils/date';
+import { Card, Badge, ProgressBar, BadgeVariant } from '@/design/components';
 
 interface DocumentCardProps {
   document: UniversalDocument;
 }
+
+// Map document status to badge variant
+const getStatusVariant = (status: DocumentStatus): BadgeVariant => {
+  switch (status) {
+    case 'completed': return 'success';
+    case 'in_progress': return 'info'; // Brand secondary is teal/info
+    case 'cancelled': return 'error';
+    case 'error': return 'error';
+    case 'synced': return 'info';
+    default: return 'neutral';
+  }
+};
 
 export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const navigate = useNavigate();
@@ -30,9 +43,10 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   };
 
   return (
-    <div
+    <Card
+      variant="interactive"
       onClick={handleClick}
-      className="bg-surface-secondary border border-surface-tertiary rounded-lg p-4 hover:shadow-soft transition-all cursor-pointer active:scale-[0.98] active:bg-surface-tertiary"
+      className="p-4"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -48,9 +62,10 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
           </div>
         </div>
 
-        <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_COLORS[document.status]}`}>
-          {STATUS_LABELS[document.status]}
-        </span>
+        <Badge 
+          label={STATUS_LABELS[document.status]} 
+          variant={getStatusVariant(document.status)} 
+        />
       </div>
 
       {/* Partner Info */}
@@ -68,18 +83,11 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
             <span>Прогресс</span>
             <span className="font-medium text-content-primary">{completionPercentage}%</span>
           </div>
-          <div className="w-full bg-surface-tertiary rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-full transition-all ${
-                completionPercentage === 100
-                  ? 'bg-success'
-                  : completionPercentage > 0
-                  ? 'bg-brand-secondary'
-                  : 'bg-surface-tertiary'
-              }`}
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
+          <ProgressBar 
+            value={completionPercentage} 
+            variant={completionPercentage === 100 ? 'success' : 'primary'} 
+            size="sm"
+          />
         </div>
       )}
 
@@ -162,6 +170,6 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
           💬 {document.notes}
         </div>
       )}
-    </div>
+    </Card>
   );
 };

@@ -30,6 +30,7 @@ import { BarcodeRecord } from '@/types/barcode';
 import { LabelTemplate, PrintTask } from '@/types/label';
 import { Employee, PartnerSession } from '@/types/partner';
 import { ODataDocumentType, ODataDocument } from '@/types/odata';
+import { ActivityEvent } from '@/types/activity';
 
 export interface SyncAction {
   id?: number;
@@ -105,6 +106,9 @@ export class WarehouseDatabase extends Dexie {
   odataDocuments!: Table<ODataDocument, string>;
   cacheMetadata!: Table<CacheMetadata, string>;
 
+  // Activity tracking
+  activityEvents!: Table<ActivityEvent, string>;
+
   constructor() {
     super('WarehouseDB');
 
@@ -166,6 +170,11 @@ export class WarehouseDatabase extends Dexie {
       odataDocTypes: 'uni, name, displayName',
       odataDocuments: 'id, documentTypeName, finished, inProcess, createDate',
       cacheMetadata: 'key, lastUpdated, expiresAt',
+    });
+
+    // Version 5 - Activity tracking events
+    this.version(5).stores({
+      activityEvents: 'id, eventType, status, timestamp',
     });
   }
 }

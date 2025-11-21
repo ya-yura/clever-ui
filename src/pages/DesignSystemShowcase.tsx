@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  User, 
   Calendar as CalendarIcon, 
   Search, 
   Bell, 
   Check, 
-  X, 
   ChevronRight, 
   MoreHorizontal,
   Settings,
   Home,
-  FileText
 } from 'lucide-react';
+
+// Import from our new Design System Component Library
+import {
+  Button,
+  Card,
+  Badge,
+  Avatar,
+  ProgressBar,
+  Input,
+  TextArea,
+  Checkbox,
+  Toggle,
+} from '@/design/components';
 
 const DesignSystemShowcase: React.FC = () => {
   const navigate = useNavigate();
@@ -30,7 +40,7 @@ const DesignSystemShowcase: React.FC = () => {
             <p className="text-content-secondary text-lg">Cleverence Mobile Proto • v1.0.0</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => navigate('/')} icon={<Home size={18} />}>
+            <Button variant="secondary" onClick={() => navigate('/')} startIcon={<Home size={18} />}>
               Back to Home
             </Button>
           </div>
@@ -40,7 +50,7 @@ const DesignSystemShowcase: React.FC = () => {
         <section className="space-y-6">
           <SectionHeader title="01. Typography" description="Atkinson Hyperlegible scale" />
           
-          <div className="bg-surface-secondary rounded-2xl border border-surface-tertiary overflow-hidden">
+          <Card noPadding className="overflow-hidden">
             <div className="p-8 space-y-8">
               <TypeSpecimen size="text-3xl" label="Display 3XL" weight="font-bold" sizeLabel="36px" />
               <TypeSpecimen size="text-2xl" label="Display 2XL" weight="font-bold" sizeLabel="32px" />
@@ -50,7 +60,7 @@ const DesignSystemShowcase: React.FC = () => {
               <TypeSpecimen size="text-sm" label="Body Small" weight="font-normal" sizeLabel="12px" />
               <TypeSpecimen size="text-xs" label="Caption XS" weight="font-normal" sizeLabel="10px" />
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* 2. Color Palette */}
@@ -107,7 +117,7 @@ const DesignSystemShowcase: React.FC = () => {
         <section className="space-y-6">
           <SectionHeader title="03. Buttons" description="Interactive elements" />
 
-          <div className="p-8 bg-surface-secondary rounded-2xl border border-surface-tertiary space-y-8">
+          <Card className="space-y-8">
             {/* Standard Buttons */}
             <div className="space-y-4">
               <h4 className="text-sm text-content-tertiary font-bold uppercase">Standard</h4>
@@ -116,6 +126,7 @@ const DesignSystemShowcase: React.FC = () => {
                 <Button variant="secondary">Secondary</Button>
                 <Button variant="ghost">Ghost</Button>
                 <Button variant="primary" disabled>Disabled</Button>
+                <Button variant="primary" isLoading>Loading</Button>
               </div>
             </div>
 
@@ -123,9 +134,9 @@ const DesignSystemShowcase: React.FC = () => {
             <div className="space-y-4">
               <h4 className="text-sm text-content-tertiary font-bold uppercase">With Icons</h4>
               <div className="flex flex-wrap gap-4 items-center">
-                <Button variant="primary" icon={<Check size={18} />}>Confirm</Button>
-                <Button variant="secondary" icon={<Settings size={18} />}>Settings</Button>
-                <Button variant="ghost" icon={<ChevronRight size={18} />}>Next</Button>
+                <Button variant="primary" startIcon={<Check size={18} />}>Confirm</Button>
+                <Button variant="secondary" startIcon={<Settings size={18} />}>Settings</Button>
+                <Button variant="ghost" endIcon={<ChevronRight size={18} />}>Next</Button>
               </div>
             </div>
 
@@ -133,12 +144,12 @@ const DesignSystemShowcase: React.FC = () => {
             <div className="space-y-4">
               <h4 className="text-sm text-content-tertiary font-bold uppercase">Icon Only</h4>
               <div className="flex flex-wrap gap-4 items-center">
-                <IconButton variant="primary" icon={<Search size={20} />} />
-                <IconButton variant="secondary" icon={<Bell size={20} />} />
-                <IconButton variant="ghost" icon={<MoreHorizontal size={20} />} />
+                <Button variant="primary" size="icon"><Search size={20} /></Button>
+                <Button variant="secondary" size="icon"><Bell size={20} /></Button>
+                <Button variant="ghost" size="icon"><MoreHorizontal size={20} /></Button>
               </div>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* 4. Cards */}
@@ -147,23 +158,23 @@ const DesignSystemShowcase: React.FC = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Base Card */}
-            <div className="bg-surface-secondary p-6 rounded-lg border border-surface-tertiary">
+            <Card>
               <h4 className="text-lg font-bold mb-2">Base Card</h4>
               <p className="text-content-secondary text-sm leading-relaxed">
                 Standard container with subtle border and no shadow. Used for grouped content.
               </p>
-            </div>
+            </Card>
 
             {/* Elevated Card */}
-            <div className="bg-surface-secondary p-6 rounded-lg border border-surface-tertiary shadow-soft">
+            <Card variant="elevated">
               <h4 className="text-lg font-bold mb-2 text-brand-primary">Elevated Card</h4>
               <p className="text-content-secondary text-sm leading-relaxed">
                 Container with soft shadow (`shadow-soft`). Used for floating elements or emphasis.
               </p>
-            </div>
+            </Card>
 
             {/* Interactive Card */}
-            <div className="bg-surface-secondary p-6 rounded-lg border border-surface-tertiary shadow-soft hover:border-brand-primary/50 hover:shadow-card transition-all cursor-pointer active:scale-[0.98]">
+            <Card variant="interactive">
               <div className="flex justify-between items-start mb-3">
                  <h4 className="text-lg font-bold">Interactive</h4>
                  <Badge label="Click Me" variant="success" />
@@ -171,7 +182,7 @@ const DesignSystemShowcase: React.FC = () => {
               <p className="text-content-secondary text-sm leading-relaxed">
                 Reacts to hover and click. Scales down slightly on active press.
               </p>
-            </div>
+            </Card>
           </div>
         </section>
 
@@ -182,7 +193,7 @@ const DesignSystemShowcase: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Avatars & Badges */}
-            <div className="p-6 bg-surface-secondary rounded-2xl border border-surface-tertiary space-y-8">
+            <Card className="space-y-8">
               <div className="space-y-4">
                 <h4 className="text-sm text-content-tertiary font-bold uppercase">Avatars</h4>
                 <div className="flex items-center gap-4">
@@ -210,27 +221,19 @@ const DesignSystemShowcase: React.FC = () => {
                   <Badge label="Neutral" variant="neutral" />
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Progress & Loading */}
-            <div className="p-6 bg-surface-secondary rounded-2xl border border-surface-tertiary space-y-8">
+            <Card className="space-y-8">
               <div className="space-y-4">
                 <h4 className="text-sm text-content-tertiary font-bold uppercase">Progress Indicators</h4>
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-content-secondary">
-                    <span>Downloading...</span>
-                    <span>45%</span>
-                  </div>
-                  <ProgressBar value={45} />
+                  <ProgressBar value={45} showLabel />
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-content-secondary">
-                    <span>Completed</span>
-                    <span className="text-success">100%</span>
-                  </div>
-                  <ProgressBar value={100} variant="success" />
+                  <ProgressBar value={100} variant="success" showLabel />
                 </div>
               </div>
 
@@ -242,7 +245,7 @@ const DesignSystemShowcase: React.FC = () => {
                   <div className="h-32 bg-surface-tertiary rounded w-full mt-4"></div>
                 </div>
               </div>
-            </div>
+            </Card>
 
           </div>
         </section>
@@ -253,74 +256,61 @@ const DesignSystemShowcase: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Inputs */}
-            <div className="p-6 bg-surface-secondary rounded-2xl border border-surface-tertiary space-y-6">
+            <Card className="space-y-6">
               <h4 className="text-sm text-content-tertiary font-bold uppercase mb-4">Input Fields</h4>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium text-content-secondary">Email Address</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 text-content-tertiary" size={18} />
-                  <input 
-                    type="email" 
-                    placeholder="user@example.com" 
-                    className="w-full bg-surface-primary text-content-primary pl-10 pr-4 py-2.5 rounded-lg border border-surface-tertiary focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all placeholder-content-tertiary"
-                  />
-                </div>
+                <Input 
+                  type="email" 
+                  placeholder="user@example.com"
+                  icon={<Search size={18} />}
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-content-secondary">Bio</label>
-                <textarea 
+                <TextArea 
                   rows={3}
                   placeholder="Tell us about yourself..." 
-                  className="w-full bg-surface-primary text-content-primary px-4 py-2.5 rounded-lg border border-surface-tertiary focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all placeholder-content-tertiary resize-none"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-content-secondary">Disabled Input</label>
-                <input 
+                <Input 
                   type="text" 
                   disabled
                   value="Cannot edit this" 
-                  className="w-full bg-surface-tertiary text-content-tertiary px-4 py-2.5 rounded-lg border border-transparent cursor-not-allowed"
                 />
               </div>
-            </div>
+            </Card>
 
             {/* Controls */}
-            <div className="p-6 bg-surface-secondary rounded-2xl border border-surface-tertiary space-y-6">
+            <Card className="space-y-6">
               <h4 className="text-sm text-content-tertiary font-bold uppercase mb-4">Selection Controls</h4>
               
               {/* Toggle */}
-              <div className="flex items-center justify-between p-3 bg-surface-primary rounded-lg border border-surface-tertiary">
-                <div>
-                  <div className="font-medium">Notifications</div>
-                  <div className="text-xs text-content-tertiary">Receive email alerts</div>
-                </div>
-                <button 
-                  onClick={() => setToggleState(!toggleState)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${toggleState ? 'bg-brand-primary' : 'bg-surface-tertiary'}`}
-                >
-                  <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out ${toggleState ? 'translate-x-6' : 'translate-x-0'}`} />
-                </button>
-              </div>
+              <Card className="p-3 flex items-center justify-between bg-surface-primary border-surface-tertiary">
+                <Toggle 
+                  label="Notifications"
+                  description="Receive email alerts"
+                  checked={toggleState}
+                  onChange={() => setToggleState(!toggleState)}
+                />
+              </Card>
 
               {/* Checkbox */}
-              <div 
-                className="flex items-center gap-3 p-3 bg-surface-primary rounded-lg border border-surface-tertiary cursor-pointer"
-                onClick={() => setCheckboxState(!checkboxState)}
-              >
-                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${checkboxState ? 'bg-brand-primary border-brand-primary' : 'border-content-tertiary bg-transparent'}`}>
-                  {checkboxState && <Check size={14} className="text-brand-dark" />}
-                </div>
-                <div className="select-none">
-                  <div className="font-medium">Terms of Service</div>
-                  <div className="text-xs text-content-tertiary">I agree to the terms</div>
-                </div>
-              </div>
+              <Card className="p-3 flex items-center bg-surface-primary border-surface-tertiary">
+                <Checkbox 
+                  label="Terms of Service"
+                  description="I agree to the terms"
+                  checked={checkboxState}
+                  onChange={() => setCheckboxState(!checkboxState)}
+                />
+              </Card>
 
-            </div>
+            </Card>
           </div>
         </section>
 
@@ -328,15 +318,19 @@ const DesignSystemShowcase: React.FC = () => {
         <section className="space-y-6">
           <SectionHeader title="07. Calendar" description="Date picker component" />
           
-          <div className="max-w-sm mx-auto md:mx-0 p-4 bg-surface-secondary rounded-2xl border border-surface-tertiary shadow-soft">
+          <Card variant="elevated" className="max-w-sm mx-auto md:mx-0 p-4">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-bold text-content-primary flex items-center gap-2">
                 <CalendarIcon size={18} className="text-brand-primary" />
                 October 2025
               </h4>
               <div className="flex gap-1">
-                <IconButton variant="ghost" icon={<ChevronRight size={18} className="rotate-180" />} />
-                <IconButton variant="ghost" icon={<ChevronRight size={18} />} />
+                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                  <ChevronRight size={18} className="rotate-180" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                  <ChevronRight size={18} />
+                </Button>
               </div>
             </div>
             
@@ -371,7 +365,7 @@ const DesignSystemShowcase: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          </Card>
         </section>
 
       </div>
@@ -389,10 +383,10 @@ const SectionHeader = ({ title, description }: { title: string, description: str
 );
 
 const ColorCard = ({ name, hex, bg, text = "text-content-primary" }: { name: string, hex: string, bg: string, text?: string }) => (
-  <div className={`${bg} ${text} p-4 rounded-lg shadow-soft flex flex-col justify-between h-24 border border-black/5`}>
+  <Card className={`${bg} ${text} flex flex-col justify-between h-24 border-black/5 shadow-soft`}>
     <span className="font-bold text-sm">{name}</span>
     <span className="font-mono text-xs opacity-80 uppercase">{hex}</span>
-  </div>
+  </Card>
 );
 
 const TypeSpecimen = ({ size, label, weight, sizeLabel }: any) => (
@@ -407,102 +401,5 @@ const TypeSpecimen = ({ size, label, weight, sizeLabel }: any) => (
     </div>
   </div>
 );
-
-interface ButtonProps {
-  children: React.ReactNode;
-  variant?: "primary" | "secondary" | "ghost";
-  disabled?: boolean;
-  icon?: React.ReactNode;
-  onClick?: () => void;
-}
-
-const Button: React.FC<ButtonProps> = ({ children, variant = "primary", disabled = false, icon, onClick }) => {
-  const baseStyles = "px-5 py-2.5 rounded-lg font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center gap-2";
-  
-  const variants = {
-    primary: "bg-brand-primary text-brand-dark hover:brightness-110 shadow-soft",
-    secondary: "bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80 border border-surface-tertiary",
-    ghost: "bg-transparent text-content-secondary hover:text-content-primary hover:bg-surface-tertiary",
-  };
-
-  return (
-    <button disabled={disabled} onClick={onClick} className={`${baseStyles} ${variants[variant]}`}>
-      {icon && <span>{icon}</span>}
-      {children}
-    </button>
-  );
-};
-
-const IconButton = ({ icon, variant = "primary" }: { icon: React.ReactNode, variant?: "primary" | "secondary" | "ghost" }) => {
-  const baseStyles = "p-2.5 rounded-lg transition-all active:scale-[0.95] flex items-center justify-center";
-  const variants = {
-    primary: "bg-brand-primary text-brand-dark hover:brightness-110 shadow-soft",
-    secondary: "bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80 border border-surface-tertiary",
-    ghost: "bg-transparent text-content-secondary hover:text-content-primary hover:bg-surface-tertiary",
-  };
-  
-  return (
-    <button className={`${baseStyles} ${variants[variant]}`}>
-      {icon}
-    </button>
-  );
-};
-
-const Badge = ({ label, variant = "neutral" }: { label: string, variant?: "success" | "warning" | "error" | "info" | "neutral" }) => {
-  const variants = {
-    success: "bg-success/20 text-success border-success/30",
-    warning: "bg-warning/20 text-warning border-warning/30",
-    error: "bg-error/20 text-error border-error/30",
-    info: "bg-info/20 text-info border-info/30",
-    neutral: "bg-surface-tertiary text-content-secondary border-surface-tertiary",
-  };
-
-  return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${variants[variant]}`}>
-      {label}
-    </span>
-  );
-};
-
-const Avatar = ({ size = "md", src, fallback, status, className = "" }: any) => {
-  const sizes = {
-    sm: "w-8 h-8 text-xs",
-    md: "w-10 h-10 text-sm",
-    lg: "w-16 h-16 text-lg",
-  };
-
-  return (
-    <div className={`relative ${className}`}>
-      <div className={`${sizes[size]} rounded-full bg-surface-tertiary flex items-center justify-center overflow-hidden border border-surface-tertiary`}>
-        {src ? (
-          <img src={src} alt="Avatar" className="w-full h-full object-cover" />
-        ) : (
-          <span className="font-bold text-content-secondary">{fallback}</span>
-        )}
-      </div>
-      {status && (
-        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface-secondary ${
-          status === 'online' ? 'bg-success' : 'bg-content-tertiary'
-        }`} />
-      )}
-    </div>
-  );
-};
-
-const ProgressBar = ({ value, variant = "primary" }: { value: number, variant?: "primary" | "success" }) => {
-  const colors = {
-    primary: "bg-brand-primary",
-    success: "bg-success",
-  };
-
-  return (
-    <div className="w-full h-2 bg-surface-tertiary rounded-full overflow-hidden">
-      <div 
-        className={`h-full transition-all duration-500 ${colors[variant]}`} 
-        style={{ width: `${value}%` }}
-      />
-    </div>
-  );
-};
 
 export default DesignSystemShowcase;
