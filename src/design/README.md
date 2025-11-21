@@ -28,12 +28,13 @@ src/design/
 │   ├── Button.tsx
 │   ├── Card.tsx
 │   ├── Badge.tsx
-│   ├── Chip.tsx       # NEW: Interactive badge/pill
+│   ├── Chip.tsx       # Interactive badge/pill
 │   ├── Avatar.tsx
 │   ├── Input.tsx
 │   ├── Checkbox.tsx
 │   ├── Toggle.tsx
 │   ├── ProgressBar.tsx
+│   ├── Skeleton.tsx   # NEW: Loading placeholders
 │   └── index.ts       # Exports all components
 └── README.md          # This file
 ```
@@ -151,6 +152,19 @@ text-content-tertiary  // Metadata
   <Chip label="Pending" variant="warning" />
   <Chip label="Cancelled" variant="error" />
 </div>
+```
+
+**Loading states with skeletons:**
+```tsx
+{loading ? (
+  <>
+    <Skeleton variant="text" width="60%" height={24} />
+    <SkeletonText lines={3} />
+    <SkeletonCard hasAvatar />
+  </>
+) : (
+  <RealContent />
+)}
 ```
 
 ## Rules

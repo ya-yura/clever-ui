@@ -112,6 +112,9 @@ Added references to:
 | **TextArea** | — | error, disabled, rows | ✅ Complete |
 | **Checkbox** | — | label, description, checked, onChange | ✅ Complete |
 | **Toggle** | — | label, description, checked, onChange | ✅ Complete |
+| **Skeleton** | text, circular, rectangular | width, height, animation | ✅ Complete |
+| **SkeletonText** | — | lines | ✅ Complete |
+| **SkeletonCard** | — | hasAvatar, hasImage | ✅ Complete |
 
 ### All Components:
 - ✅ Use design tokens via Tailwind classes
