@@ -9,7 +9,10 @@ import {
   MoreHorizontal,
   Settings,
   Home,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Import from our new Design System Component Library
 import {
@@ -26,6 +29,7 @@ import {
 
 const DesignSystemShowcase: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [toggleState, setToggleState] = useState(false);
   const [checkboxState, setCheckboxState] = useState(true);
 
@@ -40,6 +44,14 @@ const DesignSystemShowcase: React.FC = () => {
             <p className="text-content-secondary text-lg">Cleverence Mobile Proto • v1.0.0</p>
           </div>
           <div className="flex gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </Button>
             <Button variant="secondary" onClick={() => navigate('/')} startIcon={<Home size={18} />}>
               Back to Home
             </Button>

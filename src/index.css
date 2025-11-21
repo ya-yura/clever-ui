@@ -5,13 +5,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   🎨 CSS VARIABLES FOR THEME SWITCHING
+   ============================================ */
+
+/* Default theme (Dark) */
+:root {
+  /* Surface colors (backgrounds) */
+  --color-surface-primary: #242424;
+  --color-surface-secondary: #343436;
+  --color-surface-tertiary: #474747;
+  --color-surface-inverse: #ffffff;
+
+  /* Content colors (text) */
+  --color-content-primary: #ffffff;
+  --color-content-secondary: #e3e3dd;
+  --color-content-tertiary: #a7a7a7;
+  --color-content-inverse: #242424;
+
+  /* Brand colors (consistent across themes) */
+  --color-brand-primary: #daa420;
+  --color-brand-dark: #725a1e;
+  --color-brand-secondary: #86e0cb;
+
+  /* Status colors (consistent across themes) */
+  --color-success: #91ed91;
+  --color-warning: #f3a361;
+  --color-error: #ba8f8e;
+  --color-info: #86e0cb;
+}
+
+/* Light theme override */
+[data-theme='light'] {
+  /* Surface colors (backgrounds) */
+  --color-surface-primary: #f6f7fb;
+  --color-surface-secondary: #ffffff;
+  --color-surface-tertiary: #e2e8f0;
+  --color-surface-inverse: #1f2933;
+
+  /* Content colors (text) */
+  --color-content-primary: #1f2933;
+  --color-content-secondary: #52606d;
+  --color-content-tertiary: #94a3b8;
+  --color-content-inverse: #ffffff;
+}
+
 html {
   font-family: 'Atkinson Hyperlegible', 'Noto Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
-  color: #e3e3dd;
-  background-color: #343436;
+  color: var(--color-content-secondary);
+  background-color: var(--color-surface-primary);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,16 +66,14 @@ html {
 
 html[data-theme='light'] {
   color-scheme: light;
-  color: #1f2933;
-  background-color: #f6f7fb;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: inherit;
-  color: inherit;
+  background-color: var(--color-surface-primary);
+  color: var(--color-content-secondary);
 }
 
 * {

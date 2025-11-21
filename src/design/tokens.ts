@@ -5,23 +5,27 @@ import designSystem from '../theme/design-system.json';
  * 
  * Single source of truth for the application's design language.
  * Usage: import { tokens } from '@/design/tokens';
+ * 
+ * Theme switching is handled via CSS variables in index.css.
+ * These tokens reference the CSS variables for surface/content colors,
+ * which change based on [data-theme='light'|'dark'] attribute.
  */
 
 export const tokens = {
   colors: {
-    // Surface: Backgrounds and containers
+    // Surface: Backgrounds and containers (theme-switchable via CSS variables)
     surface: {
-      primary: designSystem.dna.colors.surface.primary,
-      secondary: designSystem.dna.colors.surface.secondary,
-      tertiary: designSystem.dna.colors.surface.tertiary,
-      inverse: designSystem.dna.colors.surface.inverse,
+      primary: 'var(--color-surface-primary)',
+      secondary: 'var(--color-surface-secondary)',
+      tertiary: 'var(--color-surface-tertiary)',
+      inverse: 'var(--color-surface-inverse)',
     },
-    // Content: Text and icons
+    // Content: Text and icons (theme-switchable via CSS variables)
     content: {
-      primary: designSystem.dna.colors.content.primary,
-      secondary: designSystem.dna.colors.content.secondary,
-      tertiary: designSystem.dna.colors.content.tertiary,
-      inverse: designSystem.dna.colors.content.inverse,
+      primary: 'var(--color-content-primary)',
+      secondary: 'var(--color-content-secondary)',
+      tertiary: 'var(--color-content-tertiary)',
+      inverse: 'var(--color-content-inverse)',
     },
     // Brand: Main brand colors
     brand: {
@@ -76,6 +80,15 @@ export const tokens = {
       accelerate: 'cubic-bezier(0.4, 0.0, 1, 1)',     // Exiting elements
       sharp: 'cubic-bezier(0.4, 0.0, 0.6, 1)',        // Quick feedback
     },
+  },
+
+  /**
+   * Theme-specific values (for reference/documentation)
+   * Actual colors are set via CSS variables in index.css
+   */
+  themes: {
+    dark: designSystem.dna.colors.dark,
+    light: designSystem.dna.colors.light,
   },
 } as const;
 

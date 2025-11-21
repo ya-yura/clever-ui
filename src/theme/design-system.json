@@ -3,17 +3,33 @@
   "version": "1.0.0",
   "dna": {
     "colors": {
-      "surface": {
-        "primary": "#242424",
-        "secondary": "#343436",
-        "tertiary": "#474747",
-        "inverse": "#ffffff"
+      "dark": {
+        "surface": {
+          "primary": "#242424",
+          "secondary": "#343436",
+          "tertiary": "#474747",
+          "inverse": "#ffffff"
+        },
+        "content": {
+          "primary": "#ffffff",
+          "secondary": "#e3e3dd",
+          "tertiary": "#a7a7a7",
+          "inverse": "#242424"
+        }
       },
-      "content": {
-        "primary": "#ffffff",
-        "secondary": "#e3e3dd",
-        "tertiary": "#a7a7a7",
-        "inverse": "#242424"
+      "light": {
+        "surface": {
+          "primary": "#f6f7fb",
+          "secondary": "#ffffff",
+          "tertiary": "#e2e8f0",
+          "inverse": "#1f2933"
+        },
+        "content": {
+          "primary": "#1f2933",
+          "secondary": "#52606d",
+          "tertiary": "#94a3b8",
+          "inverse": "#ffffff"
+        }
       },
       "brand": {
         "primary": "#daa420",

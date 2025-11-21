@@ -4,7 +4,6 @@ import { join } from 'path';
 // Читаем Design System DNA напрямую из файла источника
 const designSystemPath = join(process.cwd(), 'src/theme/design-system.json');
 const designSystem = JSON.parse(readFileSync(designSystemPath, 'utf-8'));
-const { colors } = designSystem.dna;
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -18,29 +17,59 @@ export default {
         sans: ['"Atkinson Hyperlegible"', 'sans-serif'],
       },
       colors: {
-        // Подключаем цвета динамически из design-system.json
-        surface: colors.surface,
-        content: colors.content,
-        brand: {
-          ...colors.brand,
-          dark: colors.brand.primaryDark // Mapping для совместимости
+        // Semantic colors using CSS variables (theme-switchable)
+        surface: {
+          primary: 'var(--color-surface-primary)',
+          secondary: 'var(--color-surface-secondary)',
+          tertiary: 'var(--color-surface-tertiary)',
+          inverse: 'var(--color-surface-inverse)',
         },
-        status: colors.status,
+        content: {
+          primary: 'var(--color-content-primary)',
+          secondary: 'var(--color-content-secondary)',
+          tertiary: 'var(--color-content-tertiary)',
+          inverse: 'var(--color-content-inverse)',
+        },
         
-        // Алиасы для совместимости с легаси кодом, если нужно
-        success: colors.status.success,
-        warning: colors.status.warning,
-        error: colors.status.error,
-        info: colors.status.info,
+        // Brand colors (consistent across themes)
+        brand: {
+          primary: 'var(--color-brand-primary)',
+          dark: 'var(--color-brand-dark)',
+          secondary: 'var(--color-brand-secondary)',
+        },
         
-        // Legacy Modules (Preserved but mapped to new palette where possible)
+        // Status colors (consistent across themes)
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        error: 'var(--color-error)',
+        info: 'var(--color-info)',
+        
+        // Legacy Modules (using brand colors)
         modules: {
-          receiving: { bg: colors.brand.primary, text: colors.brand.primaryDark },
-          inventory: { bg: '#fea079', text: '#8c533b' }, // Пока оставим, если нет в палитре
-          picking: { bg: colors.status.warning, text: '#8b5931' },
-          placement: { bg: colors.brand.secondary, text: '#2d7a6b' },
-          shipment: { bg: colors.status.success, text: '#2d6b2d' },
-          return: { bg: colors.status.error, text: '#6b3d3c' },
+          receiving: { 
+            bg: designSystem.dna.colors.brand.primary, 
+            text: designSystem.dna.colors.brand.primaryDark 
+          },
+          inventory: { 
+            bg: '#fea079', 
+            text: '#8c533b' 
+          },
+          picking: { 
+            bg: designSystem.dna.colors.status.warning, 
+            text: '#8b5931' 
+          },
+          placement: { 
+            bg: designSystem.dna.colors.brand.secondary, 
+            text: '#2d7a6b' 
+          },
+          shipment: { 
+            bg: designSystem.dna.colors.status.success, 
+            text: '#2d6b2d' 
+          },
+          return: { 
+            bg: designSystem.dna.colors.status.error, 
+            text: '#6b3d3c' 
+          },
         },
       },
       borderRadius: {
