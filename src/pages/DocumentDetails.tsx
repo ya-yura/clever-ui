@@ -273,7 +273,7 @@ const DocumentDetails: React.FC = () => {
     { key: 'progress', label: 'В работе', className: 'bg-[#253456] text-blue-200' },
     { key: 'pending', label: 'Не начато', className: 'bg-[#3f3f3f] text-[#f3f3f3]' },
     { key: 'done', label: 'Готово', className: 'bg-[#1f3d34] text-emerald-200' },
-    { key: 'over', label: 'Переполнено', className: 'bg-[#4a3a1f] text-amber-100' },
+    { key: 'over', label: 'Переп.', className: 'bg-[#4a3a1f] text-amber-100' },
   ];
 
   // Loading state
