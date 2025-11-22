@@ -406,7 +406,6 @@ const DocumentDetails: React.FC = () => {
                   <div className="flex items-center gap-2 text-[11px] text-[#f5f5f5]">
                     <span>Пл {formatQuantity(planned)}</span>
                     <span>Факт {formatQuantity(actual)}</span>
-                    <span className={`${diffColor} font-semibold`}>{diffLabel}</span>
                   </div>
                 </div>
 
