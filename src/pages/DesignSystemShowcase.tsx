@@ -99,8 +99,8 @@ const DesignSystemShowcase: React.FC = () => {
             <Tooltip content={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
               <IconButton 
                 icon={theme === 'dark' ? <Sun /> : <Moon />}
-                variant="ghost"
-                onClick={toggleTheme}
+              variant="ghost" 
+              onClick={toggleTheme}
                 aria-label={theme === 'dark' ? 'Переключить на светлую' : 'Переключить на тёмную'}
               />
             </Tooltip>
@@ -123,14 +123,14 @@ const DesignSystemShowcase: React.FC = () => {
                 <Button variant="secondary">Вторичная</Button>
                 <Button variant="ghost">Призрачная</Button>
                 <Button variant="danger">Опасная</Button>
-              </div>
+            </div>
 
               <div className="flex flex-wrap gap-3 items-center">
                 <Button variant="primary" startIcon={<Check size={18} />}>Сохранить</Button>
                 <Button variant="secondary" endIcon={<ChevronRight size={18} />}>Далее</Button>
                 <Button variant="primary" isLoading>Загрузка</Button>
                 <Button variant="primary" disabled>Недоступна</Button>
-              </div>
+            </div>
 
               <div className="flex flex-wrap gap-3 items-center">
                 <Button size="sm">Мелкая</Button>
@@ -147,7 +147,7 @@ const DesignSystemShowcase: React.FC = () => {
                 <IconButton icon={<Bell />} variant="primary" badge={5} />
                 <IconButton icon={<Settings />} variant="ghost" />
                 <IconButton icon={<Trash2 />} variant="danger" />
-              </div>
+            </div>
 
               <div className="flex flex-wrap gap-4 items-center">
                 <IconButton icon={<Filter />} size="sm" variant="secondary" />
@@ -200,7 +200,7 @@ const DesignSystemShowcase: React.FC = () => {
             {/* Selection Controls */}
             <Card className="space-y-6">
               <h4 className="text-sm text-content-tertiary font-bold uppercase mb-2">Выбор и переключение</h4>
-              
+
               <div className="space-y-4">
                 <Checkbox 
                   label="Я согласен с условиями"
@@ -303,7 +303,7 @@ const DesignSystemShowcase: React.FC = () => {
                   Контент недоступен
                 </AccordionItem>
               </Accordion>
-            </Card>
+              </Card>
           </div>
 
           <Card>
@@ -347,7 +347,7 @@ const DesignSystemShowcase: React.FC = () => {
                 />
               </List>
             </div>
-          </Card>
+            </Card>
         </section>
 
         {/* 4. Обратная связь */}
@@ -382,7 +382,7 @@ const DesignSystemShowcase: React.FC = () => {
                 <Spinner size="md" />
                 <Spinner size="lg" variant="secondary" />
                 <Spinner size="xl" />
-              </div>
+                </div>
 
               <Divider />
 
@@ -404,7 +404,7 @@ const DesignSystemShowcase: React.FC = () => {
         {/* 5. Элементы интерфейса */}
         <section className="space-y-6">
           <SectionHeader title="05. Элементы интерфейса" description="Бейджи, аватары, карточки" />
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="space-y-4">
               <h4 className="text-sm text-content-tertiary font-bold uppercase">Бейджи</h4>
@@ -423,7 +423,7 @@ const DesignSystemShowcase: React.FC = () => {
                 <Chip label="Фильтр" />
                 <Chip label="Активный" active />
                 <Chip label="Удаляемый" active icon={<X size={14} />} />
-              </div>
+            </div>
             </Card>
 
             <Card className="space-y-4">
@@ -434,8 +434,8 @@ const DesignSystemShowcase: React.FC = () => {
                 <Avatar size="lg" src="https://i.pravatar.cc/150?u=3" name="Анна С." />
               </div>
             </Card>
-          </div>
-
+            </div>
+            
           <Card>
             <h4 className="text-sm text-content-tertiary font-bold uppercase mb-4">Скелетоны (Загрузка)</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

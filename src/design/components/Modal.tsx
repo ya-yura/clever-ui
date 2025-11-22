@@ -142,9 +142,11 @@ export const Modal: React.FC<ModalProps> = ({
 /**
  * Modal.Footer helper component
  */
-Modal.Footer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+const ModalFooter = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`flex items-center justify-end gap-3 ${className}`}>
     {children}
   </div>
 );
+
+(Modal as any).Footer = ModalFooter;
 

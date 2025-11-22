@@ -49,6 +49,7 @@ function App() {
               {/* Public routes */}
               <Route path="/setup" element={<Setup />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/design-system" element={<DesignSystemShowcase />} />
 
               {/* Protected routes */}
               <Route
@@ -82,7 +83,6 @@ function App() {
                 <Route path="about" element={<About />} />
                 <Route path="feedback" element={<Feedback />} />
                 <Route path="sound-test" element={<SoundTest />} />
-                <Route path="design-system" element={<DesignSystemShowcase />} />
                 <Route path="custom-interface" element={<DynamicGridInterface />} />
               </Route>
 

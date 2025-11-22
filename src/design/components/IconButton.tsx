@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
-export type IconButtonVariant = 'default' | 'primary' | 'ghost' | 'danger';
+export type IconButtonVariant = 'default' | 'primary' | 'secondary' | 'ghost' | 'danger';
 export type IconButtonSize = 'sm' | 'md' | 'lg';
 
 interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -33,6 +33,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const variants: Record<IconButtonVariant, string> = {
     default: 'bg-surface-tertiary text-content-primary hover:bg-surface-tertiary/80 focus:ring-surface-tertiary',
     primary: 'bg-brand-primary text-brand-primaryDark hover:brightness-110 focus:ring-brand-primary',
+    secondary: 'bg-surface-secondary text-content-primary hover:bg-surface-tertiary focus:ring-surface-secondary',
     ghost: 'bg-transparent text-content-secondary hover:text-content-primary hover:bg-surface-tertiary focus:ring-content-secondary',
     danger: 'bg-error/10 text-error hover:bg-error/20 border border-error/30 focus:ring-error',
   };
