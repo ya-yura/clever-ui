@@ -23,7 +23,7 @@
 ### Что включает система
 
 - **Design Tokens** — цвета, типографика, отступы, тени, анимации
-- **Components** — 18+ готовых компонентов с вариантами
+- **Components** — 25 готовых компонентов с вариантами
 - **Guidelines** — правила использования и best practices
 - **Patterns** — типовые решения для частых задач
 - **Accessibility** — встроенная поддержка WCAG 2.1 AA
@@ -70,7 +70,7 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
 │   │   ├── Modal.tsx
-│   │   └── ... (18+ компонентов)
+│   │   └── ... (25 компонентов)
 │   └── README.md               # Краткая справка
 ├── index.css                   # CSS variables для темизации
 └── tailwind.config.js          # Интеграция токенов в Tailwind
@@ -150,10 +150,10 @@ const StyledDiv = styled.div`
 #### [COMPONENTS.md](./COMPONENTS.md)
 Каталог всех компонентов с примерами:
 - Base: Button, IconButton, Card, Badge, Avatar, Chip, ProgressBar, Skeleton
-- Forms: Input, Checkbox, Toggle, Select
-- Navigation: Tabs, List, ListItem
-- Layout: Divider
-- Overlays: Modal, Toast, Tooltip
+- Forms: Input, Checkbox, Toggle, Select, Radio, TextArea
+- Navigation: Tabs, List, ListItem, Accordion
+- Layout: Divider, Drawer
+- Overlays: Modal, Toast, Alert, Tooltip
 
 #### [GUIDELINES.md](./GUIDELINES.md)
 Правила использования:
@@ -276,7 +276,7 @@ URL: http://localhost:5173/design-system
 
 ### История версий
 
-- **2.0.0** (22.11.2025) — Полная дизайн-система с 18+ компонентами
+- **2.0.0** (22.11.2025) — Полная дизайн-система с 25 компонентами
 - **1.0.0** (31.10.2025) — Базовая система с основными компонентами
 
 ---
@@ -287,7 +287,6 @@ URL: http://localhost:5173/design-system
 - [ ] Dropdown/Menu компонент
 - [ ] DatePicker компонент
 - [ ] Stepper компонент
-- [ ] Accordion компонент
 - [ ] Table компонент
 
 ### Планируется
@@ -299,4 +298,3 @@ URL: http://localhost:5173/design-system
 ---
 
 **Создано с ❤️ командой Cleverence**
-

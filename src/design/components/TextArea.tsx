@@ -1,68 +1,45 @@
 import React from 'react';
 
-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
-  hint?: string;
   fullWidth?: boolean;
 }
 
-/**
- * TextArea Component
- * 
- * Multi-line text input field.
- */
 export const TextArea: React.FC<TextAreaProps> = ({
-  className = '',
   label,
   error,
-  hint,
   fullWidth = false,
+  className = '',
   disabled,
   ...props
 }) => {
-  const widthClass = fullWidth ? 'w-full' : '';
-  const errorClass = error 
-    ? 'border-status-error focus:ring-status-error' 
-    : 'border-border-default focus:ring-border-focus';
-  const disabledClass = disabled 
-    ? 'opacity-50 cursor-not-allowed bg-surface-disabled text-content-disabled' 
-    : 'bg-surface-secondary text-content-primary';
-
   return (
-    <div className={`${widthClass} ${className}`}>
+    <div className={`${fullWidth ? 'w-full' : 'w-auto'} ${className}`}>
       {label && (
-        <label className="block mb-2 text-sm font-medium text-content-secondary">
+        <label className="block text-sm font-medium text-content-secondary mb-1.5">
           {label}
         </label>
       )}
-      
       <textarea
-        className={`
-          min-h-[80px]
-          px-4 py-3
-          rounded-lg
-          border
-          text-base
-          placeholder-content-tertiary
-          transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-offset-0
-          ${errorClass}
-          ${disabledClass}
-          ${widthClass}
-        `}
         disabled={disabled}
+        className={`
+          px-3 py-2 rounded-lg border bg-surface-primary text-content-primary
+          placeholder:text-content-tertiary
+          focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary
+          transition-all duration-200 min-h-[80px]
+          ${fullWidth ? 'w-full' : 'w-auto'}
+          ${error 
+            ? 'border-status-error focus:border-status-error focus:ring-status-error/20' 
+            : 'border-surface-tertiary hover:border-content-tertiary'
+          }
+          ${disabled ? 'bg-surface-secondary opacity-50 cursor-not-allowed' : ''}
+        `}
         {...props}
       />
-
-      {hint && !error && (
-        <p className="mt-1.5 text-xs text-content-tertiary">{hint}</p>
-      )}
-      
       {error && (
-        <p className="mt-1.5 text-xs text-status-error">{error}</p>
+        <p className="mt-1 text-xs text-status-error">{error}</p>
       )}
     </div>
   );
 };
-

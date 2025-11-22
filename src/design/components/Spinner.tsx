@@ -1,44 +1,41 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { tokens } from '../../design/tokens';
 
-export type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl';
-
-interface SpinnerProps {
-  size?: SpinnerSize;
-  variant?: 'primary' | 'secondary' | 'white';
+export interface SpinnerProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'default' | 'primary' | 'secondary' | 'white';
   className?: string;
 }
 
-/**
- * Spinner Component
- * 
- * Loading indicator.
- */
 export const Spinner: React.FC<SpinnerProps> = ({
   size = 'md',
   variant = 'primary',
   className = '',
 }) => {
-  const sizes = {
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48,
+  const sizeClasses = {
+    sm: 'w-4 h-4 border-2',
+    md: 'w-6 h-6 border-2',
+    lg: 'w-8 h-8 border-3',
+    xl: 'w-12 h-12 border-4',
   };
 
-  const variants = {
-    primary: 'text-brand-primary',
-    secondary: 'text-content-tertiary',
-    white: 'text-white',
+  const variantClasses = {
+    default: 'border-surface-tertiary border-t-content-primary',
+    primary: 'border-surface-tertiary border-t-brand-primary',
+    secondary: 'border-surface-tertiary border-t-brand-secondary',
+    white: 'border-white/30 border-t-white',
   };
 
   return (
-    <Loader2 
-      className={`animate-spin ${variants[variant]} ${className}`}
-      size={sizes[size]}
+    <div
+      className={`
+        rounded-full animate-spin
+        ${sizeClasses[size]}
+        ${variantClasses[variant]}
+        ${className}
+      `}
       role="status"
       aria-label="Загрузка"
     />
   );
 };
-

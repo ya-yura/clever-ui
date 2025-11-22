@@ -153,34 +153,34 @@ PWA-приложение для управления складскими опе
 ### 📚 Документация
 - **[Главная страница](DOCS/design-system/README.md)** — философия, принципы, быстрый старт
 - **[Токены](DOCS/design-system/TOKENS.md)** — цвета, типографика, отступы, анимации
-- **[Компоненты](DOCS/design-system/COMPONENTS.md)** — каталог 18+ компонентов с примерами
+- **[Компоненты](DOCS/design-system/COMPONENTS.md)** — каталог 25 компонентов с примерами
 - **[Руководство](DOCS/design-system/GUIDELINES.md)** — правила использования
 - **[Паттерны](DOCS/design-system/PATTERNS.md)** — типовые решения (формы, модалы, списки)
 - **[Доступность](DOCS/design-system/ACCESSIBILITY.md)** — WCAG 2.1 AA, клавиатура, screen readers
 
 ### 🧩 Компоненты
 - **Base:** Button, IconButton, Card, Badge, Avatar, Chip, ProgressBar, Skeleton
-- **Forms:** Input, Checkbox, Toggle, Select
-- **Navigation:** Tabs, List, ListItem
-- **Layout:** Divider
-- **Overlays:** Modal, Toast, Tooltip
+- **Forms:** Input, Checkbox, Toggle, Select, Radio, TextArea
+- **Navigation:** Tabs, List, ListItem, Accordion
+- **Layout:** Divider, Drawer
+- **Overlays:** Modal, Toast, Alert, Tooltip
 
 ### 🎯 Возможности
 - ✅ **80+ токенов дизайна** — цвета, размеры, отступы, тени
-- ✅ **18+ компонентов** — готовые к использованию
+- ✅ **25 компонентов** — готовые к использованию
 - ✅ **Темизация** — светлая и тёмная тема
 - ✅ **WCAG 2.1 AA** — полная доступность
 - ✅ **TypeScript** — полная типизация
-- ✅ **Документация** — 500+ примеров кода
+- ✅ **Полностью на русском** — локализация интерфейса и документации
 
 ### 🚀 Быстрый старт
 ```tsx
 import { Button, Card, Input } from '@/design/components';
 
 <Card variant="elevated">
-  <h2 className="text-xl font-bold mb-4">Форма</h2>
+  <h2 className="text-xl font-bold mb-4">Вход в систему</h2>
   <Input label="Email" type="email" fullWidth />
-  <Button variant="primary" fullWidth>Отправить</Button>
+  <Button variant="primary" fullWidth>Войти</Button>
 </Card>
 ```
 
@@ -193,7 +193,7 @@ import { Button, Card, Input } from '@/design/components';
 - **React 18** - UI библиотека
 - **TypeScript** - Типизация
 - **TailwindCSS** - Стилизация + Design Tokens
-- **Дизайн-система v2.0** - 18+ компонентов
+- **Дизайн-система v2.0** - 25 компонентов
 - **Dexie.js** - IndexedDB обёртка
 - **Axios** - HTTP клиент
 - **React Router** - Маршрутизация
@@ -401,32 +401,16 @@ proto-3/
 │   └── sw.js             # Service Worker
 ├── src/
 │   ├── components/       # React компоненты
-│   │   ├── placement/
-│   │   ├── picking/
-│   │   └── receiving/
+│   ├── design/           # Дизайн-система
+│   │   ├── components/   # UI компоненты
+│   │   └── tokens.ts     # Дизайн-токены
 │   ├── config/          # Конфигурация
-│   │   └── server.json
 │   ├── data/            # Тестовые данные
 │   ├── hooks/           # React хуки
-│   │   ├── useScanner.ts
-│   │   ├── useOfflineStorage.ts
-│   │   └── useSync.ts
-│   ├── pages/           # Страницы модулей
-│   │   ├── Receiving.tsx
-│   │   ├── Placement.tsx
-│   │   ├── Picking.tsx
-│   │   ├── Shipment.tsx
-│   │   ├── Return.tsx
-│   │   └── Inventory.tsx
+│   ├── pages/           # Страницы
 │   ├── services/        # Сервисы
-│   │   ├── api.ts
-│   │   └── db.ts
 │   ├── types/           # TypeScript типы
 │   ├── utils/           # Утилиты
-│   │   ├── sound.ts
-│   │   ├── vibration.ts
-│   │   ├── voice.ts
-│   │   └── feedback.ts
 │   ├── App.tsx          # Главный компонент
 │   ├── main.tsx         # Точка входа
 │   └── index.css        # Глобальные стили

@@ -1,97 +1,86 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
-interface DrawerProps {
+export interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  position?: 'right' | 'left' | 'bottom';
   title?: string;
   children: React.ReactNode;
-  position?: 'bottom' | 'right' | 'left';
   className?: string;
 }
 
-/**
- * Drawer Component
- * 
- * Navigation drawer or bottom sheet for mobile.
- */
 export const Drawer: React.FC<DrawerProps> = ({
   isOpen,
   onClose,
+  position = 'right',
   title,
   children,
-  position = 'bottom',
   className = '',
 }) => {
   useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      window.addEventListener('keydown', handleEscape);
     }
+
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen]);
-
-  const positions = {
-    bottom: 'inset-x-0 bottom-0 rounded-t-2xl border-t max-h-[90vh]',
-    right: 'inset-y-0 right-0 w-full max-w-sm border-l h-full',
-    left: 'inset-y-0 left-0 w-full max-w-sm border-r h-full',
-  };
-
-  const animations = {
-    bottom: 'slide-in-from-bottom',
-    right: 'slide-in-from-right',
-    left: 'slide-in-from-left',
-  };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  return (
-    <div 
-      className="fixed inset-0 z-modal flex justify-end" 
-      role="dialog" 
-      aria-modal="true"
-    >
+  const positionClasses = {
+    right: 'top-0 right-0 h-full w-full md:w-96 transform translate-x-0',
+    left: 'top-0 left-0 h-full w-full md:w-96 transform translate-x-0',
+    bottom: 'bottom-0 left-0 w-full h-auto max-h-[90vh] rounded-t-xl transform translate-y-0',
+  };
+
+  const initialPositionClasses = {
+    right: 'translate-x-full',
+    left: '-translate-x-full',
+    bottom: 'translate-y-full',
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-surface-overlay backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-
+      
       {/* Drawer Content */}
       <div className={`
-        relative bg-surface-secondary border-border-default shadow-2xl
-        flex flex-col
-        animate-in ${animations[position]} duration-300 ease-out
-        ${positions[position]}
+        absolute bg-surface-primary shadow-2xl flex flex-col transition-transform duration-300 ease-out
+        ${positionClasses[position]}
         ${className}
       `}>
-        {/* Handle for bottom sheet */}
-        {position === 'bottom' && (
-          <div className="flex justify-center pt-3 pb-1" onClick={onClose}>
-            <div className="w-12 h-1.5 bg-surface-tertiary rounded-full" />
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border-light shrink-0">
-          {title && <h2 className="text-lg font-bold text-content-primary">{title}</h2>}
-          <button 
+        <div className="flex items-center justify-between p-4 border-b border-surface-tertiary">
+          <h2 className="text-lg font-bold text-content-primary">
+            {title}
+          </h2>
+          <button
             onClick={onClose}
-            className="p-2 -mr-2 text-content-tertiary hover:text-content-primary rounded-full hover:bg-surface-tertiary transition-colors"
+            className="p-2 -mr-2 rounded-full hover:bg-surface-secondary text-content-secondary transition-colors"
+            aria-label="Закрыть"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        
+        <div className="flex-1 overflow-y-auto p-4">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
-
