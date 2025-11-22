@@ -216,6 +216,60 @@ const DocumentDetails: React.FC = () => {
     });
   };
 
+  const getItemStatus = (planned: number, actual: number) => {
+    if (planned <= 0 && actual <= 0) return 'pending';
+    if (actual === 0) return 'pending';
+    if (actual >= planned && planned > 0) return actual > planned ? 'over' : 'done';
+    if (actual > 0 && actual < planned) return 'progress';
+    return 'pending';
+  };
+
+  const STATUS_META: Record<
+    ReturnType<typeof getItemStatus>,
+    { label: string; badge: string; border: string; progress: string }
+  > = {
+    pending: {
+      label: 'Не начато',
+      badge: 'bg-[#363636] text-[#c5c5c5]',
+      border: 'border-[#4f4f4f]',
+      progress: 'bg-[#4f4f4f]',
+    },
+    progress: {
+      label: 'В работе',
+      badge: 'bg-blue-500/15 text-blue-300 ring-1 ring-inset ring-blue-500/40',
+      border: 'border-blue-500/50',
+      progress: 'bg-blue-500/70',
+    },
+    done: {
+      label: 'Готово',
+      badge: 'bg-emerald-500/20 text-emerald-200 ring-1 ring-inset ring-emerald-400/40',
+      border: 'border-emerald-500/40',
+      progress: 'bg-emerald-400/90',
+    },
+    over: {
+      label: 'Переполнено',
+      badge: 'bg-amber-500/20 text-amber-100 ring-1 ring-inset ring-amber-400/40',
+      border: 'border-amber-500/50',
+      progress: 'bg-amber-400/90',
+    },
+  };
+
+  const statusCounters = items.reduce(
+    (acc, item) => {
+      const planned = typeof item.declaredQuantity === 'number'
+        ? item.declaredQuantity
+        : Number(item.quantityPlan ?? item.plan ?? 0);
+      const actualCandidate =
+        item.currentQuantity ?? item.currentQuantityWithBinding ?? item.quantityFact ?? item.factQuantity ?? 0;
+      const actual = typeof actualCandidate === 'number' ? actualCandidate : Number(actualCandidate || 0);
+
+      const status = getItemStatus(planned, actual);
+      acc[status] += 1;
+      return acc;
+    },
+    { pending: 0, progress: 0, done: 0, over: 0 },
+  );
+
   return (
     <div className="space-y-3">
       {/* Document header (compact) */}
@@ -231,7 +285,26 @@ const DocumentDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Items table */}
+      {items.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          {([
+            { key: 'progress', label: 'В работе', className: 'text-blue-300 bg-blue-500/20' },
+            { key: 'pending', label: 'Не начато', className: 'text-[#d0d0d0] bg-[#444]' },
+            { key: 'done', label: 'Готово', className: 'text-emerald-200 bg-emerald-500/20' },
+            { key: 'over', label: 'Переполнено', className: 'text-amber-100 bg-amber-500/20' },
+          ] as const).map((stat) => (
+            <div
+              key={stat.key}
+              className={`rounded-lg px-3 py-2 border border-white/5 ${stat.className}`}
+            >
+              <div className="text-[10px] uppercase tracking-wide opacity-70">{stat.label}</div>
+              <div className="text-xl font-semibold">{statusCounters[stat.key]}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Items list */}
       {items.length === 0 ? (
         <div className="text-center py-12 bg-[#474747] rounded-lg">
           <div className="text-6xl mb-4">📋</div>
@@ -241,79 +314,106 @@ const DocumentDetails: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-[#3c3c3c] rounded-lg border border-[#4f4f4f] overflow-x-auto">
-          <table className="w-full text-left text-xs md:text-sm">
-            <thead className="bg-[#333] border-b border-[#4f4f4f] text-[#cfcfcf] uppercase tracking-wide text-[10px]">
-              <tr>
-                <th className="px-3 py-2 font-semibold">Товар</th>
-                <th className="px-3 py-2 font-semibold">Артикул</th>
-                <th className="px-3 py-2 font-semibold">Место</th>
-                <th className="px-3 py-2 font-semibold text-right">План</th>
-                <th className="px-3 py-2 font-semibold text-right">Факт</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => {
-                const productName = item.product?.name || item.productName || item.productMarking || item.productId || '—';
-                const article = item.product?.marking || item.product?.barcode || item.productBarcode || item.productMarking || '—';
-                const location = item.firstCellId || item.secondCellId || item.firstStorageBarcode || item.secondStorageBarcode || item.firstStorageId || item.secondStorageId || '—';
+        <div className="space-y-3">
+          {items.map((item, index) => {
+            const productName =
+              item.product?.name || item.productName || item.productMarking || item.productId || '—';
+            const article =
+              item.product?.marking || item.product?.barcode || item.productBarcode || item.productMarking || '—';
+            const barcode = item.product?.barcode || item.productBarcode;
+            const location =
+              item.firstCellId ||
+              item.secondCellId ||
+              item.firstStorageBarcode ||
+              item.secondStorageBarcode ||
+              item.firstStorageId ||
+              item.secondStorageId ||
+              '—';
 
-                const plannedRaw = typeof item.declaredQuantity === 'number' ? item.declaredQuantity : Number(item.quantityPlan ?? item.plan ?? 0);
-                const actualRawCandidate = item.currentQuantity ?? item.currentQuantityWithBinding ?? item.quantityFact ?? item.factQuantity ?? 0;
-                const actualRaw = typeof actualRawCandidate === 'number' ? actualRawCandidate : Number(actualRawCandidate || 0);
+            const plannedRaw =
+              typeof item.declaredQuantity === 'number'
+                ? item.declaredQuantity
+                : Number(item.quantityPlan ?? item.plan ?? 0);
+            const actualRawCandidate =
+              item.currentQuantity ?? item.currentQuantityWithBinding ?? item.quantityFact ?? item.factQuantity ?? 0;
+            const actualRaw = typeof actualRawCandidate === 'number' ? actualRawCandidate : Number(actualRawCandidate || 0);
 
-                const isDone = actualRaw >= plannedRaw && plannedRaw > 0;
-                const isOverdone = actualRaw > plannedRaw && plannedRaw > 0;
-                
-                return (
-                  <tr
-                    key={item.uid || index}
-                    className="border-b border-[#4f4f4f] hover:bg-[#484848] transition-colors"
-                  >
-                    {/* Product name */}
-                    <td className="px-3 py-2 md:py-3 text-[#f0f0f0]">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-medium leading-snug">{productName}</span>
+            const status = getItemStatus(plannedRaw, actualRaw);
+            const statusMeta = STATUS_META[status];
+            const diff = actualRaw - plannedRaw;
+            const diffLabel = diff === 0 ? '0' : diff > 0 ? `+${formatQuantity(diff)}` : formatQuantity(diff);
+            const diffColor =
+              diff === 0 ? 'text-[#cfcfcf]' : diff > 0 ? 'text-amber-300' : 'text-red-300';
+            const completion =
+              plannedRaw <= 0 && actualRaw > 0
+                ? 100
+                : plannedRaw <= 0
+                ? 0
+                : Math.min(100, (actualRaw / plannedRaw) * 100);
+
+            return (
+              <div
+                key={item.uid || index}
+                className={`bg-[#353535] rounded-2xl border px-4 py-3 shadow-sm ${statusMeta.border}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-base leading-snug text-[#f3f3f3] truncate">
+                          {productName}
+                        </p>
                         {item.product?.packings?.[0]?.name && (
-                          <span className="text-[10px] text-[#a7a7a7] uppercase tracking-wide">{item.product?.packings?.[0]?.name}</span>
+                          <p className="text-[11px] text-[#a7a7a7] uppercase tracking-wide">
+                            {item.product?.packings?.[0]?.name}
+                          </p>
                         )}
                       </div>
-                    </td>
-                    
-                    {/* Product barcode (артикул) */}
-                    <td className="px-3 py-2 md:py-3 text-[#b9b9b9] font-mono text-[11px]">
-                      {article || '—'}
-                    </td>
-                    
-                    {/* Storage location (ячейка) */}
-                    <td className="px-3 py-2 md:py-3 text-[#b9b9b9]">
-                      {location || '—'}
-                    </td>
-                    
-                    {/* Declared quantity (план) */}
-                    <td className="px-3 py-2 md:py-3 text-[#e3e3dd] text-right font-semibold">
-                      {formatQuantity(plannedRaw)}
-                    </td>
-                    
-                    {/* Current quantity (факт) */}
-                    <td className="px-3 py-2 md:py-3 text-right font-semibold">
-                      <span
-                        className={
-                          isOverdone
-                            ? 'text-yellow-500'
-                            : isDone
-                            ? 'text-green-500'
-                            : 'text-[#e3e3dd]'
-                        }
-                      >
-                        {formatQuantity(actualRaw)}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusMeta.badge}`}>
+                        {statusMeta.label}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-[#cfcfcf]">
+                      <span className="bg-[#444] text-[#f3f3f3] px-2 py-0.5 rounded-md font-mono">
+                        {article}
+                      </span>
+                      {barcode && (
+                        <span className="bg-[#444] text-[#f3f3f3] px-2 py-0.5 rounded-md font-mono">
+                          {barcode}
+                        </span>
+                      )}
+                      <span className="bg-[#1f2937] text-[#9be7ff] px-2 py-0.5 rounded-md">
+                        Ячейка: {location}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">План</div>
+                    <div className="text-lg font-semibold text-[#e3e3dd]">{formatQuantity(plannedRaw)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">Факт</div>
+                    <div className="text-lg font-semibold text-[#fdfdfd]">{formatQuantity(actualRaw)}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">Отклонение</div>
+                    <div className={`text-lg font-semibold ${diffColor}`}>{diffLabel}</div>
+                  </div>
+                </div>
+
+                <div className="mt-2 h-1.5 bg-[#2b2b2b] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${statusMeta.progress} transition-all`}
+                    style={{ width: `${completion}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
