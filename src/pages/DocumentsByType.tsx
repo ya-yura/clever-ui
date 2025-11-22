@@ -206,22 +206,27 @@ const DocumentsByType: React.FC = () => {
         </div>
       )}
 
-      {/* Status filter chips */}
-      <div className="flex gap-[8px] overflow-x-auto pb-[4px] items-center">
+      {/* Status filter buttons */}
+      <div className="grid grid-cols-4 gap-1 px-0.5">
         {[
           { key: 'all', label: 'Все' },
           { key: 'new', label: 'Новые' },
           { key: 'in_process', label: 'В работе' },
           { key: 'finished', label: 'Завершён' },
-        ].map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setStatusFilter(s.key as any)}
-            className={`chip ${statusFilter === s.key ? 'chip-active' : ''}`}
-          >
-            {s.label}
-          </button>
-        ))}
+        ].map((s) => {
+          const isActive = statusFilter === s.key;
+          return (
+            <button
+              key={s.key}
+              onClick={() => setStatusFilter(s.key as any)}
+              className={`w-full px-2 py-2 rounded-md text-left text-[11px] transition-all ${
+                isActive ? 'ring-2 ring-offset-2 ring-brand-primary bg-[#2f2f2f]' : 'bg-[#3d3d3d]'
+              }`}
+            >
+              <div className="text-[9px] uppercase tracking-wide opacity-70">{s.label}</div>
+            </button>
+          );
+        })}
       </div>
       {/* Documents list */}
       {filteredDocuments.length === 0 ? (
