@@ -314,7 +314,7 @@ const DocumentDetails: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {items.map((item, index) => {
             const productName =
               item.product?.name || item.productName || item.productMarking || item.productId || '—';
@@ -354,60 +354,40 @@ const DocumentDetails: React.FC = () => {
             return (
               <div
                 key={item.uid || index}
-                className={`bg-[#353535] rounded-2xl border px-4 py-3 shadow-sm ${statusMeta.border}`}
+                className={`bg-[#252525] rounded-xl border px-3 py-2 shadow-sm ${statusMeta.border}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-base leading-snug text-[#f3f3f3] truncate">
-                          {productName}
-                        </p>
-                        {item.product?.packings?.[0]?.name && (
-                          <p className="text-[11px] text-[#a7a7a7] uppercase tracking-wide">
-                            {item.product?.packings?.[0]?.name}
-                          </p>
-                        )}
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusMeta.badge}`}>
-                        {statusMeta.label}
-                      </span>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {diff !== 0 && (
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${diffColor} border border-white/10`}
+                      style={{
+                        backgroundColor: diff > 0
+                          ? 'rgba(251,191,36,0.15)'
+                          : 'rgba(239,68,68,0.15)',
+                      }}
+                    >
+                      {diffLabel}
+                    </span>
+                  )}
+                  <p className="font-semibold text-sm text-[#f3f3f3] truncate flex-1">{productName}</p>
+                  <span className={`text-[9px] px-2 py-0.5 rounded-full whitespace-nowrap ${statusMeta.badge}`}>
+                    {statusMeta.label}
+                  </span>
+                </div>
 
-                    <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-[#cfcfcf]">
-                      <span className="bg-[#444] text-[#f3f3f3] px-2 py-0.5 rounded-md font-mono">
-                        {article}
-                      </span>
-                      {barcode && (
-                        <span className="bg-[#444] text-[#f3f3f3] px-2 py-0.5 rounded-md font-mono">
-                          {barcode}
-                        </span>
-                      )}
-                      <span className="bg-[#1f2937] text-[#9be7ff] px-2 py-0.5 rounded-md">
-                        Ячейка: {location}
-                      </span>
-                    </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[#d5d5d5] font-mono">
+                  <span className="bg-[#333] rounded px-2 py-0.5 truncate">Артикул: {article}</span>
+                  <span className="bg-[#1f2937] text-[#9be7ff] rounded px-2 py-0.5 truncate">Место: {location}</span>
+                  <div className="flex items-center gap-2 text-[11px] text-[#f5f5f5]">
+                    <span>Пл {formatQuantity(plannedRaw)}</span>
+                    <span>Факт {formatQuantity(actualRaw)}</span>
+                    <span className={`${diffColor} font-semibold`}>{diffLabel}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
-                  <div>
-                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">План</div>
-                    <div className="text-lg font-semibold text-[#e3e3dd]">{formatQuantity(plannedRaw)}</div>
-                  </div>
-                  <div>
-                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">Факт</div>
-                    <div className="text-lg font-semibold text-[#fdfdfd]">{formatQuantity(actualRaw)}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[#a7a7a7] uppercase tracking-wide text-[10px]">Отклонение</div>
-                    <div className={`text-lg font-semibold ${diffColor}`}>{diffLabel}</div>
-                  </div>
-                </div>
-
-                <div className="mt-2 h-1.5 bg-[#2b2b2b] rounded-full overflow-hidden">
+                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${statusMeta.progress} transition-all`}
+                    className={`h-full rounded-full ${statusMeta.progress}`}
                     style={{ width: `${completion}%` }}
                   />
                 </div>
