@@ -429,7 +429,7 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Row: Учёт (cyan) and Документооборот (green) */}
+      {/* Row: Secondary tiles with accent colors from palette */}
       <div className="grid grid-cols-4 gap-1.5 md:gap-2 mt-3">
         {tVozvrat && (
           <button
@@ -483,28 +483,40 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Перемещения section (neutral dark tiles) */}
+      {/* Перемещения section with cycling accent colors */}
       {(secondaryTiles.length > 0 || tertiaryTiles.length > 0) && (
         <>
           <div className="mt-6 mb-2">
             <h3 className="text-lg font-semibold text-content-tertiary">Перемещения</h3>
           </div>
           <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-            {[...secondaryTiles, ...tertiaryTiles].map((docType) => (
-              <button
-                key={docType.uni}
-                onClick={() => navigate(`/docs/${docType.uni}`)}
-                className="tile-secondary tone-medium tile-outline bg-surface-secondary border-border-default"
-              >
-                <div>
-                  <h2 className="tile-title-sm" style={{ color: 'var(--color-accent-yellow)' }}>{docType.displayName}</h2>
-                  <p className="tile-subtext text-content-secondary">{docType.description}</p>
-                </div>
-                <div className="tile-footer">
-                  <span className="text-content-secondary">{docType.docsCount}</span>
-                </div>
-              </button>
-            ))}
+            {[...secondaryTiles, ...tertiaryTiles].map((docType, index) => {
+              // Cycling through accent colors: cyan, green, yellow, orange, pink
+              const accentColors = [
+                'var(--color-accent-cyan)',    // #4dd0e1
+                'var(--color-accent-green)',   // #7ed321
+                'var(--color-accent-yellow)',  // #e0b536
+                'var(--color-brand-secondary)', // #d89668 orange
+                'var(--color-brand-tertiary)',  // #f0a58a pink
+              ];
+              const accentColor = accentColors[index % accentColors.length];
+              
+              return (
+                <button
+                  key={docType.uni}
+                  onClick={() => navigate(`/docs/${docType.uni}`)}
+                  className="tile-secondary tone-medium tile-outline bg-surface-secondary border-border-default"
+                >
+                  <div>
+                    <h2 className="tile-title-sm" style={{ color: accentColor }}>{docType.displayName}</h2>
+                    <p className="tile-subtext text-content-secondary">{docType.description}</p>
+                  </div>
+                  <div className="tile-footer">
+                    <span className="text-content-secondary">{docType.docsCount}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
