@@ -60,16 +60,16 @@
   --color-error: #e35454;             /* Red */
   --color-info: #4480f3;              /* Blue (same as primary) */
 
-  /* Module colors */
-  --color-module-receiving-bg: #d1ae00;
-  --color-module-receiving-text: #4a3b00;
-  --color-module-picking-bg: #f5ab61;
-  --color-module-picking-text: #4d2900;
-  --color-module-shipment-bg: #5fad05;
-  --color-module-shipment-text: #ffffff;
+  /* Module colors (from Figma Android Compact mockup) */
+  --color-module-receiving-bg: #d4a938;
+  --color-module-receiving-text: #3d2f00;
+  --color-module-picking-bg: #d89968;
+  --color-module-picking-text: #3d2900;
+  --color-module-shipment-bg: #a0d995;
+  --color-module-shipment-text: #1f4d1f;
   --color-module-placement-bg: #86e0cb;
   --color-module-placement-text: #154038;
-  --color-module-inventory-bg: #fb9898;
+  --color-module-inventory-bg: #f09283;
   --color-module-inventory-text: #4d1a1a;
   --color-module-return-bg: #e35454;
   --color-module-return-text: #ffffff;

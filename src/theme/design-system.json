@@ -77,20 +77,20 @@
       },
       "modules": {
         "receiving": {
-          "bg": "#d1ae00",
-          "text": "#4a3b00",
+          "bg": "#d4a938",
+          "text": "#3d2f00",
           "light": "#f3d640",
           "dark": "#8a7300"
         },
         "inventory": {
-          "bg": "#fb9898",
+          "bg": "#f09283",
           "text": "#4d1a1a",
           "light": "#fcd0d0",
           "dark": "#a33030"
         },
         "picking": {
-          "bg": "#f5ab61",
-          "text": "#4d2900",
+          "bg": "#d89968",
+          "text": "#3d2900",
           "light": "#ffcda3",
           "dark": "#9e5700"
         },
@@ -101,9 +101,9 @@
           "dark": "#1f5a4f"
         },
         "shipment": {
-          "bg": "#5fad05",
+          "bg": "#a0d995",
           "text": "#1f4d1f",
-          "light": "#8cce5a",
+          "light": "#c8f5c8",
           "dark": "#1f4d1f"
         },
         "return": {
