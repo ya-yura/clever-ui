@@ -381,8 +381,7 @@ const Home: React.FC = () => {
           <button
             key={tPrihod.uni}
             onClick={() => navigate(`/docs/${tPrihod.uni}`)}
-            className="tile-primary tone-strong col-span-2 row-span-2"
-            style={{ backgroundColor: 'var(--color-module-receiving-bg)', color: 'var(--color-module-receiving-text)' }}
+            className="tile-primary tone-strong col-span-2 row-span-2 bg-module-receiving-bg text-module-receiving-text"
           >
             <div>
               <h2 className="tile-title-lg">{tPrihod.displayName}</h2>
@@ -398,8 +397,7 @@ const Home: React.FC = () => {
           <button
             key={tPodbor.uni}
             onClick={() => navigate(`/docs/${tPodbor.uni}`)}
-            className="tile-primary tone-strong col-span-2"
-            style={{ backgroundColor: 'var(--color-module-picking-bg)', color: 'var(--color-module-picking-text)' }}
+            className="tile-primary tone-strong col-span-2 bg-module-picking-bg text-module-picking-text"
           >
             <div>
               <h2 className="tile-title-lg">{tPodbor.displayName}</h2>
@@ -415,8 +413,7 @@ const Home: React.FC = () => {
           <button
             key={tOtgruzka.uni}
             onClick={() => navigate(`/docs/${tOtgruzka.uni}`)}
-            className="tile-primary tone-strong col-span-2"
-            style={{ backgroundColor: 'var(--color-module-shipment-bg)', color: 'var(--color-module-shipment-text)' }}
+            className="tile-primary tone-strong col-span-2 bg-module-shipment-bg text-module-shipment-text"
           >
             <div>
               <h2 className="tile-title-lg">{tOtgruzka.displayName}</h2>

@@ -44,33 +44,19 @@ export default {
         error: 'var(--color-error)',
         info: 'var(--color-info)',
         
-        // Modules (dynamically loaded from design-system.json)
-        modules: {
-          receiving: { 
-            bg: designSystem.dna.colors.modules.receiving.bg, 
-            text: designSystem.dna.colors.modules.receiving.text 
-          },
-          inventory: { 
-            bg: designSystem.dna.colors.modules.inventory.bg, 
-            text: designSystem.dna.colors.modules.inventory.text 
-          },
-          picking: { 
-            bg: designSystem.dna.colors.modules.picking.bg, 
-            text: designSystem.dna.colors.modules.picking.text 
-          },
-          placement: { 
-            bg: designSystem.dna.colors.modules.placement.bg, 
-            text: designSystem.dna.colors.modules.placement.text 
-          },
-          shipment: { 
-            bg: designSystem.dna.colors.modules.shipment.bg, 
-            text: designSystem.dna.colors.modules.shipment.text 
-          },
-          return: { 
-            bg: designSystem.dna.colors.modules.return.bg, 
-            text: designSystem.dna.colors.modules.return.text 
-          },
-        },
+        // Module colors (using CSS variables for consistency)
+        'module-receiving-bg': 'var(--color-module-receiving-bg)',
+        'module-receiving-text': 'var(--color-module-receiving-text)',
+        'module-picking-bg': 'var(--color-module-picking-bg)',
+        'module-picking-text': 'var(--color-module-picking-text)',
+        'module-shipment-bg': 'var(--color-module-shipment-bg)',
+        'module-shipment-text': 'var(--color-module-shipment-text)',
+        'module-placement-bg': 'var(--color-module-placement-bg)',
+        'module-placement-text': 'var(--color-module-placement-text)',
+        'module-inventory-bg': 'var(--color-module-inventory-bg)',
+        'module-inventory-text': 'var(--color-module-inventory-text)',
+        'module-return-bg': 'var(--color-module-return-bg)',
+        'module-return-text': 'var(--color-module-return-text)',
       },
       borderRadius: {
         DEFAULT: designSystem.dna.borderRadius.md,
