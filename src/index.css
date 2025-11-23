@@ -139,7 +139,9 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-[var(--color-brand-primary)] text-white rounded-lg font-bold hover:bg-[var(--color-brand-dark)] active:brightness-90 transition-colors min-h-[44px] min-w-[44px];
+    @apply px-4 py-2 rounded-lg font-semibold hover:brightness-90 active:brightness-95 transition-all min-h-[44px] min-w-[44px];
+    background-color: var(--color-brand-secondary);
+    color: var(--color-module-picking-text);
   }
 
   .btn-secondary {
