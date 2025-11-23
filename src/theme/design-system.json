@@ -1,7 +1,7 @@
 {
   "name": "Cleverence Mobile Proto – Design System",
-  "version": "2.3.0",
-  "description": "Полноценная дизайн-система для PWA приложения Склад-15",
+  "version": "3.0.0",
+  "description": "Полноценная дизайн-система для PWA приложения Склад-15 (обновлено на основе Figma макета Android Compact - 22)",
   
   "dna": {
     "colors": {
@@ -25,7 +25,7 @@
           "default": "#2a2f38",
           "light": "#343a46",
           "strong": "#525760",
-          "focus": "#4480f3"
+          "focus": "#c9a636"
         }
       },
       "light": {
@@ -48,7 +48,7 @@
           "default": "#d4d5d9",
           "light": "#eaecf0",
           "strong": "#80858e",
-          "focus": "#4480f3"
+          "focus": "#c9a636"
         }
       },
       "brand": {
@@ -62,6 +62,17 @@
         "tertiaryDark": "#c76b5b",
         "tertiaryLight": "#fcd0d0"
       },
+      "accent": {
+        "cyan": "#4dd0e1",
+        "cyanDark": "#26a69a",
+        "cyanLight": "#80deea",
+        "green": "#7ed321",
+        "greenDark": "#5a9c15",
+        "greenLight": "#a8e063",
+        "yellow": "#e0b536",
+        "yellowDark": "#b8942a",
+        "yellowLight": "#f3d640"
+      },
       "status": {
         "success": "#5fad05",
         "successDark": "#2d6b2d",
@@ -72,9 +83,9 @@
         "error": "#e35454",
         "errorDark": "#6b3d3c",
         "errorLight": "#f0d6d6",
-        "info": "#4480f3",
-        "infoDark": "#113079",
-        "infoLight": "#e4edfb"
+        "info": "#4dd0e1",
+        "infoDark": "#26a69a",
+        "infoLight": "#80deea"
       },
       "modules": {
         "receiving": {
@@ -144,13 +155,13 @@
       "sizes": {
         "xs": "10px",
         "sm": "12px",
-        "base": "16px",
-        "md": "18px",
-        "lg": "20px",
-        "xl": "24px",
-        "2xl": "32px",
-        "3xl": "36px",
-        "4xl": "48px"
+        "base": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px",
+        "4xl": "40px"
       },
       "lineHeights": {
         "tight": 1.1,
@@ -225,7 +236,7 @@
       "xl": "0 8px 16px rgba(0, 0, 0, 0.6)",
       "2xl": "0 12px 24px rgba(0, 0, 0, 0.7)",
       "inner": "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
-      "focus": "0 0 0 3px rgba(68, 128, 243, 0.4)"
+      "focus": "0 0 0 3px rgba(201, 166, 54, 0.4)"
     },
     
     "motion": {
@@ -288,21 +299,24 @@
           "sm": "0 12px",
           "md": "0 20px",
           "lg": "0 24px"
-        }
+        },
+        "borderRadius": "8px"
       },
       "input": {
         "height": {
           "sm": "36px",
           "md": "44px",
           "lg": "52px"
-        }
+        },
+        "borderRadius": "8px"
       },
       "card": {
         "padding": {
           "compact": "12px",
           "default": "16px",
           "comfortable": "24px"
-        }
+        },
+        "borderRadius": "12px"
       },
       "tile": {
         "minHeight": {
@@ -310,8 +324,60 @@
           "medium": "96px",
           "large": "108px",
           "hero": "140px"
-        }
+        },
+        "padding": {
+          "compact": "12px",
+          "default": "16px",
+          "comfortable": "20px"
+        },
+        "borderRadius": "12px",
+        "gap": "6px"
       }
+    }
+  },
+  
+  "semantics": {
+    "description": "Semantic tokens для конкретных use-cases",
+    "ui": {
+      "primaryButton": {
+        "bg": "#d89668",
+        "text": "#7d4a2d",
+        "hover": "brightness(0.9)",
+        "active": "brightness(0.95)"
+      },
+      "secondaryButton": {
+        "bg": "#2a2f38",
+        "text": "#eaecf0",
+        "hover": "brightness(1.1)",
+        "active": "brightness(0.95)"
+      },
+      "tile": {
+        "hero": {
+          "minHeight": "140px",
+          "padding": "16px",
+          "titleSize": "20px",
+          "countSize": "32px"
+        },
+        "secondary": {
+          "minHeight": "96px",
+          "padding": "16px",
+          "titleSize": "15px",
+          "countSize": "24px"
+        },
+        "tertiary": {
+          "minHeight": "72px",
+          "padding": "12px",
+          "titleSize": "14px",
+          "countSize": "18px"
+        }
+      },
+      "accentColors": [
+        "#4dd0e1",
+        "#7ed321",
+        "#e0b536",
+        "#d89668",
+        "#f0a58a"
+      ]
     }
   },
   
@@ -319,6 +385,10 @@
     "author": "Cleverence Development Team",
     "license": "Proprietary",
     "repository": "https://github.com/cleverence/warehouse-mobile",
-    "lastUpdated": "2025-11-23"
+    "lastUpdated": "2025-11-23",
+    "figmaSource": "Android Compact - 22 (node-id: 11547:229)",
+    "changelog": {
+      "3.0.0": "Полная ревизия дизайн-системы на основе Figma макета. Добавлены accent colors, semantic tokens, обновлены все цвета модулей."
+    }
   }
 }

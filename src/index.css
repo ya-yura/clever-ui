@@ -24,22 +24,23 @@
 
 /* ============================================
    🎨 CSS VARIABLES FOR THEME SWITCHING
+   Design System v3.0.0
    ============================================ */
 
-/* Default theme (Dark) - Extracted from Figma Colors Dark (5583:45261) */
+/* Default theme (Dark) */
 :root {
   /* Surface colors (backgrounds) */
-  --color-surface-primary: #121721;   /* Main background */
-  --color-surface-secondary: #1d222a; /* Cards/Modals */
-  --color-surface-tertiary: #2a2f38;  /* Inputs/Hovers */
+  --color-surface-primary: #121721;
+  --color-surface-secondary: #1d222a;
+  --color-surface-tertiary: #2a2f38;
   --color-surface-inverse: #ffffff;
   --color-surface-overlay: rgba(18, 23, 33, 0.8);
   --color-surface-disabled: #2a2f38;
 
   /* Content colors (text) */
-  --color-content-primary: #eaecf0;   /* High emphasis text */
-  --color-content-secondary: #aaaeb6; /* Medium emphasis text */
-  --color-content-tertiary: #80858e;  /* Low emphasis text */
+  --color-content-primary: #eaecf0;
+  --color-content-secondary: #aaaeb6;
+  --color-content-tertiary: #80858e;
   --color-content-inverse: #121721;
   --color-content-disabled: #525760;
 
@@ -47,26 +48,45 @@
   --color-border-default: #2a2f38;
   --color-border-light: #343a46;
   --color-border-strong: #525760;
-  --color-border-focus: #d4a938;
+  --color-border-focus: #c9a636;
 
-  /* Brand colors (Base palette from mockup) */
-  --color-brand-primary: #c9a636;     /* Primary: Mustard Yellow (Приход) */
-  --color-brand-dark: #a88a2d;        /* Darker mustard */
-  --color-brand-secondary: #d89668;   /* Secondary: Sandy Orange (Подбор) */
-  --color-brand-tertiary: #f0a58a;    /* Tertiary: Coral Pink (Остатки) */
+  /* Brand colors (base palette from Figma) */
+  --color-brand-primary: #c9a636;
+  --color-brand-dark: #a88a2d;
+  --color-brand-light: #f3d640;
+  --color-brand-secondary: #d89668;
+  --color-brand-secondary-dark: #a87548;
+  --color-brand-secondary-light: #ffcda3;
+  --color-brand-tertiary: #f0a58a;
+  --color-brand-tertiary-dark: #c76b5b;
+  --color-brand-tertiary-light: #fcd0d0;
 
-  /* Status colors (Updated from Dark Theme Palette) */
-  --color-success: #5fad05;           /* Green */
-  --color-warning: #e78018;           /* Orange */
-  --color-error: #e35454;             /* Red */
-  --color-info: #4480f3;              /* Blue (same as primary) */
+  /* Accent colors for secondary elements */
+  --color-accent-cyan: #4dd0e1;
+  --color-accent-cyan-dark: #26a69a;
+  --color-accent-cyan-light: #80deea;
+  --color-accent-green: #7ed321;
+  --color-accent-green-dark: #5a9c15;
+  --color-accent-green-light: #a8e063;
+  --color-accent-yellow: #e0b536;
+  --color-accent-yellow-dark: #b8942a;
+  --color-accent-yellow-light: #f3d640;
 
-  /* Accent colors for secondary tiles (from Figma mockup) */
-  --color-accent-cyan: #4dd0e1;       /* Cyan/turquoise accent (Учёт) */
-  --color-accent-green: #7ed321;      /* Bright green accent (Документооборот, Размещение) */
-  --color-accent-yellow: #e0b536;     /* Yellow accent (По складам, По ячейкам, etc) */
+  /* Status colors */
+  --color-success: #5fad05;
+  --color-success-dark: #2d6b2d;
+  --color-success-light: #d4f8d4;
+  --color-warning: #e78018;
+  --color-warning-dark: #8b5931;
+  --color-warning-light: #ffd9b3;
+  --color-error: #e35454;
+  --color-error-dark: #6b3d3c;
+  --color-error-light: #f0d6d6;
+  --color-info: #4dd0e1;
+  --color-info-dark: #26a69a;
+  --color-info-light: #80deea;
 
-  /* Module colors (exact match from Figma mockup screenshot) */
+  /* Module colors */
   --color-module-receiving-bg: #c9a636;
   --color-module-receiving-text: #5a4a1a;
   --color-module-picking-bg: #d89668;
@@ -81,31 +101,25 @@
   --color-module-return-text: #ffffff;
 }
 
-/* Light theme override - Extracted from Figma Colors Default */
+/* Light theme override */
 [data-theme='light'] {
-  /* Surface colors (backgrounds) */
-  --color-surface-primary: #f5f6f8;   /* Light Grey bg */
-  --color-surface-secondary: #ffffff; /* White cards */
-  --color-surface-tertiary: #eaecf0;  /* Light inputs */
+  --color-surface-primary: #f5f6f8;
+  --color-surface-secondary: #ffffff;
+  --color-surface-tertiary: #eaecf0;
   --color-surface-inverse: #121721;
   --color-surface-overlay: rgba(255, 255, 255, 0.8);
   --color-surface-disabled: #f5f6f8;
 
-  /* Content colors (text) */
-  --color-content-primary: #1d222a;   /* Dark text */
-  --color-content-secondary: #525760; /* Grey text */
-  --color-content-tertiary: #80858e;  /* Light grey text */
+  --color-content-primary: #1d222a;
+  --color-content-secondary: #525760;
+  --color-content-tertiary: #80858e;
   --color-content-inverse: #ffffff;
   --color-content-disabled: #d4d5d9;
 
-  /* Border colors */
   --color-border-default: #d4d5d9;
   --color-border-light: #eaecf0;
   --color-border-strong: #80858e;
-  --color-border-focus: #4480f3;
-  
-  /* Status colors (Light theme specific if needed, currently shared but usually inverted) */
-  /* Keeping shared for consistency unless specific light tokens found */
+  --color-border-focus: #c9a636;
 }
 
 html {
@@ -185,7 +199,7 @@ body {
 
   /* Tiles */
   .tile-base {
-    @apply rounded-xl text-left transition-all shadow-lg relative overflow-hidden flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-[#4480f3]/60 border border-transparent;
+    @apply rounded-xl text-left transition-all shadow-lg relative overflow-hidden flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/60 border border-transparent;
   }
 
   .tile-primary {
@@ -290,8 +304,6 @@ button, a, input[type="button"], input[type="submit"] {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Remove explicit !important overrides and rely on variables where possible */
-/* Minimal back-compat for hardcoded tailwind classes if needed */
 html[data-theme='light'] .skeleton {
     background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.05) 63%);
 }
