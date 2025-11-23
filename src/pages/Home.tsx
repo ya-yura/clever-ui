@@ -454,7 +454,7 @@ const Home: React.FC = () => {
             className="tile-secondary tone-medium tile-outline col-span-2 bg-surface-secondary border-border-default"
           >
             <div>
-              <h2 className="tile-title-sm text-success">{tPlacement.displayName}</h2>
+              <h2 className="tile-title-sm" style={{ color: 'var(--color-accent-green)' }}>{tPlacement.displayName}</h2>
               <p className="tile-subtext text-content-secondary">{tPlacement.description}</p>
             </div>
             <div className="tile-footer">
@@ -497,7 +497,7 @@ const Home: React.FC = () => {
                 className="tile-secondary tone-medium tile-outline bg-surface-secondary border-border-default"
               >
                 <div>
-                  <h2 className="tile-title-sm text-content-primary">{docType.displayName}</h2>
+                  <h2 className="tile-title-sm" style={{ color: 'var(--color-accent-yellow)' }}>{docType.displayName}</h2>
                   <p className="tile-subtext text-content-secondary">{docType.description}</p>
                 </div>
                 <div className="tile-footer">

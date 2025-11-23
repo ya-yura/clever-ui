@@ -61,6 +61,10 @@
   --color-error: #e35454;             /* Red */
   --color-info: #4480f3;              /* Blue (same as primary) */
 
+  /* Accent colors for secondary tiles */
+  --color-accent-green: #7ed321;      /* Bright green accent */
+  --color-accent-yellow: #e0b536;     /* Yellow accent */
+
   /* Module colors (exact match from Figma mockup screenshot) */
   --color-module-receiving-bg: #c9a636;
   --color-module-receiving-text: #5a4a1a;
