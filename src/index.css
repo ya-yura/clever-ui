@@ -199,7 +199,12 @@ body {
 
   /* Tiles */
   .tile-base {
-    @apply rounded-xl text-left transition-all shadow-lg relative overflow-hidden flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/60 border border-transparent;
+    @apply rounded-xl text-left transition-all shadow-lg relative overflow-hidden flex flex-col justify-between focus:outline-none focus:ring-2 border border-transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  
+  .tile-base:focus {
+    box-shadow: 0 0 0 3px rgba(201, 166, 54, 0.4);
   }
 
   .tile-primary {
