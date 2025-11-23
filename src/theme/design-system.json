@@ -55,10 +55,10 @@
         "primary": "#c9a636",
         "primaryDark": "#a88a2d",
         "primaryLight": "#f3d640",
-        "secondary": "#d8976a",
+        "secondary": "#d89668",
         "secondaryDark": "#a87548",
         "secondaryLight": "#ffcda3",
-        "tertiary": "#ec9b88",
+        "tertiary": "#f0a58a",
         "tertiaryDark": "#c76b5b",
         "tertiaryLight": "#fcd0d0"
       },
@@ -79,19 +79,19 @@
       "modules": {
         "receiving": {
           "bg": "#c9a636",
-          "text": "#3d2f00",
+          "text": "#5a4a1a",
           "light": "#f3d640",
           "dark": "#8a7300"
         },
         "inventory": {
-          "bg": "#ec9b88",
-          "text": "#4d1a1a",
+          "bg": "#f0a58a",
+          "text": "#7d4a2d",
           "light": "#fcd0d0",
           "dark": "#a33030"
         },
         "picking": {
-          "bg": "#d8976a",
-          "text": "#3d2900",
+          "bg": "#d89668",
+          "text": "#7d4a2d",
           "light": "#ffcda3",
           "dark": "#9e5700"
         },

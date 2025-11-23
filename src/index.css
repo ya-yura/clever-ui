@@ -52,8 +52,8 @@
   /* Brand colors (Base palette from mockup) */
   --color-brand-primary: #c9a636;     /* Primary: Mustard Yellow (Приход) */
   --color-brand-dark: #a88a2d;        /* Darker mustard */
-  --color-brand-secondary: #d8976a;   /* Secondary: Sandy Orange (Подбор) */
-  --color-brand-tertiary: #ec9b88;    /* Tertiary: Coral Pink (Остатки) */
+  --color-brand-secondary: #d89668;   /* Secondary: Sandy Orange (Подбор) */
+  --color-brand-tertiary: #f0a58a;    /* Tertiary: Coral Pink (Остатки) */
 
   /* Status colors (Updated from Dark Theme Palette) */
   --color-success: #5fad05;           /* Green */
@@ -61,17 +61,17 @@
   --color-error: #e35454;             /* Red */
   --color-info: #4480f3;              /* Blue (same as primary) */
 
-  /* Module colors (matched from Figma Android Compact mockup) */
+  /* Module colors (exact match from Figma mockup screenshot) */
   --color-module-receiving-bg: #c9a636;
-  --color-module-receiving-text: #3d2f00;
-  --color-module-picking-bg: #d8976a;
-  --color-module-picking-text: #3d2900;
+  --color-module-receiving-text: #5a4a1a;
+  --color-module-picking-bg: #d89668;
+  --color-module-picking-text: #7d4a2d;
   --color-module-shipment-bg: #a0d995;
   --color-module-shipment-text: #1f4d1f;
   --color-module-placement-bg: #86e0cb;
   --color-module-placement-text: #154038;
-  --color-module-inventory-bg: #ec9b88;
-  --color-module-inventory-text: #4d1a1a;
+  --color-module-inventory-bg: #f0a58a;
+  --color-module-inventory-text: #7d4a2d;
   --color-module-return-bg: #e35454;
   --color-module-return-text: #ffffff;
 }
