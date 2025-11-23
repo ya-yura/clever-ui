@@ -1,60 +1,60 @@
 {
   "name": "Cleverence Mobile Proto – Design System",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Полноценная дизайн-система для PWA приложения Склад-15",
   
   "dna": {
     "colors": {
       "dark": {
         "surface": {
-          "primary": "#242424",
-          "secondary": "#343436",
-          "tertiary": "#474747",
+          "primary": "#121721",
+          "secondary": "#1d222a",
+          "tertiary": "#2a2f38",
           "inverse": "#ffffff",
-          "overlay": "rgba(0, 0, 0, 0.7)",
-          "disabled": "#3a3a3a"
+          "overlay": "rgba(18, 23, 33, 0.8)",
+          "disabled": "#2a2f38"
         },
         "content": {
-          "primary": "#ffffff",
-          "secondary": "#e3e3dd",
-          "tertiary": "#a7a7a7",
-          "inverse": "#242424",
-          "disabled": "#666666"
+          "primary": "#eaecf0",
+          "secondary": "#aaaeb6",
+          "tertiary": "#80858e",
+          "inverse": "#121721",
+          "disabled": "#525760"
         },
         "border": {
-          "default": "#474747",
-          "light": "#575757",
-          "strong": "#666666",
-          "focus": "#86e0cb"
+          "default": "#2a2f38",
+          "light": "#343a46",
+          "strong": "#525760",
+          "focus": "#4480f3"
         }
       },
       "light": {
         "surface": {
-          "primary": "#f6f7fb",
+          "primary": "#f5f6f8",
           "secondary": "#ffffff",
-          "tertiary": "#e2e8f0",
-          "inverse": "#1f2933",
-          "overlay": "rgba(15, 23, 42, 0.7)",
-          "disabled": "#f1f5f9"
+          "tertiary": "#eaecf0",
+          "inverse": "#121721",
+          "overlay": "rgba(255, 255, 255, 0.8)",
+          "disabled": "#f5f6f8"
         },
         "content": {
-          "primary": "#1f2933",
-          "secondary": "#52606d",
-          "tertiary": "#94a3b8",
+          "primary": "#1d222a",
+          "secondary": "#525760",
+          "tertiary": "#80858e",
           "inverse": "#ffffff",
-          "disabled": "#cbd5e1"
+          "disabled": "#d4d5d9"
         },
         "border": {
-          "default": "#d1d5db",
-          "light": "#e2e8f0",
-          "strong": "#94a3b8",
-          "focus": "#86e0cb"
+          "default": "#d4d5d9",
+          "light": "#eaecf0",
+          "strong": "#80858e",
+          "focus": "#4480f3"
         }
       },
       "brand": {
-        "primary": "#daa420",
-        "primaryDark": "#725a1e",
-        "primaryLight": "#f3c563",
+        "primary": "#4480f3",
+        "primaryDark": "#3d75e4",
+        "primaryLight": "#6b9bf5",
         "secondary": "#86e0cb",
         "secondaryDark": "#2d7a6b",
         "secondaryLight": "#b3f0e3",
@@ -71,16 +71,16 @@
         "error": "#ba8f8e",
         "errorDark": "#6b3d3c",
         "errorLight": "#f0d6d6",
-        "info": "#86e0cb",
-        "infoDark": "#2d7a6b",
-        "infoLight": "#d4f5ee"
+        "info": "#4480f3",
+        "infoDark": "#113079",
+        "infoLight": "#e4edfb"
       },
       "modules": {
         "receiving": {
-          "bg": "#daa420",
-          "text": "#725a1e",
-          "light": "#f3c563",
-          "dark": "#5a4518"
+          "bg": "#4480f3",
+          "text": "#ffffff",
+          "light": "#6b9bf5",
+          "dark": "#3d75e4"
         },
         "inventory": {
           "bg": "#fea079",
@@ -224,7 +224,7 @@
       "xl": "0 8px 16px rgba(0, 0, 0, 0.6)",
       "2xl": "0 12px 24px rgba(0, 0, 0, 0.7)",
       "inner": "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
-      "focus": "0 0 0 3px rgba(134, 224, 203, 0.4)"
+      "focus": "0 0 0 3px rgba(68, 128, 243, 0.4)"
     },
     
     "motion": {
@@ -318,6 +318,6 @@
     "author": "Cleverence Development Team",
     "license": "Proprietary",
     "repository": "https://github.com/cleverence/warehouse-mobile",
-    "lastUpdated": "2025-11-22"
+    "lastUpdated": "2025-11-23"
   }
 }
