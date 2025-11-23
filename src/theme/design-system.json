@@ -52,13 +52,13 @@
         }
       },
       "brand": {
-        "primary": "#d4a938",
+        "primary": "#c9a636",
         "primaryDark": "#a88a2d",
         "primaryLight": "#f3d640",
-        "secondary": "#d89968",
+        "secondary": "#d8976a",
         "secondaryDark": "#a87548",
         "secondaryLight": "#ffcda3",
-        "tertiary": "#f09283",
+        "tertiary": "#ec9b88",
         "tertiaryDark": "#c76b5b",
         "tertiaryLight": "#fcd0d0"
       },
@@ -78,19 +78,19 @@
       },
       "modules": {
         "receiving": {
-          "bg": "#d4a938",
+          "bg": "#c9a636",
           "text": "#3d2f00",
           "light": "#f3d640",
           "dark": "#8a7300"
         },
         "inventory": {
-          "bg": "#f09283",
+          "bg": "#ec9b88",
           "text": "#4d1a1a",
           "light": "#fcd0d0",
           "dark": "#a33030"
         },
         "picking": {
-          "bg": "#d89968",
+          "bg": "#d8976a",
           "text": "#3d2900",
           "light": "#ffcda3",
           "dark": "#9e5700"
