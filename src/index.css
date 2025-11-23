@@ -29,6 +29,10 @@
 
 /* Default theme (Dark) */
 :root {
+  /* Typography */
+  --font-family-base: 'Atkinson Hyperlegible', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Avenir, Helvetica, Arial, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace;
+
   /* Surface colors (backgrounds) */
   --color-surface-primary: #121721;
   --color-surface-secondary: #1d222a;
@@ -127,7 +131,7 @@
 }
 
 html {
-  font-family: 'Atkinson Hyperlegible', 'Noto Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family-base, 'Atkinson Hyperlegible', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Avenir, Helvetica, Arial, sans-serif);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -150,10 +154,25 @@ body {
   overflow-x: hidden;
   background-color: var(--color-surface-primary);
   color: var(--color-content-secondary);
+  font-family: inherit;
 }
 
 * {
   box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-family-mono, 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace);
 }
 
 @layer components {

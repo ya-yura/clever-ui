@@ -12,10 +12,11 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    fontFamily: {
+      sans: ['var(--font-family-base)', 'system-ui', 'sans-serif'],
+      mono: ['var(--font-family-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+    },
     extend: {
-      fontFamily: {
-        sans: ['"Atkinson Hyperlegible"', 'sans-serif'],
-      },
       colors: {
         // Semantic colors using CSS variables (theme-switchable)
         surface: {
