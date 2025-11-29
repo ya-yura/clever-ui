@@ -303,14 +303,14 @@ const DocumentsByType: React.FC = () => {
       </div>
 
       {/* Search and Sort */}
-      <div className="flex gap-2 h-10">
-        <div className="relative flex-1 h-full">
+      <div className="flex gap-2 h-10 items-stretch">
+        <div className="relative flex-1">
           <input
             type="text"
             placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 text-sm focus:outline-none focus:border-[#86e0cb]"
+            className="w-full h-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 text-sm focus:outline-none focus:border-[#86e0cb] appearance-none m-0"
           />
           {searchQuery && (
             <button 
@@ -321,20 +321,27 @@ const DocumentsByType: React.FC = () => {
             </button>
           )}
         </div>
-        <select
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value as any)}
-          className="h-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 text-sm focus:outline-none focus:border-[#86e0cb]"
-        >
-          <option value="date">Дата</option>
-          <option value="number">Номер</option>
-          <option value="status">Статус</option>
-        </select>
+        <div className="relative">
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value as any)}
+            className="h-full appearance-none bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md pl-3 pr-8 text-sm focus:outline-none focus:border-[#86e0cb] m-0"
+          >
+            <option value="date">Дата</option>
+            <option value="number">Номер</option>
+            <option value="status">Статус</option>
+          </select>
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#888]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
         <button
           onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-          className="h-full aspect-square flex items-center justify-center bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md hover:bg-[#4c4c4c]"
+          className="h-full aspect-square flex items-center justify-center bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md hover:bg-[#4c4c4c] m-0 p-0"
         >
-          {sortDirection === 'asc' ? '↑' : '↓'}
+          <span className="text-lg leading-none mb-0.5">{sortDirection === 'asc' ? '↑' : '↓'}</span>
         </button>
       </div>
 
