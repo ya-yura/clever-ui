@@ -324,28 +324,32 @@ const DocumentsByType: React.FC = () => {
             </button>
           )}
         </div>
-        <div className="relative">
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value as any)}
-            className="h-full appearance-none bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md pl-3 pr-8 text-sm focus:outline-none focus:border-[#86e0cb] m-0"
-          >
-            <option value="date">Дата</option>
-            <option value="number">Номер</option>
-            <option value="status">Статус</option>
-          </select>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#888]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
+        
+        {/* Compact Sort Group */}
+        <div className="flex shrink-0">
+          <div className="relative">
+            <select
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as any)}
+              className="h-full appearance-none bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] border-r-0 rounded-l-md rounded-r-none pl-3 pr-7 text-sm focus:outline-none focus:border-[#86e0cb] focus:z-10 m-0"
+            >
+              <option value="date">Дата</option>
+              <option value="number">Номер</option>
+              <option value="status">Статус</option>
+            </select>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#888]">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
           </div>
+          <button
+            onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="h-full w-8 flex items-center justify-center bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-r-md rounded-l-none hover:bg-[#4c4c4c] m-0 p-0 focus:z-10"
+          >
+            <span className="text-lg leading-none mb-0.5">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+          </button>
         </div>
-        <button
-          onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-          className="h-full aspect-square flex items-center justify-center bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md hover:bg-[#4c4c4c] m-0 p-0"
-        >
-          <span className="text-lg leading-none mb-0.5">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-        </button>
       </div>
 
       {/* Documents list */}
