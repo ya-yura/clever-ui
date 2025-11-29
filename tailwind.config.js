@@ -28,7 +28,7 @@ export default {
           disabled: 'var(--color-content-disabled)',
         },
         
-        border: {
+        borders: {
           default: 'var(--color-border-default)',
           light: 'var(--color-border-light)',
           strong: 'var(--color-border-strong)',

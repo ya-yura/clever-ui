@@ -435,7 +435,7 @@ const Home: React.FC = () => {
           <button
             key={`${tVozvrat.uni}-small`}
             onClick={() => navigate(`/docs/${tVozvrat.uni}`)}
-            className="tile-secondary tone-medium tile-outline col-span-2 bg-surface-secondary border-border-default"
+            className="tile-secondary tone-medium tile-outline col-span-2 bg-surface-secondary border-borders-default"
           >
             <div>
               <h2 className="tile-title-sm" style={{ color: 'var(--color-accent-cyan)' }}>{tVozvrat.displayName}</h2>
@@ -451,7 +451,7 @@ const Home: React.FC = () => {
           <button
             key={`${tPlacement.uni}-small`}
             onClick={() => navigate(`/docs/${tPlacement.uni}`)}
-            className="tile-secondary tone-medium tile-outline col-span-2 bg-surface-secondary border-border-default"
+            className="tile-secondary tone-medium tile-outline col-span-2 bg-surface-secondary border-borders-default"
           >
             <div>
               <h2 className="tile-title-sm" style={{ color: 'var(--color-accent-green)' }}>{tPlacement.displayName}</h2>
@@ -470,7 +470,7 @@ const Home: React.FC = () => {
           <button
             key={`${tInvent.uni}-full`}
             onClick={() => navigate(`/docs/${tInvent.uni}`)}
-            className="tile-secondary tone-medium tile-outline col-span-4 bg-surface-secondary border-border-default"
+            className="tile-secondary tone-medium tile-outline col-span-4 bg-surface-secondary border-borders-default"
           >
             <div>
               <h2 className="tile-title-md text-content-primary">{tInvent.displayName}</h2>
@@ -501,7 +501,7 @@ const Home: React.FC = () => {
                 <button
                   key={docType.uni}
                   onClick={() => navigate(`/docs/${docType.uni}`)}
-                  className="tile-secondary tone-medium tile-outline bg-surface-secondary border-border-default"
+                  className="tile-secondary tone-medium tile-outline bg-surface-secondary border-borders-default"
                 >
                   <div>
                     <h2 className="tile-title-sm" style={{ color: accentColor }}>{docType.displayName}</h2>

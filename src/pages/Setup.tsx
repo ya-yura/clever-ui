@@ -116,7 +116,7 @@ const Setup: React.FC = () => {
                 required
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-primary border border-border-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                className="w-full px-4 py-3 bg-surface-primary border border-borders-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                 placeholder="http://localhost:9000/MobileSMARTS/api/v1"
                 disabled={isValidating}
               />
@@ -133,7 +133,7 @@ const Setup: React.FC = () => {
             )}
 
             {/* Hint */}
-            <div className="bg-surface-tertiary border border-border-default rounded-lg p-3">
+            <div className="bg-surface-tertiary border border-borders-default rounded-lg p-3">
               <p className="text-xs text-content-primary">
                 💡 Убедитесь, что сервер Cleverence Mobile SMARTS запущен и доступен по указанному адресу
               </p>
@@ -164,7 +164,7 @@ const Setup: React.FC = () => {
               type="button"
               onClick={handleTestConnection}
               disabled={isValidating || !serverUrl.trim()}
-              className="w-full py-3 px-4 bg-surface-secondary hover:bg-surface-tertiary text-content-primary border border-border-default font-medium rounded-lg transition-colors disabled:bg-surface-disabled disabled:text-content-disabled disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-surface-secondary hover:bg-surface-tertiary text-content-primary border border-borders-default font-medium rounded-lg transition-colors disabled:bg-surface-disabled disabled:text-content-disabled disabled:cursor-not-allowed"
             >
               Проверить соединение
             </button>

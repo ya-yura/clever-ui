@@ -200,7 +200,7 @@ const DocumentsByType: React.FC = () => {
     if (doc.inProcess) {
       return <span className={`${base} bg-info-dark text-info-light border-transparent dark:bg-info-dark dark:text-info-light bg-info-light text-info-dark border-info-light`}>В работе</span>;
     }
-    return <span className={`${base} bg-surface-tertiary text-content-secondary border-border-default`}>Новый</span>;
+    return <span className={`${base} bg-surface-tertiary text-content-secondary border-borders-default`}>Новый</span>;
   };
 
   const formatDateShort = (dateString: string) => {
@@ -283,9 +283,9 @@ const DocumentsByType: React.FC = () => {
             const activeStyleFinal = "bg-success-dark text-success-light border-transparent shadow-sm dark:bg-success-dark dark:text-success-light bg-success-light text-success-dark border-success-light"; 
             
             // Let's use the logic:
-            // Inactive: bg-surface-secondary text-content-secondary border-border-default hover:bg-surface-tertiary
+            // Inactive: bg-surface-secondary text-content-secondary border-borders-default hover:bg-surface-tertiary
             
-            const inactiveStyle = "bg-surface-secondary text-content-secondary border-border-default hover:bg-surface-tertiary";
+            const inactiveStyle = "bg-surface-secondary text-content-secondary border-borders-default hover:bg-surface-tertiary";
             
             // For active, I'll keep the specific green request but maybe lighter in light mode?
             // Or just keep it high contrast. #1f3324 is very dark green.
@@ -319,7 +319,7 @@ const DocumentsByType: React.FC = () => {
            
            // UPDATED: Theme-aware colors for active state (Dark: Blue-ish, Light: Light Blue)
            const activeStyle = "bg-info-dark text-info-light border-transparent dark:bg-info-dark dark:text-info-light bg-info-light text-info-dark border-info-light"; 
-           const inactiveStyle = "bg-surface-secondary text-content-secondary border-border-default hover:bg-surface-tertiary";
+           const inactiveStyle = "bg-surface-secondary text-content-secondary border-borders-default hover:bg-surface-tertiary";
 
           return (
             <button
@@ -342,7 +342,7 @@ const DocumentsByType: React.FC = () => {
             placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-full bg-surface-secondary text-content-primary border border-border-default rounded-md px-3 text-sm focus:outline-none focus:border-brand-primary appearance-none m-0 placeholder:text-content-tertiary"
+            className="w-full h-full bg-surface-secondary text-content-primary border border-borders-default rounded-md px-3 text-sm focus:outline-none focus:border-brand-primary appearance-none m-0 placeholder:text-content-tertiary"
           />
           {searchQuery && (
             <button 
@@ -355,7 +355,7 @@ const DocumentsByType: React.FC = () => {
         </div>
         
         {/* Compact Sort Group */}
-        <div className="flex shrink-0 h-full border border-border-default bg-surface-secondary rounded-md overflow-hidden">
+        <div className="flex shrink-0 h-full border border-borders-default bg-surface-secondary rounded-md overflow-hidden">
           <div className="relative h-full">
             <select
               value={sortField}
@@ -387,7 +387,7 @@ const DocumentsByType: React.FC = () => {
 
       {/* Documents list */}
       {filteredDocuments.length === 0 ? (
-        <div className="text-center py-12 bg-surface-secondary rounded-lg border border-border-default">
+        <div className="text-center py-12 bg-surface-secondary rounded-lg border border-borders-default">
           <div className="text-6xl mb-4">📋</div>
           <h3 className="text-xl text-content-secondary mb-2">Нет документов</h3>
           <p className="text-sm text-content-tertiary opacity-80">
@@ -408,7 +408,7 @@ const DocumentsByType: React.FC = () => {
                   console.log(`📄 [DOCS] Navigating to document details: /docs/${docTypeUni}/${doc.id}`);
                   navigate(`/docs/${docTypeUni}/${doc.id}`);
                 }}
-                className="w-full bg-surface-secondary hover:bg-surface-tertiary rounded border-b border-border-light last:border-0 px-3 py-2 text-left transition-colors"
+                className="w-full bg-surface-secondary hover:bg-surface-tertiary rounded border-b border-borders-light last:border-0 px-3 py-2 text-left transition-colors"
               >
                 <div className="flex gap-3">
                 {/* Left Content Area: Title and Info */}

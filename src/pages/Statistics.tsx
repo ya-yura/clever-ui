@@ -146,7 +146,7 @@ const Statistics: React.FC = () => {
           return (
             <div
               key={kpi.id}
-              className="bg-surface-secondary rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-border-default"
+              className="bg-surface-secondary rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-borders-default"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className={`${kpi.color} p-3 rounded-lg`}>
@@ -187,9 +187,9 @@ const Statistics: React.FC = () => {
       </div>
 
       {/* Charts Placeholder */}
-      <div className="mt-8 bg-surface-secondary rounded-xl p-6 shadow-lg border border-border-default">
+      <div className="mt-8 bg-surface-secondary rounded-xl p-6 shadow-lg border border-borders-default">
         <h2 className="text-xl font-semibold text-content-primary mb-4">График активности</h2>
-        <div className="h-64 flex items-center justify-center border-2 border-dashed border-border-strong rounded-lg">
+        <div className="h-64 flex items-center justify-center border-2 border-dashed border-borders-strong rounded-lg">
           <p className="text-content-tertiary">
             Графики будут доступны после интеграции библиотеки Chart.js
           </p>

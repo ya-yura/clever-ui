@@ -147,7 +147,7 @@ const Login: React.FC = () => {
         <div className="mt-8 space-y-6">
           {requiresAuth && (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-surface-secondary rounded-lg p-6 space-y-4 border border-border-default">
+              <div className="bg-surface-secondary rounded-lg p-6 space-y-4 border border-borders-default">
                 <div>
                   <label
                     htmlFor="username"
@@ -163,7 +163,7 @@ const Login: React.FC = () => {
                       autoComplete="username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-4 py-3 pl-10 bg-surface-primary border border-border-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                      className="w-full px-4 py-3 pl-10 bg-surface-primary border border-borders-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                       placeholder="Введите имя пользователя"
                       disabled={isLogging}
                     />
@@ -186,7 +186,7 @@ const Login: React.FC = () => {
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pl-10 pr-12 bg-surface-primary border border-border-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                      className="w-full px-4 py-3 pl-10 pr-12 bg-surface-primary border border-borders-default rounded-lg text-content-primary placeholder-content-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                       placeholder="Введите пароль"
                       disabled={isLogging}
                     />
@@ -238,7 +238,7 @@ const Login: React.FC = () => {
             type="button"
             onClick={handleDemoLogin}
             disabled={isDemoLogging}
-            className="w-full py-3 px-4 border border-border-default bg-surface-tertiary text-content-secondary font-medium rounded-lg transition-colors hover:bg-surface-secondary disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 px-4 border border-borders-default bg-surface-tertiary text-content-secondary font-medium rounded-lg transition-colors hover:bg-surface-secondary disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isDemoLogging ? 'Запуск демо...' : 'Демо-режим'}
           </button>

@@ -199,15 +199,15 @@ samp {
   }
 
   .card {
-    @apply bg-surface-secondary border border-border-default rounded-lg shadow-md p-4 text-content-primary;
+    @apply bg-surface-secondary border border-borders-default rounded-lg shadow-md p-4 text-content-primary;
   }
 
   .card-compact {
-    @apply bg-surface-secondary border border-border-default rounded-lg shadow-md px-3 py-2 text-content-primary;
+    @apply bg-surface-secondary border border-borders-default rounded-lg shadow-md px-3 py-2 text-content-primary;
   }
 
   .input-field {
-    @apply w-full px-3 py-2 border border-border-default rounded-lg bg-surface-secondary text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary min-h-[44px] placeholder:text-content-tertiary;
+    @apply w-full px-3 py-2 border border-borders-default rounded-lg bg-surface-secondary text-content-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary min-h-[44px] placeholder:text-content-tertiary;
   }
 
   .status-badge {
@@ -217,10 +217,10 @@ samp {
   /* Chips */
   .chip {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm leading-tight whitespace-nowrap min-w-0 shrink-0 select-none font-medium
-           border border-border-default bg-transparent text-content-secondary transition-all;
+           border border-borders-default bg-transparent text-content-secondary transition-all;
   }
 
-  .chip:hover:not(.chip-active) { @apply bg-surface-tertiary border-border-strong; }
+  .chip:hover:not(.chip-active) { @apply bg-surface-tertiary border-borders-strong; }
 
   .chip-active { @apply bg-brand-primary text-white border-brand-primary font-semibold shadow-sm; }
 
@@ -247,7 +247,7 @@ samp {
   }
 
   .tile-outline {
-    @apply bg-transparent border border-border-strong;
+    @apply bg-transparent border border-borders-strong;
   }
 
   /* Tile Typography */
