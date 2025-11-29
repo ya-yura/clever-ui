@@ -14,6 +14,7 @@ import { STATUS_LABELS } from '@/types/document';
 import ReceivingCard from '@/components/receiving/ReceivingCard';
 import ScannerInput from '@/components/ScannerInput';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
+import analytics from '@/analytics';
 
 const Receiving: React.FC = () => {
   const { id } = useParams();
@@ -24,6 +25,10 @@ const Receiving: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentCell, setCurrentCell] = useState<string>('');
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
+  
+  // Ref to track if we are in the process of completing the document
+  // This prevents the cleanup function from stopping the timer if we are about to complete
+  const isCompletingRef = React.useRef(false);
 
   const { addSyncAction } = useOfflineStorage('receiving');
   const { sync, isSyncing, pendingCount } = useSync({
@@ -57,6 +62,20 @@ const Receiving: React.FC = () => {
   // Load document
   useEffect(() => {
     loadDocument();
+    
+    if (id) {
+      // Start "Time on Task" timer
+      analytics.startTimer(`doc-tot-${id}`);
+      isCompletingRef.current = false;
+    }
+    
+    return () => {
+      // Stop "Time on Task" timer when leaving (optional: can treat as 'abandoned' or 'paused')
+      // Only stop if we are NOT currently completing the document (to avoid race conditions/double stops)
+      if (id && !isCompletingRef.current) {
+        analytics.stopTimer(`doc-tot-${id}`, 'receiving.document.exit', { documentId: id });
+      }
+    };
   }, [id]);
 
   const loadDocument = async () => {
@@ -99,6 +118,14 @@ const Receiving: React.FC = () => {
     
     if (line) {
       // Increment fact
+      // Check for over-plan
+      if (line.quantityFact >= line.quantityPlan) {
+        scanFeedback(false, 'Превышение плана');
+        if (!window.confirm(`Внимание! План по товару ${line.productName} выполнен (${line.quantityPlan}). Добавить сверх плана?`)) {
+          return;
+        }
+      }
+
       const updatedLine: ReceivingLine = {
         ...line,
         quantityFact: line.quantityFact + 1,
@@ -112,11 +139,18 @@ const Receiving: React.FC = () => {
       setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
       
       scanFeedback(true, `Добавлено: ${line.productName}`);
+
+      // Track Error Recovery Time (if previous scan was an error, how fast did they fix it?)
+      // We stop the timer ID 'last-error' if it exists
+      analytics.stopTimer('last-error', 'error.recovery', { module: 'receiving', action: 'scan_success' });
       
       // Update document progress
       updateDocumentProgress();
     } else {
       scanFeedback(false, 'Товар не найден в документе');
+      
+      // Start Error Recovery Timer
+      analytics.startTimer('last-error');
     }
   };
 
@@ -147,11 +181,20 @@ const Receiving: React.FC = () => {
     
     // Auto-complete and navigate when all done
     if (allCompleted && document.status !== 'completed') {
+      // Mark as completing so cleanup doesn't stop the timer
+      isCompletingRef.current = true;
+
       await addSyncAction('complete', updatedDoc);
       sync();
       
       // Show success feedback
       feedback.success('Приёмка завершена!');
+
+      // Stop "Time on Task" timer - Success
+      analytics.stopTimer(`doc-tot-${document.id}`, 'receiving.document.complete', { 
+        documentId: document.id, 
+        totalLines: totalLines 
+      });
       
       // Navigate after short delay
       setTimeout(() => {
@@ -162,6 +205,55 @@ const Receiving: React.FC = () => {
         }
       }, 500);
     }
+  };
+
+  const handleManualComplete = async () => {
+    if (!document) return;
+    
+    const uncompletedLines = lines.filter(l => l.quantityFact < l.quantityPlan);
+    const overPlanLines = lines.filter(l => l.quantityFact > l.quantityPlan);
+    
+    let message = 'Завершить документ?';
+    if (uncompletedLines.length > 0 || overPlanLines.length > 0) {
+      message = 'Внимание! Есть расхождения:\n';
+      if (uncompletedLines.length > 0) message += `- Не завершено строк: ${uncompletedLines.length}\n`;
+      if (overPlanLines.length > 0) message += `- Перевыполнение: ${overPlanLines.length}\n`;
+      message += '\nВы уверены, что хотите завершить?';
+      
+      if (!window.confirm(message)) {
+        return;
+      }
+    }
+    
+    const updatedDoc = {
+      ...document,
+      status: 'completed' as const,
+      completedLines: lines.filter(l => l.status === 'completed').length,
+      updatedAt: Date.now(),
+    };
+
+    await db.receivingDocuments.update(document.id, updatedDoc);
+    setDocument(updatedDoc);
+    
+    isCompletingRef.current = true;
+
+    await addSyncAction('complete', updatedDoc);
+    sync();
+    
+    feedback.success('Приёмка завершена вручную!');
+
+    analytics.stopTimer(`doc-tot-${document.id}`, 'receiving.document.complete_manual', { 
+      documentId: document.id, 
+      totalLines: lines.length 
+    });
+    
+    setTimeout(() => {
+      if (window.confirm('Документ завершён. Перейти к размещению?')) {
+        navigate(`/placement?source=${document.id}`);
+      } else {
+        navigate('/receiving');
+      }
+    }, 500);
   };
 
   const adjustQuantity = async (lineId: string, delta: number) => {
@@ -284,6 +376,15 @@ const Receiving: React.FC = () => {
             Нет товаров в документе. Отсканируйте документ для загрузки.
           </p>
         </div>
+      )}
+
+      {document && document.status !== 'completed' && lines.length > 0 && (
+        <button
+          onClick={handleManualComplete}
+          className="w-full bg-brand-primary text-white py-4 rounded-lg font-bold text-lg shadow-lg hover:brightness-110 transition-all mt-4 mb-8"
+        >
+          Завершить документ
+        </button>
       )}
     </div>
   );

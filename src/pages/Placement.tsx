@@ -36,6 +36,7 @@ const Placement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentCell, setCurrentCell] = useState<string>('');
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [history, setHistory] = useState<{lineId: string, prevLine: PlacementLine}[]>([]);
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('placement');
@@ -202,6 +203,9 @@ const Placement: React.FC = () => {
   };
 
   const placeProduct = async (line: PlacementLine, cellId: string) => {
+    // Save history
+    setHistory(prev => [...prev, { lineId: line.id, prevLine: { ...line } }]);
+
     const updatedLine: PlacementLine = {
       ...line,
       cellId,
@@ -224,6 +228,35 @@ const Placement: React.FC = () => {
     // Set active line
     setActiveLineId(line.id);
     setTimeout(() => setActiveLineId(null), 2000);
+  };
+
+  const handleUndo = async () => {
+    if (history.length === 0) return;
+
+    const lastAction = history[history.length - 1];
+    const { lineId, prevLine } = lastAction;
+
+    await db.placementLines.update(lineId, prevLine);
+    await addSyncAction('update_line', prevLine); // Using generic update for undo
+
+    setLines(prev => prev.map(l => l.id === lineId ? prevLine : l));
+    setHistory(prev => prev.slice(0, -1));
+    
+    scanFeedback(true, 'Действие отменено');
+    feedback.warning('Отмена последнего действия');
+    
+    // Re-calc progress
+    // (updateDocumentProgress will be called indirectly or we can call it)
+    // We need to update doc progress based on reverted line
+    const doc = await db.placementDocuments.get(document!.id);
+    if (doc) {
+       // recalculate locally
+       const currentLines = await db.placementLines.where('documentId').equals(doc.id).toArray();
+       const completedLines = currentLines.filter(l => l.status === 'completed').length;
+       const updatedDoc = { ...doc, completedLines, updatedAt: Date.now() };
+       await db.placementDocuments.update(doc.id, updatedDoc);
+       setDocument(updatedDoc);
+    }
   };
 
   const { handleScan: onScanWithFeedback, lastScan } = useScanner({
@@ -391,6 +424,18 @@ const Placement: React.FC = () => {
         onScan={onScanWithFeedback}
         placeholder={currentCell ? 'Отсканируйте товар...' : 'Отсканируйте ячейку...'}
       />
+
+      {/* Actions */}
+      {history.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleUndo}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors flex items-center gap-2"
+          >
+            ↩ Отменить последнее
+          </button>
+        </div>
+      )}
 
       {/* Lines */}
       <div className="space-y-2">

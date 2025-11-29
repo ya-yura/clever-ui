@@ -25,11 +25,37 @@ const Statistics: React.FC = () => {
 
   const loadStatistics = async () => {
     try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayTs = today.getTime();
+
       // Load data from IndexedDB
       const receiving = await db.receivingDocuments.count();
       const placement = await db.placementDocuments.count();
       const picking = await db.pickingDocuments.count();
       const shipment = await db.shipmentDocuments.count();
+
+      // Calculate Avg Time (based on completed receiving docs for now)
+      const completedReceiving = await db.receivingDocuments
+        .where('status')
+        .equals('completed')
+        .toArray();
+      
+      let totalTime = 0;
+      let count = 0;
+      completedReceiving.forEach(doc => {
+          if (doc.createdAt && doc.updatedAt) {
+              totalTime += (doc.updatedAt - doc.createdAt);
+              count++;
+          }
+      });
+      const avgMinutes = count > 0 ? Math.round(totalTime / count / 60000) : 0;
+
+      // Count errors from today
+      const errors = await db.errorLogs
+        .where('timestamp')
+        .above(todayTs)
+        .count();
 
       // Calculate KPIs
       const stats: KPI[] = [
@@ -38,7 +64,7 @@ const Statistics: React.FC = () => {
           label: 'Приемка документов',
           value: receiving,
           unit: 'док.',
-          trend: 'up',
+          trend: 'stable',
           icon: Package,
           color: 'bg-brand-primary',
         },
@@ -47,7 +73,7 @@ const Statistics: React.FC = () => {
           label: 'Размещено',
           value: placement,
           unit: 'док.',
-          trend: 'up',
+          trend: 'stable',
           icon: CheckCircle,
           color: 'bg-green-500',
         },
@@ -65,25 +91,25 @@ const Statistics: React.FC = () => {
           label: 'Отгружено',
           value: shipment,
           unit: 'док.',
-          trend: 'down',
+          trend: 'stable',
           icon: TrendingUp,
           color: 'bg-purple-500',
         },
         {
           id: 'avgTime',
-          label: 'Среднее время',
-          value: 45,
+          label: 'Среднее время (Приемка)',
+          value: avgMinutes,
           unit: 'мин',
-          trend: 'down',
+          trend: 'stable',
           icon: Clock,
           color: 'bg-orange-500',
         },
         {
           id: 'errors',
-          label: 'Ошибок',
-          value: 3,
+          label: 'Ошибок сегодня',
+          value: errors,
           unit: 'шт.',
-          trend: 'up',
+          trend: errors > 0 ? 'down' : 'stable',
           icon: AlertCircle,
           color: 'bg-red-500',
         },

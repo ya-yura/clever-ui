@@ -4,6 +4,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { playSound } from '@/utils/sound';
+import analytics from '@/analytics';
 
 export type ScanMode = 'camera' | 'keyboard' | 'bluetooth';
 
@@ -23,14 +24,34 @@ export const useScanner = ({
   const [isScanning, setIsScanning] = useState(false);
   const [lastScan, setLastScan] = useState<string>('');
   const scannerRef = useRef<Html5QrcodeScanner | Html5Qrcode | null>(null);
+  
+  // Ref to track time between scans for rhythm metrics
+  const lastScanTimeRef = useRef<number>(Date.now());
+
+  const trackScanInterval = useCallback((mode: ScanMode) => {
+    const now = Date.now();
+    const interval = now - lastScanTimeRef.current;
+    
+    // Ignore realistic first scans (intervals > 5 min are likely new sessions)
+    if (interval < 300000) {
+      analytics.trackMetric('scan_interval', interval, 'ms', { mode });
+    }
+    
+    lastScanTimeRef.current = now;
+  }, []);
 
   // Keyboard mode is now handled by ScannerInput component
   // This hook wraps onScan to add sound and tracking
   const handleScan = useCallback((code: string) => {
     setLastScan(code);
     playSound('scan');
+    
+    // Track successful scan (keyboard mode)
+    analytics.trackScanSuccess(code, 'keyboard');
+    trackScanInterval('keyboard');
+    
     onScan(code);
-  }, [onScan]);
+  }, [onScan, trackScanInterval]);
 
   // Camera mode: use Html5Qrcode
   const startCameraScanner = useCallback(async (elementId: string) => {
@@ -47,6 +68,11 @@ export const useScanner = ({
         (decodedText) => {
           setLastScan(decodedText);
           playSound('scan');
+          
+          // Track successful scan (camera mode)
+          analytics.trackScanSuccess(decodedText, 'camera');
+          trackScanInterval('camera');
+          
           onScan(decodedText);
           
           if (!continuous) {
@@ -65,7 +91,7 @@ export const useScanner = ({
     } catch (error: any) {
       onError?.(error.message);
     }
-  }, [continuous, onScan, onError]);
+  }, [continuous, onScan, onError, trackScanInterval]);
 
   const stopScanner = useCallback(async () => {
     try {
@@ -83,8 +109,14 @@ export const useScanner = ({
   const manualScan = useCallback((code: string) => {
     setLastScan(code);
     playSound('scan');
+    
+    // Track successful scan (manual mode)
+    analytics.trackScanSuccess(code, 'manual');
+    analytics.trackManualInput('barcode');
+    trackScanInterval('keyboard'); // Manual acts like keyboard input in flow
+    
     onScan(code);
-  }, [onScan]);
+  }, [onScan, trackScanInterval]);
 
   // Cleanup
   useEffect(() => {

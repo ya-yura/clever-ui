@@ -26,6 +26,7 @@ const Shipment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showTtnModal, setShowTtnModal] = useState(false);
   const [ttnNumber, setTtnNumber] = useState('');
+  const [carrier, setCarrier] = useState('');
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
   const { addSyncAction } = useOfflineStorage('shipment');
@@ -219,11 +220,12 @@ const Shipment: React.FC = () => {
   };
 
   const saveTtn = async () => {
-    if (!document || !ttnNumber.trim()) return;
+    if (!document) return;
 
     const updatedDoc = {
       ...document,
       ttn: ttnNumber.trim(),
+      carrier: carrier.trim(),
       updatedAt: Date.now(),
     };
 
@@ -231,6 +233,7 @@ const Shipment: React.FC = () => {
     setDocument(updatedDoc);
     setShowTtnModal(false);
     setTtnNumber('');
+    setCarrier('');
 
     completeDocument();
   };
@@ -414,23 +417,39 @@ const Shipment: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Введите номер ТТН
+              Параметры отгрузки
             </h3>
-            <input
-              type="text"
-              value={ttnNumber}
-              onChange={(e) => setTtnNumber(e.target.value)}
-              placeholder="TTH-123456"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
-              autoFocus
-            />
+            
+            <div className="mb-4">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Номер ТТН *</label>
+              <input
+                type="text"
+                value={ttnNumber}
+                onChange={(e) => setTtnNumber(e.target.value)}
+                placeholder="TTH-123456"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                autoFocus
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Перевозчик</label>
+              <input
+                type="text"
+                value={carrier}
+                onChange={(e) => setCarrier(e.target.value)}
+                placeholder="Например: СДЭК"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={saveTtn}
                 disabled={!ttnNumber.trim()}
                 className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-orange-700"
               >
-                Сохранить
+                Сохранить и завершить
               </button>
               <button
                 onClick={() => setShowTtnModal(false)}

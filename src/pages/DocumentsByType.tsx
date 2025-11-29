@@ -59,14 +59,77 @@ const DocumentsByType: React.FC = () => {
     })();
   }, []);
 
-  // Calculate filtered documents by status
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<'date' | 'number' | 'status'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    if (docTypeUni) {
+      loadDocuments();
+    }
+  }, [docTypeUni]);
+
+  // Load all doc types for quick switching chips
+  useEffect(() => {
+    (async () => {
+      try {
+        const types = await odataCache.getDocTypes();
+        setAllDocTypes(types);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
+  // Calculate filtered documents by status, search, and sort
   const filteredDocuments = useMemo(() => {
-    if (statusFilter === 'all') return documents;
-    if (statusFilter === 'finished') return documents.filter((d: any) => d.finished === true);
-    if (statusFilter === 'in_process') return documents.filter((d: any) => d.inProcess === true);
-    // 'new'
-    return documents.filter((d: any) => !d.finished && !d.inProcess);
-  }, [documents, statusFilter]);
+    let filtered = documents;
+
+    // 1. Filter by Status
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'finished') filtered = filtered.filter((d: any) => d.finished === true);
+      else if (statusFilter === 'in_process') filtered = filtered.filter((d: any) => d.inProcess === true);
+      else filtered = filtered.filter((d: any) => !d.finished && !d.inProcess); // 'new'
+    }
+
+    // 2. Filter by Search Query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        (d.id && d.id.toLowerCase().includes(q)) ||
+        (d.name && d.name.toLowerCase().includes(q)) ||
+        (d.barcode && d.barcode.toLowerCase().includes(q)) ||
+        (d.description && d.description.toLowerCase().includes(q)) ||
+        (d.warehouseId && d.warehouseId.toLowerCase().includes(q)) ||
+        (d.userName && d.userName.toLowerCase().includes(q))
+      );
+    }
+
+    // 3. Sort
+    return filtered.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sortField) {
+        case 'date':
+          valA = new Date(a.createDate || 0).getTime();
+          valB = new Date(b.createDate || 0).getTime();
+          break;
+        case 'number':
+          valA = a.id || '';
+          valB = b.id || '';
+          break;
+        case 'status':
+          valA = a.finished ? 2 : a.inProcess ? 1 : 0;
+          valB = b.finished ? 2 : b.inProcess ? 1 : 0;
+          break;
+      }
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [documents, statusFilter, searchQuery, sortField, sortDirection]);
 
   // Update header with list info (short title)
   useEffect(() => {
@@ -238,6 +301,43 @@ const DocumentsByType: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Search and Sort */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Поиск..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#86e0cb]"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#888] hover:text-white"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <select
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value as any)}
+          className="bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-2 py-2 text-sm focus:outline-none focus:border-[#86e0cb]"
+        >
+          <option value="date">Дата</option>
+          <option value="number">Номер</option>
+          <option value="status">Статус</option>
+        </select>
+        <button
+          onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+          className="bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 py-2 hover:bg-[#4c4c4c]"
+        >
+          {sortDirection === 'asc' ? '↑' : '↓'}
+        </button>
+      </div>
+
       {/* Documents list */}
       {filteredDocuments.length === 0 ? (
         <div className="text-center py-12 bg-[#474747] rounded-lg">

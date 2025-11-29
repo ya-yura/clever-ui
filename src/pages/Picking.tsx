@@ -222,18 +222,28 @@ const Picking: React.FC = () => {
     );
 
     if (allCompleted) {
-      const nextCell = lines.find(l => 
-        l.cellId !== currentCell && 
-        l.status !== 'completed'
-      );
+      moveToNextCell();
+    }
+  };
 
-      if (nextCell) {
-        setTimeout(() => {
-          setCurrentCell(nextCell.cellId);
-          scanFeedback(true, `Переход к ячейке ${nextCell.cellName}`);
-          speak(`Переход к ячейке ${nextCell.cellName}`);
-        }, 1500);
-      }
+  const moveToNextCell = () => {
+    const nextCell = lines.find(l => 
+      l.cellId !== currentCell && 
+      l.status !== 'completed'
+    );
+
+    if (nextCell) {
+      setTimeout(() => {
+        setCurrentCell(nextCell.cellId);
+        scanFeedback(true, `Переход к ячейке ${nextCell.cellName}`);
+        speak(`Переход к ячейке ${nextCell.cellName}`);
+      }, 1500);
+    }
+  };
+
+  const handleSkipCell = () => {
+    if (confirm('Пропустить текущую ячейку?')) {
+       moveToNextCell();
     }
   };
 
@@ -424,6 +434,17 @@ const Picking: React.FC = () => {
         onScan={onScanWithFeedback}
         placeholder={currentCell ? `Ячейка ${currentCellName} - сканируйте товар...` : 'Отсканируйте ячейку...'}
       />
+
+      {currentCell && (
+        <div className="flex justify-end">
+          <button 
+            onClick={handleSkipCell}
+            className="text-sm text-gray-500 underline hover:text-brand-primary"
+          >
+            Пропустить ячейку →
+          </button>
+        </div>
+      )}
 
       {/* Lines */}
       <div className="space-y-2">

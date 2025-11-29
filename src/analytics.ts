@@ -11,6 +11,8 @@
  * - Network-aware sending
  */
 
+import { db } from '@/services/db';
+
 // ==================== TYPES ====================
 
 export interface AnalyticsEvent {
@@ -98,6 +100,7 @@ class Analytics {
   private flushTimer: number | null = null;
   private isInitialized = false;
   private context: EventContext;
+  private timers: Map<string, number> = new Map();
 
   // LocalStorage keys
   private readonly STORAGE_KEYS = {
@@ -110,7 +113,7 @@ class Analytics {
   constructor() {
     // Default config (will be overridden in init)
     this.config = {
-      endpoint: '/track',
+      endpoint: import.meta.env.VITE_SUPABASE_ANALYTICS_URL || '/track', // Use env var or default
       batchSize: 10,
       flushInterval: 30000, // 30 seconds
       debug: false,
@@ -159,6 +162,52 @@ class Analytics {
   }
 
   /**
+   * Start a timer for a specific operation/session
+   * @param id Unique identifier for the timer (e.g., document ID)
+   */
+  public startTimer(id: string): void {
+    this.timers.set(id, performance.now());
+    this.log(`Timer started: ${id}`);
+  }
+
+  /**
+   * Stop a timer and track the duration
+   * @param id Timer identifier
+   * @param eventName Event name to track (e.g., 'document.complete')
+   * @param properties Additional properties
+   */
+  public stopTimer(id: string, eventName: string, properties?: Record<string, any>): number | null {
+    const startTime = this.timers.get(id);
+    if (!startTime) {
+      this.log(`Timer not found: ${id}`);
+      return null;
+    }
+
+    const duration = Math.round(performance.now() - startTime);
+    this.timers.delete(id);
+
+    this.track(eventName, {
+      ...properties,
+      duration_ms: duration,
+      timer_id: id
+    });
+
+    return duration;
+  }
+
+  /**
+   * Track a generic metric value
+   */
+  public trackMetric(name: string, value: number, unit?: string, context?: Record<string, any>): void {
+    this.track('metric', {
+      name,
+      value,
+      unit,
+      ...context
+    });
+  }
+
+  /**
    * Track a custom event
    */
   public track(event: string, properties?: Record<string, any>): void {
@@ -177,7 +226,37 @@ class Analytics {
     };
 
     this.addToBuffer(analyticsEvent);
+    this.saveToLocalDB(analyticsEvent);
     this.log('Event tracked:', event, properties);
+  }
+
+  /**
+   * Save event to local IndexedDB for statistics
+   */
+  private async saveToLocalDB(event: AnalyticsEvent): Promise<void> {
+    try {
+      // Map AnalyticsEvent to ActivityEvent structure expected by DB
+      // We use @ts-ignore because we are adapting generic analytics to specific DB schema
+      // @ts-ignore
+      await db.activityEvents.add({
+        id: generateUUID(),
+        eventType: event.event,
+        timestamp: new Date(event.timestamp).getTime(),
+        createdAt: Date.now(),
+        status: 'pending', 
+        retryCount: 0,
+        userId: event.userId, // Indexed field
+        payload: {
+          ...event.properties,
+          userId: event.userId,
+          sessionId: event.sessionId,
+          context: event.context
+        }
+      });
+    } catch (error) {
+      // Silent fail for stats to not interrupt main flow
+      if (this.config.debug) console.error('Failed to save stats locally:', error);
+    }
   }
 
   /**
@@ -718,6 +797,9 @@ export const {
   trackError: analytics.trackError.bind(analytics),
   trackTiming: analytics.trackTiming.bind(analytics),
   trackScreenLoadTime: analytics.trackScreenLoadTime.bind(analytics),
+  startTimer: analytics.startTimer.bind(analytics),
+  stopTimer: analytics.stopTimer.bind(analytics),
+  trackMetric: analytics.trackMetric.bind(analytics),
   flush: analytics.flush.bind(analytics),
   clear: analytics.clear.bind(analytics),
 };

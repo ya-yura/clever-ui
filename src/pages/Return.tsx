@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import { db } from '@/services/db';
 import { useScanner } from '@/hooks/useScanner';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -435,6 +436,20 @@ const Return: React.FC = () => {
                   🗑️
                 </button>
               </div>
+            </div>
+
+            {/* Photo Button */}
+            <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  alert('Функция фотофиксации будет доступна в следующей версии');
+                  // In real app: open camera -> save photo blob -> update line.photo
+                }}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-brand-primary transition-colors"
+              >
+                <Camera size={16} />
+                <span>Добавить фото</span>
+              </button>
             </div>
           </div>
         ))}

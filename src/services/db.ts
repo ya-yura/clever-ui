@@ -174,7 +174,7 @@ export class WarehouseDatabase extends Dexie {
 
     // Version 5 - Activity tracking events
     this.version(5).stores({
-      activityEvents: 'id, eventType, status, timestamp',
+      activityEvents: 'id, eventType, status, timestamp, userId',
     });
   }
 }
