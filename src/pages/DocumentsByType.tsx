@@ -383,10 +383,10 @@ const DocumentsByType: React.FC = () => {
                   )}
 
                   {/* Tertiary Meta Row (Owner & Warehouse) */}
-                  <div className="flex items-center gap-2 text-[10px] text-[#808080] mt-0.5 leading-tight">
-                    {owner && <span>👤 {owner}</span>}
-                    {owner && doc.warehouseId && <span className="opacity-50">•</span>}
-                    {doc.warehouseId && <span>📦 {doc.warehouseId}</span>}
+                  <div className="flex items-center gap-2 text-[10px] mt-1 leading-tight">
+                    {owner && <span className="text-[#a5c7ff] font-medium">{owner}</span>}
+                    {owner && doc.warehouseId && <span className="text-[#666]">•</span>}
+                    {doc.warehouseId && <span className="text-[#808080]">📦 {doc.warehouseId}</span>}
                   </div>
                 </div>
 
