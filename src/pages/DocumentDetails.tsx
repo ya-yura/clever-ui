@@ -352,7 +352,7 @@ const DocumentDetails: React.FC = () => {
 
       {/* Items list */}
       {items.length === 0 ? (
-        <div className="text-center py-12 bg-[#474747] rounded-lg">
+        <div className="text-center py-12 bg-surface-secondary border border-borders-default rounded-lg">
           <div className="text-6xl mb-4">📋</div>
           <h3 className="text-xl text-[#a7a7a7] mb-2">Нет строк</h3>
           <p className="text-sm text-[#a7a7a7] opacity-80">

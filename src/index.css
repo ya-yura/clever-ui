@@ -295,6 +295,28 @@ samp {
   .tone-muted {
     @apply filter saturate-50 brightness-95;
   }
+
+  .theme-chip-active-success {
+    background-color: var(--color-success-dark);
+    color: var(--color-success-light);
+    border-color: transparent;
+  }
+
+  html[data-theme='light'] .theme-chip-active-success {
+    background-color: var(--color-success-light);
+    color: var(--color-success-dark);
+  }
+
+  .theme-chip-active-info {
+    background-color: var(--color-info-dark);
+    color: var(--color-info-light);
+    border-color: transparent;
+  }
+
+  html[data-theme='light'] .theme-chip-active-info {
+    background-color: var(--color-info-light);
+    color: var(--color-info-dark);
+  }
 }
 
 /* Touch targets */

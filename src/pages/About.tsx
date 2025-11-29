@@ -13,40 +13,40 @@ const About: React.FC = () => {
         <div className="inline-flex items-center justify-center w-20 h-20 bg-brand-primary rounded-full mb-4">
           <Info className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-4xl font-bold text-[#e3e3dd] mb-2">
+        <h1 className="text-4xl font-bold text-content-primary mb-2">
           {appMetadata.name}
         </h1>
-        <p className="text-gray-400 text-lg">
+        <p className="text-content-secondary text-lg">
           PWA-приложение для управления складскими операциями
         </p>
       </div>
 
       {/* Version Info */}
-      <div className="bg-[#474747] rounded-xl p-6 shadow-lg mb-6">
-        <h2 className="text-xl font-semibold text-[#e3e3dd] mb-4">Информация о версии</h2>
+      <div className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg mb-6">
+        <h2 className="text-xl font-semibold text-content-primary mb-4">Информация о версии</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-gray-400 text-sm">Версия</p>
-            <p className="text-[#e3e3dd] text-lg font-semibold">{appMetadata.version}</p>
+            <p className="text-content-secondary text-sm">Версия</p>
+            <p className="text-content-primary text-lg font-semibold">{appMetadata.version}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Сборка</p>
-            <p className="text-[#e3e3dd] text-lg font-semibold">{appMetadata.build}</p>
+            <p className="text-content-secondary text-sm">Сборка</p>
+            <p className="text-content-primary text-lg font-semibold">{appMetadata.build}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Разработчик</p>
-            <p className="text-[#e3e3dd] text-lg font-semibold">{appMetadata.vendor}</p>
+            <p className="text-content-secondary text-sm">Разработчик</p>
+            <p className="text-content-primary text-lg font-semibold">{appMetadata.vendor}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Тип</p>
-            <p className="text-[#e3e3dd] text-lg font-semibold">PWA</p>
+            <p className="text-content-secondary text-sm">Тип</p>
+            <p className="text-content-primary text-lg font-semibold">PWA</p>
           </div>
         </div>
       </div>
 
       {/* Features */}
-      <div className="bg-[#474747] rounded-xl p-6 shadow-lg mb-6">
-        <h2 className="text-xl font-semibold text-[#e3e3dd] mb-4">Возможности</h2>
+      <div className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg mb-6">
+        <h2 className="text-xl font-semibold text-content-primary mb-4">Возможности</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
             '📦 Приёмка товаров',
@@ -59,16 +59,16 @@ const About: React.FC = () => {
             '📱 PWA установка',
           ].map((feature, index) => (
             <div key={index} className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full" />
-              <span className="text-gray-200">{feature}</span>
+              <div className="w-2 h-2 bg-brand-primary rounded-full" />
+              <span className="text-content-primary">{feature}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Technologies */}
-      <div className="bg-[#474747] rounded-xl p-6 shadow-lg mb-6">
-        <h2 className="text-xl font-semibold text-[#e3e3dd] mb-4">Технологии</h2>
+      <div className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg mb-6">
+        <h2 className="text-xl font-semibold text-content-primary mb-4">Технологии</h2>
         <div className="flex flex-wrap gap-2">
           {['React 18', 'TypeScript', 'Tailwind CSS', 'Vite', 'IndexedDB', 'Dexie.js', 'Framer Motion', 'React Router'].map((tech) => (
             <span
@@ -82,12 +82,12 @@ const About: React.FC = () => {
       </div>
 
       {/* Contact */}
-      <div className="bg-[#474747] rounded-xl p-6 shadow-lg">
-        <h2 className="text-xl font-semibold text-[#e3e3dd] mb-4">Контакты</h2>
+      <div className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg">
+        <h2 className="text-xl font-semibold text-content-primary mb-4">Контакты</h2>
         <div className="space-y-3">
           <a
             href="mailto:support@cleverence.com"
-            className="flex items-center gap-3 text-gray-200 hover:text-brand-primary transition-colors"
+            className="flex items-center gap-3 text-content-primary hover:text-brand-primary transition-colors"
           >
             <Mail className="w-5 h-5" />
             <span>support@cleverence.com</span>
@@ -96,7 +96,7 @@ const About: React.FC = () => {
             href="https://cleverence.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 text-gray-200 hover:text-brand-primary transition-colors"
+            className="flex items-center gap-3 text-content-primary hover:text-brand-primary transition-colors"
           >
             <Globe className="w-5 h-5" />
             <span>cleverence.com</span>
@@ -105,7 +105,7 @@ const About: React.FC = () => {
             href="https://github.com/cleverence"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 text-gray-200 hover:text-brand-primary transition-colors"
+            className="flex items-center gap-3 text-content-primary hover:text-brand-primary transition-colors"
           >
             <Github className="w-5 h-5" />
             <span>github.com/cleverence</span>
@@ -114,7 +114,7 @@ const About: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="text-center mt-8 text-gray-500">
+      <div className="text-center mt-8 text-content-tertiary">
         <p className="flex items-center justify-center gap-2">
           Сделано с <Heart className="w-4 h-4 text-red-500 fill-current" /> командой {appMetadata.vendor}
         </p>

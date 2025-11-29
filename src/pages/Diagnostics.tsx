@@ -155,31 +155,13 @@ const Diagnostics: React.FC = () => {
     setRunning(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ok':
-        return 'text-green-400';
-      case 'warning':
-        return 'text-yellow-400';
-      case 'error':
-        return 'text-red-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
-  const getStatusBg = (status: string) => {
-    switch (status) {
-      case 'ok':
-        return 'bg-green-500/20';
-      case 'warning':
-        return 'bg-yellow-500/20';
-      case 'error':
-        return 'bg-red-500/20';
-      default:
-        return 'bg-gray-500/20';
-    }
-  };
+  const statusStyles = {
+    ok: { iconBg: 'bg-success-light', iconText: 'text-success-dark', badgeBg: 'bg-success-light', badgeText: 'text-success-dark' },
+    warning: { iconBg: 'bg-warning-light', iconText: 'text-warning-dark', badgeBg: 'bg-warning-light', badgeText: 'text-warning-dark' },
+    error: { iconBg: 'bg-error-light', iconText: 'text-error-dark', badgeBg: 'bg-error-light', badgeText: 'text-error-dark' },
+    checking: { iconBg: 'bg-info-light', iconText: 'text-info-dark', badgeBg: 'bg-info-light', badgeText: 'text-info-dark' },
+    default: { iconBg: 'bg-surface-tertiary', iconText: 'text-content-tertiary', badgeBg: 'bg-surface-tertiary', badgeText: 'text-content-tertiary' },
+  } as const;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -187,13 +169,13 @@ const Diagnostics: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#e3e3dd] mb-2">🧠 Диагностика</h1>
-            <p className="text-gray-400">Проверка состояния системы</p>
+            <h1 className="text-3xl font-bold text-content-primary mb-2">🧠 Диагностика</h1>
+            <p className="text-content-secondary">Проверка состояния системы</p>
           </div>
           <button
             onClick={runDiagnostics}
             disabled={running}
-            className="bg-brand-primary hover:brightness-90 disabled:bg-gray-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2 touch-manipulation"
+            className="bg-brand-primary hover:brightness-90 disabled:bg-surface-disabled text-brand-dark px-6 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2 touch-manipulation"
           >
             <Activity className={`w-5 h-5 ${running ? 'animate-spin' : ''}`} />
             {running ? 'Проверка...' : 'Запустить проверку'}
@@ -201,18 +183,18 @@ const Diagnostics: React.FC = () => {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+        <div className="bg-error-light/40 border border-error-light rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <Trash2 className="w-5 h-5 text-red-400 mt-0.5" />
+            <Trash2 className="w-5 h-5 text-error mt-0.5" />
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-red-400 mb-1">Опасная зона</h3>
-              <p className="text-xs text-gray-400 mb-3">
+              <h3 className="text-sm font-semibold text-error mb-1">Опасная зона</h3>
+              <p className="text-xs text-content-secondary mb-3">
                 Очистить все данные, настройки и кэш. Используйте для сброса приложения к начальному состоянию.
               </p>
               <button
                 onClick={clearAllData}
                 disabled={clearing}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+                className="bg-error hover:brightness-90 disabled:bg-surface-disabled text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
               >
                 <Trash2 className={`w-4 h-4 ${clearing ? 'animate-pulse' : ''}`} />
                 {clearing ? 'Очистка...' : 'Очистить все данные'}
@@ -229,57 +211,62 @@ const Diagnostics: React.FC = () => {
           return (
             <div
               key={check.id}
-              className="bg-[#474747] rounded-xl p-6 shadow-lg"
+              className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg"
             >
+              {(() => {
+                const style = statusStyles[check.status as keyof typeof statusStyles] || statusStyles.default;
+                return (
               <div className="flex items-start gap-4">
-                <div className={`${getStatusBg(check.status)} p-3 rounded-lg`}>
-                  <Icon className={`w-6 h-6 ${getStatusColor(check.status)}`} />
-                </div>
+                    <div className={`${style.iconBg} p-3 rounded-lg`}>
+                      <Icon className={`w-6 h-6 ${style.iconText}`} />
+                    </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-[#e3e3dd]">
-                      {check.label}
-                    </h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                        check.status
-                      )} ${getStatusBg(check.status)}`}
-                    >
-                      {check.status === 'ok'
-                        ? '✓ OK'
-                        : check.status === 'warning'
-                        ? '⚠ Предупреждение'
-                        : '✗ Ошибка'}
-                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-content-primary">
+                          {check.label}
+                        </h3>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${style.badgeBg} ${style.badgeText}`}
+                        >
+                          {check.status === 'ok'
+                            ? '✓ OK'
+                            : check.status === 'warning'
+                            ? '⚠ Предупреждение'
+                            : check.status === 'error'
+                            ? '✗ Ошибка'
+                            : 'Проверка'}
+                        </span>
+                      </div>
+                      <p className="text-content-secondary">{check.message}</p>
+                    </div>
                   </div>
-                  <p className="text-gray-400">{check.message}</p>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           );
         })}
       </div>
 
       {/* System Info */}
-      <div className="mt-8 bg-[#474747] rounded-xl p-6 shadow-lg">
-        <h2 className="text-xl font-semibold text-[#e3e3dd] mb-4">Системная информация</h2>
+      <div className="mt-8 bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg">
+        <h2 className="text-xl font-semibold text-content-primary mb-4">Системная информация</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-400">Браузер:</span>
-            <span className="text-[#e3e3dd] ml-2">{navigator.userAgent.split(' ').pop()}</span>
+            <span className="text-content-secondary">Браузер:</span>
+            <span className="text-content-primary ml-2">{navigator.userAgent.split(' ').pop()}</span>
           </div>
           <div>
-            <span className="text-gray-400">Язык:</span>
-            <span className="text-[#e3e3dd] ml-2">{navigator.language}</span>
+            <span className="text-content-secondary">Язык:</span>
+            <span className="text-content-primary ml-2">{navigator.language}</span>
           </div>
           <div>
-            <span className="text-gray-400">Платформа:</span>
-            <span className="text-[#e3e3dd] ml-2">{navigator.platform}</span>
+            <span className="text-content-secondary">Платформа:</span>
+            <span className="text-content-primary ml-2">{navigator.platform}</span>
           </div>
           <div>
-            <span className="text-gray-400">Онлайн:</span>
-            <span className="text-[#e3e3dd] ml-2">{navigator.onLine ? 'Да' : 'Нет'}</span>
+            <span className="text-content-secondary">Онлайн:</span>
+            <span className="text-content-primary ml-2">{navigator.onLine ? 'Да' : 'Нет'}</span>
           </div>
         </div>
       </div>

@@ -79,8 +79,8 @@ const Settings: React.FC = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#e3e3dd] mb-2">⚙️ Настройки</h1>
-        <p className="text-gray-400">Конфигурация приложения Склад-15</p>
+        <h1 className="text-3xl font-bold text-content-primary mb-2">⚙️ Настройки</h1>
+        <p className="text-content-secondary">Конфигурация приложения Склад-15</p>
       </div>
 
       {/* Settings Sections */}
@@ -90,19 +90,19 @@ const Settings: React.FC = () => {
           return (
             <div
               key={section.id}
-              className="bg-[#474747] rounded-xl p-6 shadow-lg"
+              className="bg-surface-secondary border border-borders-default rounded-xl p-6 shadow-lg"
             >
               <div className="flex items-center gap-3 mb-4">
                 <Icon className="w-6 h-6 text-brand-primary" />
-                <h2 className="text-xl font-semibold text-[#e3e3dd]">
+                <h2 className="text-xl font-semibold text-content-primary">
                   {section.title}
                 </h2>
               </div>
 
               <div className="space-y-4">
                 {section.fields.map((field) => (
-                  <div key={field.id} className="flex items-center justify-between">
-                    <label className="text-gray-200 font-medium">
+                  <div key={field.id} className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                    <label className="text-content-primary font-medium">
                       {field.label}
                     </label>
 
@@ -110,7 +110,7 @@ const Settings: React.FC = () => {
                       <input
                         type="text"
                         defaultValue={field.value as string}
-                        className="bg-[#343436] text-gray-200 px-4 py-2 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-surface-primary text-content-primary px-4 py-2 rounded-lg w-64 border border-borders-default focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                       />
                     )}
 
@@ -118,14 +118,14 @@ const Settings: React.FC = () => {
                       <input
                         type="number"
                         defaultValue={field.value as number}
-                        className="bg-[#343436] text-gray-200 px-4 py-2 rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-surface-primary text-content-primary px-4 py-2 rounded-lg w-32 border border-borders-default focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                       />
                     )}
 
                     {field.type === 'select' && (
                       <select
                         defaultValue={field.value as string}
-                        className="bg-[#343436] text-gray-200 px-4 py-2 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-surface-primary text-content-primary px-4 py-2 rounded-lg w-64 border border-borders-default focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
                       >
                         {field.options?.map((option) => (
                           <option key={option} value={option}>
@@ -137,12 +137,12 @@ const Settings: React.FC = () => {
 
                     {field.type === 'toggle' && (
                       <button
-                        className={`relative w-14 h-8 rounded-full transition-colors ${
-                          field.value ? 'bg-brand-primary' : 'bg-gray-600'
+                        className={`relative w-14 h-8 rounded-full transition-colors border border-borders-default ${
+                          field.value ? 'bg-brand-primary' : 'bg-surface-tertiary'
                         }`}
                       >
                         <span
-                          className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
+                          className={`absolute top-1 left-1 w-6 h-6 bg-surface-primary rounded-full transition-transform ${
                             field.value ? 'translate-x-6' : ''
                           }`}
                         />
@@ -177,7 +177,7 @@ const Settings: React.FC = () => {
 
         <button
           onClick={() => navigate(-1)}
-          className="px-6 py-4 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold transition-colors touch-manipulation"
+          className="px-6 py-4 bg-surface-tertiary hover:bg-surface-secondary text-content-primary border border-borders-default rounded-xl font-semibold transition-colors touch-manipulation"
         >
           Отмена
         </button>

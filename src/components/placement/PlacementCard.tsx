@@ -11,11 +11,14 @@ interface Props {
 }
 
 const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
-  const statusColor = 
-    line.status === 'completed' ? 'bg-[#2d6b2d] border-[#91ed91]' :
-    line.status === 'partial' ? 'bg-[#8b5931] border-[#f3a361]' :
-    isActive ? 'bg-[#2d7a6b] border-[#86e0cb]' :
-    'bg-[#2a2a2c] border-[#474747]';
+  const statusClass =
+    line.status === 'completed'
+      ? 'border-success bg-success-light'
+      : line.status === 'partial'
+      ? 'border-warning bg-warning-light'
+      : isActive
+      ? 'border-info bg-info-light'
+      : 'border-borders-default bg-surface-secondary';
 
   const statusIcon =
     line.status === 'completed' ? '🟢' :
@@ -27,8 +30,8 @@ const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
 
   return (
     <div 
-      className={`card border-2 ${statusColor} transition-all cursor-pointer ${
-        isActive ? 'ring-2 ring-blue-400' : ''
+      className={`card border-2 ${statusClass} transition-all cursor-pointer ${
+        isActive ? 'ring-2 ring-brand-primary' : ''
       }`}
       onClick={onSelect}
     >
@@ -37,10 +40,10 @@ const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
           <div className="flex items-center space-x-2 mb-2">
             <span className="text-2xl">{statusIcon}</span>
             <div>
-              <h3 className="font-semibold text-[#e3e3dd]">
+              <h3 className="font-semibold text-content-primary">
                 {line.productName}
               </h3>
-              <p className="text-sm text-[#a7a7a7]">
+              <p className="text-sm text-content-secondary">
                 Артикул: {line.productSku}
               </p>
             </div>
@@ -50,16 +53,16 @@ const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
           <div className="mt-3 space-y-2">
             {line.suggestedCellName && (
               <div className="flex items-center space-x-2 text-sm">
-                <span className="text-[#a7a7a7]">Рекомендуемая ячейка:</span>
-                <span className="font-semibold text-[#86e0cb] bg-[#2d7a6b] px-2 py-1 rounded">
+                <span className="text-content-secondary">Рекомендуемая ячейка:</span>
+                <span className="font-semibold text-info-dark bg-info-light px-2 py-1 rounded">
                   📍 {line.suggestedCellName}
                 </span>
               </div>
             )}
             {line.cellName && (
               <div className="flex items-center space-x-2 text-sm">
-                <span className="text-[#a7a7a7]">Текущая ячейка:</span>
-                <span className="font-semibold text-[#91ed91] bg-[#2d6b2d] px-2 py-1 rounded">
+                <span className="text-content-secondary">Текущая ячейка:</span>
+                <span className="font-semibold text-success-dark bg-success-light px-2 py-1 rounded">
                   ✓ {line.cellName}
                 </span>
               </div>
@@ -68,21 +71,21 @@ const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
 
           {/* Quantity */}
           <div className="grid grid-cols-3 gap-2 text-center mt-4">
-            <div className="bg-[#343436] border border-[#474747] rounded p-2">
-              <div className="text-xs text-[#a7a7a7]">Всего</div>
-              <div className="text-lg font-bold text-[#e3e3dd]">
+            <div className="bg-surface-tertiary border border-borders-default rounded p-2">
+              <div className="text-xs text-content-secondary">Всего</div>
+              <div className="text-lg font-bold text-content-primary">
                 {line.quantityPlan}
               </div>
             </div>
-            <div className="bg-[#343436] border border-[#474747] rounded p-2">
-              <div className="text-xs text-[#a7a7a7]">Размещено</div>
-              <div className="text-lg font-bold text-[#91ed91]">
+            <div className="bg-surface-tertiary border border-borders-default rounded p-2">
+              <div className="text-xs text-content-secondary">Размещено</div>
+              <div className="text-lg font-bold text-success">
                 {line.quantityFact}
               </div>
             </div>
-            <div className="bg-[#343436] border border-[#474747] rounded p-2">
-              <div className="text-xs text-[#a7a7a7]">Осталось</div>
-              <div className="text-lg font-bold text-[#86e0cb]">
+            <div className="bg-surface-tertiary border border-borders-default rounded p-2">
+              <div className="text-xs text-content-secondary">Осталось</div>
+              <div className="text-lg font-bold text-info">
                 {remaining}
               </div>
             </div>
@@ -93,9 +96,9 @@ const PlacementCard: React.FC<Props> = ({ line, isActive, onSelect }) => {
       {/* Progress bar */}
       {line.quantityPlan > 0 && (
         <div className="mt-4">
-          <div className="w-full bg-[#474747] rounded-full h-2">
+          <div className="w-full bg-surface-tertiary rounded-full h-2">
             <div
-              className="bg-[#91ed91] h-2 rounded-full transition-all"
+              className="bg-success h-2 rounded-full transition-all"
               style={{ width: `${(line.quantityFact / line.quantityPlan) * 100}%` }}
             />
           </div>
