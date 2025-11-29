@@ -12,6 +12,7 @@ import {
 } from '@/types/document';
 import { DocumentStatus } from '@/types/common';
 import { Chip, Badge, Button } from '@/design/components';
+import analytics, { EventType } from '@/lib/analytics';
 
 interface DocumentFiltersProps {
   filter: DocumentFilter;
@@ -39,6 +40,14 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
       ...filter,
       searchQuery: e.target.value,
     });
+    
+    // Debounce tracking would be better, but tracking on change for now
+    if (e.target.value.length > 2) {
+      analytics.track(EventType.SEARCH_USE, {
+        query: e.target.value,
+        module: 'documents',
+      });
+    }
   };
 
   const handleTypeToggle = (type: DocumentType) => {
@@ -50,6 +59,12 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
     onFilterChange({
       ...filter,
       types: newTypes.length > 0 ? newTypes : undefined,
+    });
+
+    analytics.track(EventType.FILTER_USE, {
+      filterType: 'type',
+      value: type,
+      action: types.includes(type) ? 'remove' : 'add'
     });
   };
 
@@ -63,19 +78,38 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
       ...filter,
       statuses: newStatuses.length > 0 ? newStatuses : undefined,
     });
+
+    analytics.track(EventType.FILTER_USE, {
+      filterType: 'status',
+      value: status,
+      action: statuses.includes(status) ? 'remove' : 'add'
+    });
   };
 
   const handleSortChange = (field: DocumentSortField) => {
     if (sort.field === field) {
       // Toggle direction
+      const newDirection = sort.direction === 'asc' ? 'desc' : 'asc';
       onSortChange({
         field,
-        direction: sort.direction === 'asc' ? 'desc' : 'asc',
+        direction: newDirection,
+      });
+      
+      analytics.track(EventType.SORT_USE, {
+        sortBy: field,
+        order: newDirection,
+        module: 'documents'
       });
     } else {
       onSortChange({
         field,
         direction: 'desc',
+      });
+
+      analytics.track(EventType.SORT_USE, {
+        sortBy: field,
+        order: 'desc',
+        module: 'documents'
       });
     }
   };

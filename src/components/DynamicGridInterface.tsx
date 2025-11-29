@@ -5,7 +5,7 @@ import { ACTION_ROUTES, type ButtonAction } from '../types/ui-schema';
 import { ActionRegistry } from '../services/actionRegistry';
 import { SchemaLoader } from '../services/schemaLoader';
 import { documentCounter } from '../services/documentCounter';
-import analytics from '../analytics';
+import analytics from '@/lib/analytics';
 
 interface DynamicGridInterfaceProps {
   schemaName?: string;

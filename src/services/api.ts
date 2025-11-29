@@ -3,6 +3,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { configService } from './configService';
+import analytics, { EventType } from '@/lib/analytics';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -220,6 +221,7 @@ class ApiService {
 
   // Generic request methods
   async get<T = any>(url: string, params?: any): Promise<ApiResponse<T>> {
+    const start = Date.now();
     try {
       this.updateBaseURL(); // Ensure baseURL is current
       
@@ -238,12 +240,29 @@ class ApiService {
       
       const response = await this.client.get(url, { params });
       
+      analytics.track(EventType.API_CALL, {
+        method: 'GET',
+        endpoint: url,
+        status: response.status,
+        duration_ms: Date.now() - start,
+        success: true
+      });
+      
       console.log(`✅ [API] Response status: ${response.status}`);
       console.log(`📦 [API] Response data type:`, Array.isArray(response.data) ? 'Array' : typeof response.data);
       console.log(`📦 [API] Response data:`, response.data);
       
       return { success: true, data: response.data };
     } catch (error: any) {
+      analytics.track(EventType.API_CALL, {
+        method: 'GET',
+        endpoint: url,
+        status: error.response?.status || 0,
+        error: error.message,
+        duration_ms: Date.now() - start,
+        success: false
+      });
+      
       console.error(`❌ [API] GET ${url} failed:`, error.message);
       if (error.response) {
         console.error(`❌ [API] Response status: ${error.response.status}`);
@@ -254,28 +273,85 @@ class ApiService {
   }
 
   async post<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    const start = Date.now();
     try {
       const response = await this.client.post(url, data);
+      
+      analytics.track(EventType.API_CALL, {
+        method: 'POST',
+        endpoint: url,
+        status: response.status,
+        duration_ms: Date.now() - start,
+        success: true
+      });
+
       return { success: true, data: response.data };
     } catch (error: any) {
+      analytics.track(EventType.API_CALL, {
+        method: 'POST',
+        endpoint: url,
+        status: error.response?.status || 0,
+        error: error.message,
+        duration_ms: Date.now() - start,
+        success: false
+      });
+
       return { success: false, error: error.message };
     }
   }
 
   async put<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    const start = Date.now();
     try {
       const response = await this.client.put(url, data);
+      
+      analytics.track(EventType.API_CALL, {
+        method: 'PUT',
+        endpoint: url,
+        status: response.status,
+        duration_ms: Date.now() - start,
+        success: true
+      });
+
       return { success: true, data: response.data };
     } catch (error: any) {
+      analytics.track(EventType.API_CALL, {
+        method: 'PUT',
+        endpoint: url,
+        status: error.response?.status || 0,
+        error: error.message,
+        duration_ms: Date.now() - start,
+        success: false
+      });
+
       return { success: false, error: error.message };
     }
   }
 
   async delete<T = any>(url: string): Promise<ApiResponse<T>> {
+    const start = Date.now();
     try {
       const response = await this.client.delete(url);
+      
+      analytics.track(EventType.API_CALL, {
+        method: 'DELETE',
+        endpoint: url,
+        status: response.status,
+        duration_ms: Date.now() - start,
+        success: true
+      });
+
       return { success: true, data: response.data };
     } catch (error: any) {
+      analytics.track(EventType.API_CALL, {
+        method: 'DELETE',
+        endpoint: url,
+        status: error.response?.status || 0,
+        error: error.message,
+        duration_ms: Date.now() - start,
+        success: false
+      });
+
       return { success: false, error: error.message };
     }
   }

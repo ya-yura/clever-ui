@@ -6,7 +6,7 @@ import { useState, useRef } from 'react';
 import { X, QrCode, Upload, FileJson } from 'lucide-react';
 import { SchemaLoader } from '../services/schemaLoader';
 import { QRScanner } from './QRScanner';
-import analytics from '../analytics';
+import analytics from '@/lib/analytics';
 import type { UISchema } from '../types/ui-schema';
 import { validateSchema } from '../types/ui-schema';
 import { Button, Input, TextArea } from '@/design/components';

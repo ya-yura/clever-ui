@@ -4,7 +4,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 // import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { playSound } from '@/utils/sound';
-import analytics from '@/analytics';
+import analytics, { EventType } from '@/lib/analytics';
 
 // Temporary type placeholders
 type Html5QrcodeScanner = any;
@@ -38,7 +38,7 @@ export const useScanner = ({
     
     // Ignore realistic first scans (intervals > 5 min are likely new sessions)
     if (interval < 300000) {
-      analytics.trackMetric('scan_interval', interval, 'ms', { mode });
+      analytics.track('scan_interval', { value: interval, unit: 'ms', mode });
     }
     
     lastScanTimeRef.current = now;
@@ -51,7 +51,7 @@ export const useScanner = ({
     playSound('scan');
     
     // Track successful scan (keyboard mode)
-    analytics.trackScanSuccess(code, 'keyboard');
+    analytics.track(EventType.SCAN_SUCCESS, { barcode: code, method: 'keyboard' });
     trackScanInterval('keyboard');
     
     onScan(code);
@@ -74,7 +74,7 @@ export const useScanner = ({
           playSound('scan');
           
           // Track successful scan (camera mode)
-          analytics.trackScanSuccess(decodedText, 'camera');
+          analytics.track(EventType.SCAN_SUCCESS, { barcode: decodedText, method: 'camera' });
           trackScanInterval('camera');
           
           onScan(decodedText);
@@ -115,8 +115,8 @@ export const useScanner = ({
     playSound('scan');
     
     // Track successful scan (manual mode)
-    analytics.trackScanSuccess(code, 'manual');
-    analytics.trackManualInput('barcode');
+    analytics.track(EventType.SCAN_SUCCESS, { barcode: code, method: 'manual' });
+    analytics.track('manual_input', { input_type: 'barcode' });
     trackScanInterval('keyboard'); // Manual acts like keyboard input in flow
     
     onScan(code);

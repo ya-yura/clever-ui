@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { AuthState, User, LoginCredentials } from '@/types/auth';
 import { api } from '@/services/api';
 import { authService } from '@/services/authService';
+import { useAnalytics } from '@/lib/analytics';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_STORAGE_KEY = 'auth_state';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const analytics = useAnalytics();
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null,
@@ -138,6 +140,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Set token in API service
         api.setToken(storedToken);
         
+        // Set user in analytics
+        if (parsed.user?.id) {
+          analytics.setUserId(parsed.user.id);
+        }
+        
         console.log('✅ Auth state restored:', parsed.user?.name);
       } else {
         console.log('ℹ️ No saved auth state found');
@@ -177,6 +184,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         setAuthState(newAuthState);
         saveAuthState(newAuthState);
+
+        if (newAuthState.user?.id) {
+          analytics.setUserId(newAuthState.user.id);
+        }
 
         console.log('✅ Login successful (OAuth2):', newAuthState.user?.name);
         return { success: true };
@@ -226,6 +237,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       token: 'demo-token',
     });
     
+    analytics.setUserId(demoUser.id);
+
     setIsDemo(true);
     localStorage.setItem('demo_mode', 'true');
     console.log('✅ Demo mode activated');

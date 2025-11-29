@@ -14,11 +14,12 @@ import { STATUS_LABELS } from '@/types/document';
 import ReceivingCard from '@/components/receiving/ReceivingCard';
 import ScannerInput from '@/components/ScannerInput';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
-import analytics from '@/analytics';
+import { useAnalytics, EventType } from '@/lib/analytics';
 
 const Receiving: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const analytics = useAnalytics();
   const [document, setDocument] = useState<ReceivingDocument | null>(null);
   const [lines, setLines] = useState<ReceivingLine[]>([]);
   const [documents, setDocuments] = useState<ReceivingDocument[]>([]);
@@ -64,16 +65,23 @@ const Receiving: React.FC = () => {
     loadDocument();
     
     if (id) {
-      // Start "Time on Task" timer
-      analytics.startTimer(`doc-tot-${id}`);
+      // Track document start
+      analytics.track(EventType.DOC_START, {
+        documentId: id,
+        docType: 'receiving',
+        module: 'Приёмка',
+      });
       isCompletingRef.current = false;
     }
     
     return () => {
-      // Stop "Time on Task" timer when leaving (optional: can treat as 'abandoned' or 'paused')
-      // Only stop if we are NOT currently completing the document (to avoid race conditions/double stops)
+      // Track document exit/completion
       if (id && !isCompletingRef.current) {
-        analytics.stopTimer(`doc-tot-${id}`, 'receiving.document.exit', { documentId: id });
+        analytics.track(EventType.DOC_COMPLETE, {
+           documentId: id,
+           docType: 'receiving',
+           status: 'aborted' 
+        });
       }
     };
   }, [id]);
@@ -140,17 +148,23 @@ const Receiving: React.FC = () => {
       
       scanFeedback(true, `Добавлено: ${line.productName}`);
 
-      // Track Error Recovery Time (if previous scan was an error, how fast did they fix it?)
-      // We stop the timer ID 'last-error' if it exists
-      analytics.stopTimer('last-error', 'error.recovery', { module: 'receiving', action: 'scan_success' });
+      analytics.track(EventType.SCAN_SUCCESS, {
+        barcode: code,
+        documentId: id,
+        productId: line.productId,
+        productName: line.productName,
+      });
       
       // Update document progress
       updateDocumentProgress();
     } else {
       scanFeedback(false, 'Товар не найден в документе');
       
-      // Start Error Recovery Timer
-      analytics.startTimer('last-error');
+      analytics.track(EventType.SCAN_ERROR, {
+        barcode: code,
+        documentId: id,
+        error: 'Product not found in document',
+      });
     }
   };
 
@@ -190,10 +204,12 @@ const Receiving: React.FC = () => {
       // Show success feedback
       feedback.success('Приёмка завершена!');
 
-      // Stop "Time on Task" timer - Success
-      analytics.stopTimer(`doc-tot-${document.id}`, 'receiving.document.complete', { 
-        documentId: document.id, 
-        totalLines: totalLines 
+      // Track completion
+      analytics.track(EventType.DOC_COMPLETE, {
+        documentId: document.id,
+        docType: 'receiving',
+        status: 'completed',
+        totalLines: totalLines
       });
       
       // Navigate after short delay
@@ -242,9 +258,11 @@ const Receiving: React.FC = () => {
     
     feedback.success('Приёмка завершена вручную!');
 
-    analytics.stopTimer(`doc-tot-${document.id}`, 'receiving.document.complete_manual', { 
-      documentId: document.id, 
-      totalLines: lines.length 
+    analytics.track(EventType.DOC_COMPLETE, {
+      documentId: document.id,
+      docType: 'receiving',
+      status: 'completed_manual',
+      totalLines: lines.length
     });
     
     setTimeout(() => {

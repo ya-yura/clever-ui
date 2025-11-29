@@ -29,6 +29,7 @@ import { MenuProvider } from './modules/menu';
 import { AuthProvider } from './contexts/AuthContext';
 import { DocumentHeaderProvider } from './contexts/DocumentHeaderContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NavigationTracker } from './components/NavigationTracker';
 
 function App() {
   // Initial data loading disabled - using API server data
@@ -45,6 +46,7 @@ function App() {
         <MenuProvider>
           <DocumentHeaderProvider>
             <BrowserRouter>
+              <NavigationTracker />
               <Routes>
               {/* Public routes */}
               <Route path="/setup" element={<Setup />} />
