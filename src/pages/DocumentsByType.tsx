@@ -253,15 +253,20 @@ const DocumentsByType: React.FC = () => {
     <div className="space-y-3">
       {/* Quick type chips */}
       {allDocTypes.length > 0 && (
-        <div className="flex gap-[8px] overflow-x-auto pb-[4px] -mt-1 items-center">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mt-1 items-center no-scrollbar">
           {allDocTypes.map((t) => {
             const short = SHORT_TITLES[t.uni] || toShortTitle(String(t.displayName || t.name || t.uni));
             const isActive = t.uni === docTypeUni;
+            // Style matching status badges (Elements 2)
+            const baseStyle = "inline-flex items-center h-[22px] px-2 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap transition-colors";
+            const activeStyle = "bg-[#1f3324] text-[#74ff9c] border-transparent";
+            const inactiveStyle = "bg-[#353535] text-[#d7d7d7] border-[#4e4e4e] hover:bg-[#3f3f3f]";
+            
             return (
               <button
                 key={t.uni}
                 onClick={() => navigate(`/docs/${t.uni}`)}
-                className={`chip ${isActive ? 'chip-active' : ''}`}
+                className={`${baseStyle} ${isActive ? activeStyle : inactiveStyle}`}
               >
                 {short}
               </button>
@@ -279,24 +284,19 @@ const DocumentsByType: React.FC = () => {
           { key: 'finished', label: 'Завершён' },
         ].map((s) => {
           const isActive = statusFilter === s.key;
+           // Style matching status badges (Elements 2)
+           const baseStyle = "inline-flex items-center h-[22px] px-2 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors";
+           const activeStyle = "bg-[#1d2f3c] text-[#7ad4ff] border-transparent"; // Blueish for active filter to distinguish
+           const inactiveStyle = "bg-[#353535] text-[#d7d7d7] border-[#4e4e4e] hover:bg-[#3f3f3f]";
+
           return (
             <button
               key={s.key}
               type="button"
               onClick={() => setStatusFilter(s.key as any)}
-              aria-pressed={isActive}
-              className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-shadow duration-150"
+              className={`${baseStyle} ${isActive ? activeStyle : inactiveStyle}`}
             >
-              <Badge
-                label={s.label}
-                size="sm"
-                variant="neutral"
-                className={`uppercase tracking-wide ${
-                  isActive
-                    ? 'bg-brand-primary border-brand-primary text-brand-primaryDark shadow-sm'
-                    : 'bg-transparent border-content-tertiary/70 text-content-tertiary'
-                }`}
-              />
+              {s.label}
             </button>
           );
         })}
