@@ -30,6 +30,3 @@
   "exclude": ["integration_demo", "integration_temp", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
-
-
-
