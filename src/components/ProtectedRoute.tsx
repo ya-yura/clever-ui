@@ -1,7 +1,7 @@
 // === 📁 src/components/ProtectedRoute.tsx ===
 // Protected route wrapper for authenticated routes
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { configService } from '@/services/configService';
@@ -11,27 +11,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user, token, loginDemo } = useAuth();
+  const { isAuthenticated, isLoading, user, token } = useAuth();
   const isConfigured = configService.isConfigured();
   const location = useLocation();
-
-  // Log protection check
-  useEffect(() => {
-    console.log('🛡️ ProtectedRoute check:', {
-      path: location.pathname,
-      isConfigured,
-      isAuthenticated,
-      hasUser: !!user,
-      hasToken: !!token,
-      isLoading,
-    });
-
-    // Auto-login if configured but not authenticated (replacing Login screen)
-    if (isConfigured && !isLoading && (!isAuthenticated || !user)) {
-      console.log('🔄 Auto-logging in as default user...');
-      loginDemo();
-    }
-  }, [location.pathname, isConfigured, isAuthenticated, user, token, isLoading, loginDemo]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -57,15 +39,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // However, loginDemo updates state which triggers re-render.
   
   if (!isAuthenticated || !user || !token) {
-    // Show loading while auto-login kicks in
-    return (
-      <div className="min-h-screen bg-surface-primary flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">📦</div>
-          <p className="text-xl text-content-secondary">Вход в систему...</p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   // All checks passed - render protected content
