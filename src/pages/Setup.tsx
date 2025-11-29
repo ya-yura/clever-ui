@@ -5,9 +5,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { configService } from '@/services/configService';
 import { Logo } from '@/components/Logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Setup: React.FC = () => {
   const navigate = useNavigate();
+  const { loginDemo } = useAuth();
   const [serverUrl, setServerUrl] = useState('http://localhost:9000/MobileSMARTS/api/v1');
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -31,10 +33,12 @@ const Setup: React.FC = () => {
       
       console.log('✅ Server URL configured:', serverUrl);
       
-      // Navigate to login
+      // Auto-login as default user and go to home
+      loginDemo();
+      
       setTimeout(() => {
-        navigate('/login');
-      }, 500);
+        navigate('/');
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Ошибка сохранения настроек');
       setIsValidating(false);

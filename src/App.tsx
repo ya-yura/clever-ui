@@ -48,7 +48,6 @@ function App() {
               <Routes>
               {/* Public routes */}
               <Route path="/setup" element={<Setup />} />
-              <Route path="/login" element={<Login />} />
               <Route path="/design-system" element={<DesignSystemShowcase />} />
 
               {/* Protected routes */}

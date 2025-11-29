@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user, token } = useAuth();
+  const { isAuthenticated, isLoading, user, token, loginDemo } = useAuth();
   const isConfigured = configService.isConfigured();
   const location = useLocation();
 
@@ -25,7 +25,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       hasToken: !!token,
       isLoading,
     });
-  }, [location.pathname, isConfigured, isAuthenticated, user, token, isLoading]);
+
+    // Auto-login if configured but not authenticated (replacing Login screen)
+    if (isConfigured && !isLoading && (!isAuthenticated || !user)) {
+      console.log('🔄 Auto-logging in as default user...');
+      loginDemo();
+    }
+  }, [location.pathname, isConfigured, isAuthenticated, user, token, isLoading, loginDemo]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -45,10 +51,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/setup" replace />;
   }
 
-  // Strict authentication check
+  // Allow access if authenticated (or while auto-login is happening, effectively)
+  // We check isAuthenticated to prevent flickering, but since we call loginDemo in useEffect, 
+  // we might need to show loading or just allow it to proceed if loginDemo is synchronous-ish or fast enough.
+  // However, loginDemo updates state which triggers re-render.
+  
   if (!isAuthenticated || !user || !token) {
-    console.warn('⚠️ Not authenticated, redirecting to /login');
-    return <Navigate to="/login" replace />;
+    // Show loading while auto-login kicks in
+    return (
+      <div className="min-h-screen bg-[#343436] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">📦</div>
+          <p className="text-xl text-[#a7a7a7]">Вход в систему...</p>
+        </div>
+      </div>
+    );
   }
 
   // All checks passed - render protected content
