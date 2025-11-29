@@ -192,7 +192,8 @@ const DocumentsByType: React.FC = () => {
   };
 
   const getStatusBadge = (doc: ODataDocument) => {
-    const base = 'inline-flex items-center h-[22px] px-2 rounded-full text-[10px] font-semibold uppercase tracking-wide border';
+    // Compact badges: reduced height, smaller font, tighter padding
+    const base = 'inline-flex items-center h-[18px] px-1.5 rounded text-[9px] font-bold uppercase tracking-wider border';
     if (doc.finished) {
       return <span className={`${base} bg-[#1f3324] text-[#74ff9c] border-transparent`}>Завершён</span>;
     }
@@ -202,18 +203,17 @@ const DocumentsByType: React.FC = () => {
     return <span className={`${base} bg-[#353535] text-[#d7d7d7] border-[#4e4e4e]`}>Новый</span>;
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDateShort = (dateString: string) => {
     try {
       const date = new Date(dateString);
       return date.toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
         day: '2-digit',
+        month: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-      });
+      }).replace(',', ''); // "DD.MM HH:MM"
     } catch {
-      return dateString;
+      return '';
     }
   };
 
@@ -348,7 +348,7 @@ const DocumentsByType: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredDocuments.map((doc) => {
             const appointment = (doc.appointment || '').trim();
             const owner = (doc.userName || '').trim();
@@ -361,45 +361,43 @@ const DocumentsByType: React.FC = () => {
                 console.log(`📄 [DOCS] Navigating to document details: /docs/${docTypeUni}/${doc.id}`);
                 navigate(`/docs/${docTypeUni}/${doc.id}`);
               }}
-              className="w-full bg-[#3c3c3c] hover:bg-[#444] rounded-md px-3 py-2.5 text-left transition-all border border-[#4c4c4c] hover:border-[#666]"
+              className="w-full bg-[#3c3c3c] hover:bg-[#444] rounded border-b border-[#4c4c4c] last:border-0 px-3 py-2 text-left transition-colors"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-[#f0f0f0] leading-tight line-clamp-2">
-                    {doc.name || doc.id}
-                  </h3>
-                  <div className="mt-1 flex flex-col gap-0.5 text-[11px] leading-tight">
-                    {secondaryLine && (
-                      <span className="text-[#8fe4a3] line-clamp-1">
-                        {secondaryLine}
-                      </span>
-                    )}
-                    {owner && (
-                      <span className="text-[#a5c7ff] line-clamp-1">{owner}</span>
-                    )}
+              <div className="flex gap-3">
+                {/* Left Content Area: Title and Info */}
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                  {/* Title Row */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white truncate leading-tight">
+                      {doc.name || doc.id}
+                    </span>
+                  </div>
+                  
+                  {/* Secondary Info Row (Description & Barcode) */}
+                  {(secondaryLine || doc.barcode) && (
+                    <div className="text-xs text-[#b0b0b0] truncate leading-tight flex items-center">
+                      {secondaryLine && <span className="truncate">{secondaryLine}</span>}
+                      {secondaryLine && doc.barcode && <span className="mx-1.5 opacity-40 text-[10px]">|</span>}
+                      {doc.barcode && <span className="font-mono text-[10px] opacity-70 shrink-0">{doc.barcode}</span>}
+                    </div>
+                  )}
+
+                  {/* Tertiary Meta Row (Owner & Warehouse) */}
+                  <div className="flex items-center gap-2 text-[10px] text-[#808080] mt-0.5 leading-tight">
+                    {owner && <span>👤 {owner}</span>}
+                    {owner && doc.warehouseId && <span className="opacity-50">•</span>}
+                    {doc.warehouseId && <span>📦 {doc.warehouseId}</span>}
                   </div>
                 </div>
-                <div className="shrink-0">{getStatusBadge(doc)}</div>
-              </div>
- 
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] leading-tight text-[#b8b8b8]">
-                <span className="flex items-center gap-1">
-                  <span className="uppercase tracking-wide text-[10px] text-[#8f8f8f]">Создан</span>
-                  <span className="text-[#e3e3e3]">{formatDate(doc.createDate)}</span>
-                </span>
-                {doc.warehouseId && (
-                  <span className="flex items-center gap-1">
-                    <span className="uppercase tracking-wide text-[10px] text-[#8f8f8f]">Склад</span>
-                    <span className="text-[#d3d3d3]">{doc.warehouseId}</span>
+
+                {/* Right Meta Area: Status and Date */}
+                <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
+                  {getStatusBadge(doc)}
+                  <span className="text-[10px] text-[#666] font-mono whitespace-nowrap">
+                    {formatDateShort(doc.createDate)}
                   </span>
-                )}
-              </div>
- 
-              {doc.barcode && (
-                <div className="mt-2 pt-2 border-t border-[#4c4c4c] text-[11px] text-[#d8d8d8] font-mono truncate">
-                  {doc.barcode}
                 </div>
-              )}
+              </div>
             </button>
             );
           })}
