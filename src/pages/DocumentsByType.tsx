@@ -303,14 +303,14 @@ const DocumentsByType: React.FC = () => {
       </div>
 
       {/* Search and Sort */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      <div className="flex gap-2 h-10">
+        <div className="relative flex-1 h-full">
           <input
             type="text"
             placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#86e0cb]"
+            className="w-full h-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 text-sm focus:outline-none focus:border-[#86e0cb]"
           />
           {searchQuery && (
             <button 
@@ -324,7 +324,7 @@ const DocumentsByType: React.FC = () => {
         <select
           value={sortField}
           onChange={(e) => setSortField(e.target.value as any)}
-          className="bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-2 py-2 text-sm focus:outline-none focus:border-[#86e0cb]"
+          className="h-full bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 text-sm focus:outline-none focus:border-[#86e0cb]"
         >
           <option value="date">Дата</option>
           <option value="number">Номер</option>
@@ -332,7 +332,7 @@ const DocumentsByType: React.FC = () => {
         </select>
         <button
           onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-          className="bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md px-3 py-2 hover:bg-[#4c4c4c]"
+          className="h-full aspect-square flex items-center justify-center bg-[#3c3c3c] text-[#e3e3e3] border border-[#4c4c4c] rounded-md hover:bg-[#4c4c4c]"
         >
           {sortDirection === 'asc' ? '↑' : '↓'}
         </button>
