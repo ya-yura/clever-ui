@@ -39,9 +39,20 @@ const Documents: React.FC = () => {
       setError(null);
       const docs = await documentService.getAllDocuments();
       setAllDocuments(docs);
+      
+      // Log for debugging
+      console.log('📄 Loaded documents:', docs.length);
+      
+      // Don't set error if we just have no documents
+      // That's a valid state, especially in demo mode with empty data
     } catch (err) {
       console.error('Error loading documents:', err);
-      setError('Ошибка загрузки документов');
+      // Only set error for real errors (network, API, etc.)
+      // Empty data is not an error
+      const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
+      if (!errorMessage.includes('No data') && !errorMessage.includes('empty')) {
+        setError('Не удалось загрузить документы с сервера');
+      }
     } finally {
       setLoading(false);
     }
@@ -73,16 +84,21 @@ const Documents: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-primary flex flex-col">
-      {/* Error Message */}
+      {/* Error Message - show only if there's a network/API error */}
       {error && (
-        <div className="bg-error/10 border-l-4 border-error p-4 m-4 rounded-r">
+        <div className="bg-warning/10 border-l-4 border-warning p-4 m-4 rounded-r">
           <div className="flex items-center">
-            <span className="text-2xl mr-3">⚠️</span>
+            <span className="text-2xl mr-3">ℹ️</span>
             <div>
-              <p className="text-error font-medium">{error}</p>
+              <p className="text-warning font-medium">
+                Не удалось загрузить данные с сервера
+              </p>
+              <p className="text-sm text-content-secondary mt-1">
+                Используются локальные данные. Проверьте подключение к серверу.
+              </p>
               <button
                 onClick={handleRefresh}
-                className="text-sm text-error underline mt-1 hover:text-error/80"
+                className="text-sm text-warning underline mt-2 hover:text-warning/80"
               >
                 Попробовать снова
               </button>

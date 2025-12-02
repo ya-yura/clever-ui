@@ -1,410 +1,534 @@
-// === 📁 src/pages/Receiving.tsx ===
-// Receiving module page
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '@/services/db';
-import { api } from '@/services/api';
 import { useScanner } from '@/hooks/useScanner';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useSync } from '@/hooks/useSync';
-import { ReceivingDocument, ReceivingLine } from '@/types/receiving';
-import { scanFeedback, feedback } from '@/utils/feedback';
-import { STATUS_LABELS } from '@/types/document';
-import ReceivingCard from '@/components/receiving/ReceivingCard';
-import ScannerInput from '@/components/ScannerInput';
+import { useDocumentLogic } from '@/hooks/useDocumentLogic';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
-import { useAnalytics, EventType } from '@/lib/analytics';
+import ScannerInput from '@/components/ScannerInput';
+import { QuantityControl } from '@/components/QuantityControl';
+import { DocumentListFilter } from '@/components/DocumentListFilter';
+import { DiscrepancyAlert } from '@/components/DiscrepancyAlert';
+import { LineCard } from '@/components/LineCard';
+import { AutoCompletePrompt } from '@/components/AutoCompletePrompt';
+import ReceivingCard from '@/components/receiving/ReceivingCard';
+import { ReceivingDocument } from '@/types/receiving';
+import { ArrowLeft, CheckCircle, XCircle, Package, Info, AlertTriangle } from 'lucide-react';
+import { Button } from '@/design/components';
+import { feedback } from '@/utils/feedback';
 
 const Receiving: React.FC = () => {
-  const { id } = useParams();
+  const { id, docId } = useParams(); // Support both legacy /receiving/:id and new /docs/PrihodNaSklad/:docId
+  const documentId = docId || id; // Prefer new format, fallback to legacy
   const navigate = useNavigate();
-  const analytics = useAnalytics();
-  const [document, setDocument] = useState<ReceivingDocument | null>(null);
-  const [lines, setLines] = useState<ReceivingLine[]>([]);
-  const [documents, setDocuments] = useState<ReceivingDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentCell, setCurrentCell] = useState<string>('');
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
-  
-  // Ref to track if we are in the process of completing the document
-  // This prevents the cleanup function from stopping the timer if we are about to complete
-  const isCompletingRef = React.useRef(false);
 
-  const { addSyncAction } = useOfflineStorage('receiving');
-  const { sync, isSyncing, pendingCount } = useSync({
-    module: 'receiving',
-    syncEndpoint: '/receiving/sync',
+  // US I.1: Список документов
+  const [documentsList, setDocumentsList] = useState<ReceivingDocument[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all' as 'all' | 'new' | 'in_progress' | 'completed',
+    dateFrom: undefined as string | undefined,
+    dateTo: undefined as string | undefined,
+    supplier: undefined as string | undefined,
   });
 
-  // Update header with document info or list info
+  // US I.2.5: Карточка строки
+  const [showLineCard, setShowLineCard] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<any | null>(null);
+
+  // US I.3.1: Автозавершение
+  const [showAutoComplete, setShowAutoComplete] = useState(false);
+
+  // Логика документа (через хук)
+  const {
+    document,
+    lines,
+    activeLine,
+    loading,
+    handleScan,
+    updateQuantity,
+    finishDocument,
+    getDiscrepancies,
+    showDiscrepancyAlert,
+    setShowDiscrepancyAlert,
+    setActiveLine,
+  } = useDocumentLogic({
+    docType: 'receiving',
+    docId: documentId,
+    onComplete: async () => {
+      // US II.1: Предложить перейти к размещению
+      if (confirm('Приёмка завершена. Перейти к размещению?')) {
+        // Создаём документ размещения на основе приёмки
+        const placementDoc = {
+          id: `PLM-${Date.now()}`,
+          sourceDocumentId: documentId,
+          sourceDocumentType: 'receiving',
+          status: 'new',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          totalLines: lines.length,
+          completedLines: 0,
+          notes: `Размещение по приёмке ${document?.id || documentId}`,
+        };
+
+        await db.placementDocuments.add(placementDoc);
+
+        // Копируем строки из приёмки в размещение
+        const placementLines = lines.map(line => ({
+          id: `${placementDoc.id}-${line.id}`,
+          documentId: placementDoc.id,
+          productId: line.productId,
+          productName: line.productName,
+          productSku: line.productSku,
+          barcode: line.barcode,
+          quantityPlan: line.quantityFact, // План = факт из приёмки
+          quantityFact: 0,
+          cellId: '', // Будет задана при сканировании
+          status: 'pending',
+        }));
+
+        await db.placementLines.bulkAdd(placementLines);
+
+        feedback.success('✅ Документ размещения создан');
+        navigate(`/docs/RazmeshhenieVYachejki/${placementDoc.id}`);
+      } else {
+        navigate('/docs/PrihodNaSklad');
+      }
+    },
+  });
+
+  // --- Эффекты заголовка ---
   useEffect(() => {
-    if (document && id) {
+    if (documentId && document) {
       setDocumentInfo({
         documentId: document.id,
         completed: document.completedLines || 0,
         total: document.totalLines || 0,
       });
       setListInfo(null);
-    } else if (!id) {
+    } else if (!documentId) {
       setDocumentInfo(null);
-      setListInfo({
-        title: 'Приёмка',
-        count: documents.length,
-      });
+      setListInfo({ title: 'Приёмка', count: filteredDocuments.length });
     }
-    
     return () => {
       setDocumentInfo(null);
       setListInfo(null);
     };
-  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
+  }, [documentId, document, filteredDocuments.length, setDocumentInfo, setListInfo]);
 
-  // Load document
+  // --- US I.1: Загрузка списка документов (<1 sec) ---
   useEffect(() => {
-    loadDocument();
-    
-    if (id) {
-      // Track document start
-      analytics.track(EventType.DOC_START, {
-        documentId: id,
-        docType: 'receiving',
-        module: 'Приёмка',
-      });
-      isCompletingRef.current = false;
-    }
-    
-    return () => {
-      // Track document exit/completion
-      if (id && !isCompletingRef.current) {
-        analytics.track(EventType.DOC_COMPLETE, {
-           documentId: id,
-           docType: 'receiving',
-           status: 'aborted' 
-        });
-      }
-    };
-  }, [id]);
-
-  const loadDocument = async () => {
-    setLoading(true);
-    try {
-      if (id) {
-        // Load specific document
-        const doc = await db.receivingDocuments.get(id);
-        const docLines = await db.receivingLines.where('documentId').equals(id).toArray();
-
-        if (doc) {
-          setDocument(doc);
-          setLines(docLines);
+    if (!documentId) {
+      setLoadingList(true);
+      const startTime = Date.now();
+      db.receivingDocuments.toArray().then((docs) => {
+        setDocumentsList(docs);
+        setLoadingList(false);
+        const loadTime = Date.now() - startTime;
+        if (loadTime > 1000) {
+          console.warn(`US I.1 FAILED: List loaded in ${loadTime}ms (target: <1000ms)`);
         }
-      } else {
-        // Load all documents
-        const allDocs = await db.receivingDocuments.toArray();
-        setDocuments(allDocs);
-      }
-    } catch (error) {
-      console.error('Error loading document:', error);
-    } finally {
-      setLoading(false);
+      });
     }
-  };
+  }, [documentId]);
 
-  // Handle scan
-  const handleScan = async (code: string) => {
-    if (!document) return;
+  // US VII.1, VII.2: Фильтрация и поиск
+  const filteredDocuments = useMemo(() => {
+    let filtered = [...documentsList];
 
-    // Check if it's a document barcode
-    if (code.startsWith('DOC-')) {
-      // Load document
-      navigate(`/receiving/${code}`);
-      return;
+    // Поиск
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (doc) =>
+          doc.id.toLowerCase().includes(search) ||
+          doc.supplier?.toLowerCase().includes(search) ||
+          doc.deliveryNumber?.toLowerCase().includes(search)
+      );
     }
 
-    // Find product by barcode
-    const line = lines.find(l => l.barcode === code || l.productSku === code);
-    
-    if (line) {
-      // Increment fact
-      // Check for over-plan
-      if (line.quantityFact >= line.quantityPlan) {
-        scanFeedback(false, 'Превышение плана');
-        if (!window.confirm(`Внимание! План по товару ${line.productName} выполнен (${line.quantityPlan}). Добавить сверх плана?`)) {
+    // Фильтр по статусу
+    if (filters.status !== 'all') {
+      filtered = filtered.filter((doc) => doc.status === filters.status);
+    }
+
+    // Фильтр по дате
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom).getTime();
+      filtered = filtered.filter((doc) => doc.createdAt >= from);
+    }
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo).getTime() + 86400000; // +1 день
+      filtered = filtered.filter((doc) => doc.createdAt < to);
+    }
+
+    // Фильтр по поставщику
+    if (filters.supplier) {
+      filtered = filtered.filter((doc) => doc.supplier === filters.supplier);
+    }
+
+    return filtered;
+  }, [documentsList, filters]);
+
+  // US I.1: Получение списка поставщиков для фильтра
+  const supplierOptions = useMemo(() => {
+    return Array.from(new Set(documentsList.map((d) => d.supplier).filter(Boolean) as string[]));
+  }, [documentsList]);
+
+  // --- US I.2: Сканирование товара ---
+  const { handleScan: onScanWithFeedback } = useScanner({
+    mode: 'keyboard',
+    onScan: async (code) => {
+      if (!documentId) {
+        // US I.1: Сканирование QR документа
+        if (code.startsWith('DOC-') || code.startsWith('RCV-') || code.startsWith('new_')) {
+          navigate(`/docs/PrihodNaSklad/${code}`);
           return;
         }
       }
-
-      const updatedLine: ReceivingLine = {
-        ...line,
-        quantityFact: line.quantityFact + 1,
-        status: line.quantityFact + 1 >= line.quantityPlan ? 'completed' : 'partial' as const,
-      };
-
-      await db.receivingLines.update(line.id, updatedLine);
-      await addSyncAction('update_line', updatedLine);
+      // US I.2: Скан товара с авто +1
+      const result = await handleScan(code);
       
-      // Refresh lines
-      setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
-      
-      scanFeedback(true, `Добавлено: ${line.productName}`);
-
-      analytics.track(EventType.SCAN_SUCCESS, {
-        barcode: code,
-        documentId: id,
-        productId: line.productId,
-        productName: line.productName,
-      });
-      
-      // Update document progress
-      updateDocumentProgress();
-    } else {
-      scanFeedback(false, 'Товар не найден в документе');
-      
-      analytics.track(EventType.SCAN_ERROR, {
-        barcode: code,
-        documentId: id,
-        error: 'Product not found in document',
-      });
-    }
-  };
-
-  const { handleScan: onScanWithFeedback, lastScan } = useScanner({
-    mode: 'keyboard',
-    onScan: handleScan,
+      if (result.success && result.line) {
+        // US I.2.1: Успешное сканирование
+        setActiveLine(result.line);
+        feedback.success(`${result.line.productName} (+1)`);
+        
+        // US I.3.1: Проверка на автозавершение
+        if (document && lines.length > 0) {
+          const allCompleted = lines.every(l => l.id === result.line!.id ? result.line!.status === 'completed' : l.status === 'completed');
+          if (allCompleted) {
+            setTimeout(() => setShowAutoComplete(true), 500);
+          }
+        }
+      } else if (!result.success) {
+        // US I.2.2: Ошибка сканирования
+        feedback.error(result.message || 'Товар не найден');
+      }
+    },
   });
 
-  // Update document progress and auto-complete if all lines are done
-  const updateDocumentProgress = async () => {
-    if (!document) return;
-
-    const completedLines = lines.filter(l => l.status === 'completed').length;
-    const totalLines = lines.length;
+  // US I.4: Завершение с проверкой расхождений
+  const handleFinish = async () => {
+    const discrepancies = getDiscrepancies();
     
-    // Check if all lines are completed
-    const allCompleted = totalLines > 0 && completedLines === totalLines;
-    
-    const updatedDoc = {
-      ...document,
-      completedLines,
-      status: allCompleted ? 'completed' as const : document.status,
-      updatedAt: Date.now(),
-    };
-
-    await db.receivingDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
-    
-    // Auto-complete and navigate when all done
-    if (allCompleted && document.status !== 'completed') {
-      // Mark as completing so cleanup doesn't stop the timer
-      isCompletingRef.current = true;
-
-      await addSyncAction('complete', updatedDoc);
-      sync();
-      
-      // Show success feedback
-      feedback.success('Приёмка завершена!');
-
-      // Track completion
-      analytics.track(EventType.DOC_COMPLETE, {
-        documentId: document.id,
-        docType: 'receiving',
-        status: 'completed',
-        totalLines: totalLines
-      });
-      
-      // Navigate after short delay
-      setTimeout(() => {
-        if (confirm('Документ завершён. Перейти к размещению?')) {
-          navigate(`/placement?source=${document.id}`);
-        } else {
-          navigate('/receiving');
-        }
-      }, 500);
+    if (discrepancies.length > 0) {
+      // US I.3.3: Показать диалог расхождений
+      setShowDiscrepancyAlert(true);
+    } else {
+      // Нет расхождений - завершаем сразу
+      await finishDocument(true);
+      feedback.success('✅ Документ завершён');
     }
   };
 
-  const handleManualComplete = async () => {
-    if (!document) return;
-    
-    const uncompletedLines = lines.filter(l => l.quantityFact < l.quantityPlan);
-    const overPlanLines = lines.filter(l => l.quantityFact > l.quantityPlan);
-    
-    let message = 'Завершить документ?';
-    if (uncompletedLines.length > 0 || overPlanLines.length > 0) {
-      message = 'Внимание! Есть расхождения:\n';
-      if (uncompletedLines.length > 0) message += `- Не завершено строк: ${uncompletedLines.length}\n`;
-      if (overPlanLines.length > 0) message += `- Перевыполнение: ${overPlanLines.length}\n`;
-      message += '\nВы уверены, что хотите завершить?';
-      
-      if (!window.confirm(message)) {
-        return;
-      }
-    }
-    
-    const updatedDoc = {
-      ...document,
-      status: 'completed' as const,
-      completedLines: lines.filter(l => l.status === 'completed').length,
-      updatedAt: Date.now(),
-    };
-
-    await db.receivingDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
-    
-    isCompletingRef.current = true;
-
-    await addSyncAction('complete', updatedDoc);
-    sync();
-    
-    feedback.success('Приёмка завершена вручную!');
-
-    analytics.track(EventType.DOC_COMPLETE, {
-      documentId: document.id,
-      docType: 'receiving',
-      status: 'completed_manual',
-      totalLines: lines.length
-    });
-    
-    setTimeout(() => {
-      if (window.confirm('Документ завершён. Перейти к размещению?')) {
-        navigate(`/placement?source=${document.id}`);
-      } else {
-        navigate('/receiving');
-      }
-    }, 500);
+  const handleConfirmWithDiscrepancies = async () => {
+    setShowDiscrepancyAlert(false);
+    await finishDocument(true);
+    feedback.success('✅ Документ завершён с расхождениями');
   };
 
-  const adjustQuantity = async (lineId: string, delta: number) => {
-    const line = lines.find(l => l.id === lineId);
-    if (!line) return;
-
-    const newFact = Math.max(0, line.quantityFact + delta);
-    const updatedLine: ReceivingLine = {
-      ...line,
-      quantityFact: newFact,
-      status: newFact >= line.quantityPlan ? 'completed' : newFact > 0 ? 'partial' : 'pending' as const,
-    };
-
-    await db.receivingLines.update(lineId, updatedLine);
-    await addSyncAction('update_line', updatedLine);
-    
-    setLines(prev => prev.map(l => l.id === lineId ? updatedLine : l));
-    updateDocumentProgress();
+  // US I.2.5: Открытие карточки строки
+  const handleLineClick = (line: any) => {
+    setSelectedLine(line);
+    setShowLineCard(true);
   };
 
-    if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
-      </div>
-    );
-  }
+  // US I.3.1: Автозавершение
+  const handleAutoComplete = () => {
+    setShowAutoComplete(false);
+    handleFinish();
+  };
 
-  // Show document list if no id specified
-  if (!id) {
+  // --- Рендер списка документов ---
+  if (!documentId) {
+    if (loadingList) return <div className="p-4 text-center">Загрузка...</div>;
+
     return (
-      <div className="space-y-4">
-        {documents.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-content-tertiary">
-              Нет документов приёмки
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {documents.map((doc) => (
-              <button
+      <div className="space-y-4 p-4">
+        {/* US VII.1, VII.2: Фильтры и поиск */}
+        <DocumentListFilter
+          onFilterChange={setFilters}
+          supplierOptions={supplierOptions}
+          showSupplier={true}
+        />
+
+        {/* US I.1: Список документов */}
+        <div className="space-y-3">
+          {filteredDocuments.length === 0 ? (
+            <div className="text-center py-10">
+              <Package className="mx-auto mb-4 text-content-tertiary" size={48} />
+              <p className="text-content-tertiary">
+                {filters.search || filters.status !== 'all'
+                  ? 'Нет документов по заданным фильтрам'
+                  : 'Нет документов приёмки'}
+              </p>
+            </div>
+          ) : (
+            filteredDocuments.map((doc) => (
+              <div
                 key={doc.id}
                 onClick={() => navigate(`/receiving/${doc.id}`)}
-                className="card hover:shadow-lg hover:border-brand-primary transition-all text-left p-6"
+                className="card p-4 active:scale-[0.98] transition-transform cursor-pointer hover:border-brand-primary"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-content-primary">
-                      {doc.id}
-                    </h3>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg">{doc.id}</h3>
                     {doc.supplier && (
                       <p className="text-sm text-content-secondary mt-1">
                         Поставщик: {doc.supplier}
                       </p>
                     )}
                     {doc.deliveryNumber && (
-                      <p className="text-sm text-content-secondary">
-                        Номер поставки: {doc.deliveryNumber}
-                      </p>
+                      <p className="text-xs text-content-tertiary">№ {doc.deliveryNumber}</p>
                     )}
                   </div>
                   <div className="text-right">
-                    <span className={`status-badge ${
-                      doc.status === 'completed' ? 'bg-success-light text-success-dark' :
-                      doc.status === 'in_progress' ? 'bg-warning-light text-warning-dark' :
-                      'bg-surface-tertiary text-content-secondary'
-                    }`}>
-                      {doc.status === 'completed' ? 'Завершен' :
-                       doc.status === 'in_progress' ? 'В работе' :
-                       'Ожидает'}
-                    </span>
-                    <p className="text-sm text-content-tertiary mt-2">
-                      {doc.completedLines} / {doc.totalLines} строк
-                    </p>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        doc.status === 'completed'
+                          ? 'bg-success-light text-success-dark'
+                          : doc.status === 'in_progress'
+                          ? 'bg-warning-light text-warning-dark'
+                          : 'bg-surface-tertiary text-content-secondary'
+                      }`}
+                    >
+                      {doc.status === 'completed'
+                        ? 'ЗАВЕРШЁН'
+                        : doc.status === 'in_progress'
+                        ? 'В РАБОТЕ'
+                        : 'НОВЫЙ'}
+                    </div>
                   </div>
                 </div>
-              </button>
-            ))}
-          </div>
-        )}
+                <div className="mt-3 flex justify-between text-sm text-content-tertiary">
+                  <span>{new Date(doc.createdAt).toLocaleString('ru-RU')}</span>
+                  <span>
+                    {doc.completedLines} / {doc.totalLines} строк
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     );
   }
 
-  if (!document) {
+  // --- Рендер документа ---
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-content-secondary">Документ не найден</p>
+      <div className="p-10 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-brand-primary rounded-full border-t-transparent mx-auto"></div>
       </div>
     );
   }
-
-  const progress = document.totalLines > 0 
-    ? (document.completedLines / document.totalLines) * 100 
-    : 0;
+  if (!document) {
+    return <div className="p-10 text-center text-error">Документ не найден</div>;
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Scanner Input */}
-      <ScannerInput 
-        onScan={onScanWithFeedback}
-        placeholder="Отсканируйте товар или документ..."
-      />
+    <>
+      <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+        {/* US I.2: Панель активного товара (детальный просмотр) */}
+        {activeLine && (
+          <div className="fixed inset-0 z-50 bg-surface-primary flex flex-col p-4 animate-in slide-in-from-bottom duration-200">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold">{activeLine.productName}</h2>
+                <p className="text-content-secondary font-mono mt-1 text-sm">
+                  {activeLine.barcode}
+                </p>
+                <p className="text-content-tertiary text-xs mt-1">Арт: {activeLine.productSku}</p>
+              </div>
+              <button
+                onClick={() => setActiveLine(null)}
+                className="p-2 bg-surface-secondary rounded-full hover:bg-surface-tertiary transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
 
-      {/* Lines */}
-      <div className="space-y-2">
-        {lines.map(line => (
-          <ReceivingCard
-            key={line.id}
-            line={line}
-            onAdjust={(delta) => adjustQuantity(line.id, delta)}
+            {/* US I.3: Индикация расхождений */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-8">
+              <div
+                className={`text-6xl font-bold ${
+                  activeLine.quantityFact > activeLine.quantityPlan
+                    ? 'text-warning'
+                    : activeLine.quantityFact === activeLine.quantityPlan
+                    ? 'text-success'
+                    : 'text-brand-primary'
+                }`}
+              >
+                {activeLine.quantityFact}{' '}
+                <span className="text-2xl text-content-tertiary">/ {activeLine.quantityPlan}</span>
+              </div>
+
+              {/* US I.3: Предупреждение о расхождениях */}
+              {activeLine.quantityFact !== activeLine.quantityPlan && (
+                <div
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    activeLine.quantityFact > activeLine.quantityPlan
+                      ? 'bg-warning/20 text-warning-dark'
+                      : 'bg-error/20 text-error-dark'
+                  }`}
+                >
+                  {activeLine.quantityFact > activeLine.quantityPlan
+                    ? `⚠️ Излишек: +${activeLine.quantityFact - activeLine.quantityPlan} шт.`
+                    : `⚠️ Недостача: ${activeLine.quantityPlan - activeLine.quantityFact} шт.`}
+                </div>
+              )}
+
+              {/* US I.2: Управление количеством */}
+              <QuantityControl
+                current={activeLine.quantityFact}
+                plan={activeLine.quantityPlan}
+                onChange={(val) => updateQuantity(activeLine.id, val, true)}
+              />
+
+              <div className="w-full grid grid-cols-2 gap-4 mt-8">
+                <div className="p-3 bg-surface-secondary rounded flex flex-col items-center">
+                  <span className="text-sm text-content-tertiary">Статус</span>
+                  <span className="font-bold uppercase text-xs mt-1">
+                    {activeLine.status === 'completed' && '✅ ВЫПОЛНЕНО'}
+                    {activeLine.status === 'partial' && '🟡 ЧАСТИЧНО'}
+                    {activeLine.status === 'pending' && '⚪ ОЖИДАЕТ'}
+                    {activeLine.status === 'over' && '⚠️ ИЗЛИШЕК'}
+                  </span>
+                </div>
+                <div className="p-3 bg-surface-secondary rounded flex flex-col items-center">
+                  <span className="text-sm text-content-tertiary">Осталось</span>
+                  <span className="font-bold text-lg">
+                    {Math.max(0, activeLine.quantityPlan - activeLine.quantityFact)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <Button size="lg" onClick={() => setActiveLine(null)} className="mt-4 w-full">
+              Готово
+            </Button>
+          </div>
+        )}
+
+        {/* 2. Основной экран документа */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          {/* US I.2: Поле сканирования */}
+          <ScannerInput
+            onScan={onScanWithFeedback}
+            placeholder="Скан товара или документа..."
+            className="sticky top-0 z-10 shadow-md"
           />
-        ))}
+
+          {/* US I.2.3: Статус и прогресс документа */}
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold">Прогресс приёмки</h3>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                document.status === 'completed'
+                  ? 'bg-success-light text-success-dark'
+                  : document.status === 'in_progress'
+                  ? 'bg-warning-light text-warning-dark'
+                  : 'bg-surface-tertiary text-content-secondary'
+              }`}>
+                {document.status === 'completed' ? 'ЗАВЕРШЁН' : document.status === 'in_progress' ? 'В РАБОТЕ' : 'НОВЫЙ'}
+              </span>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Выполнено строк</span>
+                <span className="font-mono">{document.completedLines} / {document.totalLines}</span>
+              </div>
+              <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-brand-primary transition-all duration-300"
+                  style={{ width: `${document.totalLines > 0 ? (document.completedLines / document.totalLines) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* US I.2: Список строк документа */}
+          <div className="space-y-2">
+            {lines.map((line) => (
+              <div 
+                key={line.id} 
+                onClick={() => handleLineClick(line)}
+                className="cursor-pointer"
+              >
+                <ReceivingCard
+                  line={{
+                    id: line.id,
+                    documentId: documentId || '',
+                    productId: line.productId,
+                    productName: line.productName,
+                    productSku: line.productSku,
+                    barcode: line.barcode,
+                    quantity: line.quantityFact,
+                    quantityPlan: line.quantityPlan,
+                    quantityFact: line.quantityFact,
+                    status: line.status === 'over' ? 'completed' : line.status,
+                    notes: ''
+                  }}
+                  onAdjust={(delta) => {
+                    updateQuantity(line.id, delta);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* US I.4: Кнопка завершения документа */}
+        <div className="p-4 border-t border-borders-default bg-surface-primary fixed bottom-0 w-full max-w-3xl">
+          <Button
+            variant={document.status === 'completed' ? 'secondary' : 'primary'}
+            className="w-full"
+            onClick={handleFinish}
+            disabled={document.status === 'completed'}
+          >
+            {document.status === 'completed' ? '✅ Документ завершен' : 'Завершить приёмку'}
+          </Button>
+        </div>
       </div>
 
-      {lines.length === 0 && (
-        <div className="card text-center py-8">
-          <p className="text-gray-600 dark:text-gray-400">
-            Нет товаров в документе. Отсканируйте документ для загрузки.
-          </p>
-        </div>
+      {/* US I.3: Алерт расхождений */}
+      {showDiscrepancyAlert && (
+        <DiscrepancyAlert
+          discrepancies={getDiscrepancies()}
+          onConfirm={handleConfirmWithDiscrepancies}
+          onCancel={() => setShowDiscrepancyAlert(false)}
+        />
       )}
 
-      {document && document.status !== 'completed' && lines.length > 0 && (
-        <button
-          onClick={handleManualComplete}
-          className="w-full bg-brand-primary text-white py-4 rounded-lg font-bold text-lg shadow-lg hover:brightness-110 transition-all mt-4 mb-8"
-        >
-          Завершить документ
-        </button>
+      {/* US I.2.5: Карточка строки */}
+      {showLineCard && selectedLine && (
+        <LineCard
+          line={selectedLine}
+          onClose={() => {
+            setShowLineCard(false);
+            setSelectedLine(null);
+          }}
+          onQuantityChange={(lineId, delta) => {
+            updateQuantity(lineId, delta);
+            // Обновляем selectedLine для отображения новых значений
+            const updatedLine = lines.find(l => l.id === lineId);
+            if (updatedLine) setSelectedLine(updatedLine);
+          }}
+        />
       )}
-    </div>
+
+      {/* US I.3.1: Автозавершение */}
+      {showAutoComplete && document && (
+        <AutoCompletePrompt
+          totalLines={document.totalLines}
+          completedLines={document.completedLines}
+          onComplete={handleAutoComplete}
+          onContinue={() => setShowAutoComplete(false)}
+        />
+      )}
+    </>
   );
 };
 

@@ -29,6 +29,15 @@ const toShortTitle = (raw: string): string => {
   return first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : raw;
 };
 
+const INTERACTIVE_ROUTES: Record<string, string> = {
+  PrihodNaSklad: '/receiving',
+  RazmeshhenieVYachejki: '/placement',
+  PodborZakaza: '/picking',
+  Otgruzka: '/shipment',
+  Inventarizaciya: '/inventory',
+  Vozvrat: '/return',
+};
+
 const DocumentsByType: React.FC = () => {
   const { docTypeUni } = useParams<{ docTypeUni: string }>();
   const navigate = useNavigate();
@@ -180,12 +189,20 @@ const DocumentsByType: React.FC = () => {
         if (t) names = [t.uni as any, (t as any).name, (t as any).displayName].filter(Boolean) as string[];
       } catch {}
       const docs = await odataCache.getDocsByType(docTypeUni, { names });
-      console.log(`📄 [DOCS] Loaded ${docs.length} documents:`, docs);
+      console.log(`📄 [DOCS] Loaded ${docs.length} documents`);
       setDocuments(docs);
+      
+      // Empty list is not an error - it's a valid state
       
     } catch (error: any) {
       console.error('❌ [DOCS] Error loading documents:', error);
-      setError('Ошибка загрузки документов. Проверьте подключение к серверу.');
+      // Only set error for real network/API errors, not empty data
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+      if (!errorMessage.includes('No data') && !errorMessage.includes('empty')) {
+        setError('Не удалось загрузить документы');
+      }
+      // If it's just empty data, leave documents as empty array
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -224,16 +241,23 @@ const DocumentsByType: React.FC = () => {
 
   // Error state
   if (error) {
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-error mb-2">Ошибка загрузки</h2>
-          <p className="text-content-secondary mb-6">{error}</p>
-          <div className="flex gap-4 justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-6xl mb-4">ℹ️</div>
+          <h2 className="text-2xl font-bold text-amber-500 mb-2">Не удалось загрузить документы</h2>
+          <p className="text-content-secondary mb-2">{error}</p>
+          {isDemoMode && (
+            <p className="text-sm text-[#999] mb-6">
+              Демо-режим: данные загружаются из локальных файлов
+            </p>
+          )}
+          <div className="flex gap-4 justify-center mt-6">
             <button
               onClick={loadDocuments}
-              className="bg-brand-primary hover:bg-brand-primary text-white px-6 py-3 rounded-lg transition-colors"
+              className="bg-brand-primary hover:bg-brand-primary/80 text-white px-6 py-3 rounded-lg transition-colors"
             >
               Повторить
             </button>
@@ -405,8 +429,20 @@ const DocumentsByType: React.FC = () => {
               <button
                 key={doc.id}
                 onClick={() => {
-                  console.log(`📄 [DOCS] Navigating to document details: /docs/${docTypeUni}/${doc.id}`);
-                  navigate(`/docs/${docTypeUni}/${doc.id}`);
+                  const interactiveRoute = docTypeUni ? INTERACTIVE_ROUTES[docTypeUni] : undefined;
+                  if (import.meta.env.DEV) {
+                    console.log('🎯 [DOCS] docTypeUni:', docTypeUni, 'interactiveRoute:', interactiveRoute);
+                  }
+                  const targetPath = interactiveRoute
+                    ? `${interactiveRoute}/${doc.id}`
+                    : `/docs/${docTypeUni}/${doc.id}`;
+                  console.log(`📄 [DOCS] Navigating to document details: ${targetPath}`);
+                  try {
+                    sessionStorage.setItem(`doc_cache_${doc.id}`, JSON.stringify(doc));
+                  } catch (storageError) {
+                    console.warn('⚠️ [DOCS] Failed to cache document for fallback', storageError);
+                  }
+                  navigate(targetPath, { state: { doc } });
                 }}
                 className="w-full bg-surface-secondary hover:bg-surface-tertiary rounded border-b border-borders-light last:border-0 px-3 py-2 text-left transition-colors"
               >

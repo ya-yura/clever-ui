@@ -62,4 +62,13 @@ export const feedback = {
   warning: (message?: string) => provideFeedback('warning', message, { voice: true }),
   scan: (message?: string) => provideFeedback('scan', message, { voice: false }),
   notification: (message?: string) => provideFeedback('notification', message, { voice: false }),
+  info: (message?: string) => provideFeedback('notification', message, { voice: false }),
+  
+  // US VIII.12: Scan with product name (voice enabled)
+  scanProduct: (productName: string, quantity?: number) => {
+    const message = quantity 
+      ? `${productName}, ${quantity}` 
+      : productName;
+    provideFeedback('scan', message, { voice: true, sound: true, vibration: true });
+  },
 };

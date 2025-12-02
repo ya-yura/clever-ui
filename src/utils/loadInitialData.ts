@@ -18,54 +18,112 @@ export const loadInitialData = async () => {
     console.log('🔄 Loading initial data from JSON files...');
 
     // Load Employees data
-    const employeesData = await import('@/data/employees.json');
-    await db.employees.bulkAdd(employeesData.default);
-    console.log('✅ Employees loaded:', employeesData.default.length);
+    try {
+      const employeesData = await import('@/data/employees.json');
+      if (employeesData.default && Array.isArray(employeesData.default)) {
+        await db.employees.bulkAdd(employeesData.default);
+        console.log('✅ Employees loaded:', employeesData.default.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load employees data:', err.message);
+    }
 
     // Load Receiving data
-    const receivingData = await import('@/data/receiving.json');
-    await db.receivingDocuments.bulkPut(receivingData.default.documents);
-    await db.receivingLines.bulkPut(receivingData.default.lines);
-    console.log('✅ Receiving data loaded:', receivingData.default.documents.length, 'documents');
+    try {
+      const receivingData = await import('@/data/receiving.json');
+      if (receivingData.default?.documents) {
+        await db.receivingDocuments.bulkPut(receivingData.default.documents);
+        console.log('✅ Receiving documents loaded:', receivingData.default.documents.length);
+      }
+      if (receivingData.default?.lines) {
+        await db.receivingLines.bulkPut(receivingData.default.lines);
+        console.log('✅ Receiving lines loaded:', receivingData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load receiving data:', err.message);
+    }
 
     // Load Placement data
-    const placementData = await import('@/data/placement.json');
-    await db.placementDocuments.bulkPut(placementData.default.documents);
-    await db.placementLines.bulkPut(placementData.default.lines);
-    console.log('✅ Placement data loaded:', placementData.default.documents.length, 'documents');
+    try {
+      const placementData = await import('@/data/placement.json');
+      if (placementData.default?.documents) {
+        await db.placementDocuments.bulkPut(placementData.default.documents);
+        console.log('✅ Placement documents loaded:', placementData.default.documents.length);
+      }
+      if (placementData.default?.lines) {
+        await db.placementLines.bulkPut(placementData.default.lines);
+        console.log('✅ Placement lines loaded:', placementData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load placement data:', err.message);
+    }
 
     // Load Picking data
-    const pickingData = await import('@/data/picking.json');
-    await db.pickingDocuments.bulkPut(pickingData.default.documents);
-    await db.pickingLines.bulkPut(pickingData.default.lines);
-    console.log('✅ Picking data loaded:', pickingData.default.documents.length, 'documents');
+    try {
+      const pickingData = await import('@/data/picking.json');
+      if (pickingData.default?.documents) {
+        await db.pickingDocuments.bulkPut(pickingData.default.documents);
+        console.log('✅ Picking documents loaded:', pickingData.default.documents.length);
+      }
+      if (pickingData.default?.lines) {
+        await db.pickingLines.bulkPut(pickingData.default.lines);
+        console.log('✅ Picking lines loaded:', pickingData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load picking data:', err.message);
+    }
 
     // Load Shipment data
-    const shipmentData = await import('@/data/shipment.json');
-    await db.shipmentDocuments.bulkPut(shipmentData.default.documents);
-    await db.shipmentLines.bulkPut(shipmentData.default.lines);
-    console.log('✅ Shipment data loaded:', shipmentData.default.documents.length, 'documents');
+    try {
+      const shipmentData = await import('@/data/shipment.json');
+      if (shipmentData.default?.documents) {
+        await db.shipmentDocuments.bulkPut(shipmentData.default.documents);
+        console.log('✅ Shipment documents loaded:', shipmentData.default.documents.length);
+      }
+      if (shipmentData.default?.lines) {
+        await db.shipmentLines.bulkPut(shipmentData.default.lines);
+        console.log('✅ Shipment lines loaded:', shipmentData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load shipment data:', err.message);
+    }
 
     // Load Return data
-    const returnData = await import('@/data/return.json');
-    await db.returnDocuments.bulkPut(returnData.default.documents);
-    await db.returnLines.bulkPut(returnData.default.lines);
-    console.log('✅ Return data loaded:', returnData.default.documents.length, 'documents');
+    try {
+      const returnData = await import('@/data/return.json');
+      if (returnData.default?.documents) {
+        await db.returnDocuments.bulkPut(returnData.default.documents);
+        console.log('✅ Return documents loaded:', returnData.default.documents.length);
+      }
+      if (returnData.default?.lines) {
+        await db.returnLines.bulkPut(returnData.default.lines);
+        console.log('✅ Return lines loaded:', returnData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load return data:', err.message);
+    }
 
     // Load Inventory data
-    const inventoryData = await import('@/data/inventory.json');
-    await db.inventoryDocuments.bulkPut(inventoryData.default.documents);
-    await db.inventoryLines.bulkPut(inventoryData.default.lines);
-    console.log('✅ Inventory data loaded:', inventoryData.default.documents.length, 'documents');
+    try {
+      const inventoryData = await import('@/data/inventory.json');
+      if (inventoryData.default?.documents) {
+        await db.inventoryDocuments.bulkPut(inventoryData.default.documents);
+        console.log('✅ Inventory documents loaded:', inventoryData.default.documents.length);
+      }
+      if (inventoryData.default?.lines) {
+        await db.inventoryLines.bulkPut(inventoryData.default.lines);
+        console.log('✅ Inventory lines loaded:', inventoryData.default.lines.length);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not load inventory data:', err.message);
+    }
 
     // Mark as loaded
     localStorage.setItem(DATA_LOADED_KEY, 'true');
-    console.log('🎉 All initial data loaded successfully!');
-    console.log('📊 Total: 27 documents, 278 lines');
+    console.log('🎉 Initial data loading completed!');
   } catch (error) {
     console.error('❌ Error loading initial data:', error);
-    console.error('Details:', error);
-    // Don't mark as loaded if there was an error
+    // Don't mark as loaded if there was a critical error
   }
 };
 

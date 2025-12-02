@@ -13,9 +13,11 @@ import { DocumentStatus } from '@/types/common';
 import { documentService } from '@/services/documentService';
 import { formatDate, formatRelativeTime } from '@/utils/date';
 import { Card, Badge, ProgressBar, BadgeVariant } from '@/design/components';
+import { Eye } from 'lucide-react';
 
 interface DocumentCardProps {
   document: UniversalDocument;
+  onQuickView?: (document: UniversalDocument) => void;
 }
 
 // Map document status to badge variant
@@ -30,7 +32,7 @@ const getStatusVariant = (status: DocumentStatus): BadgeVariant => {
   }
 };
 
-export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
+export const DocumentCard: React.FC<DocumentCardProps> = ({ document, onQuickView }) => {
   const navigate = useNavigate();
   
   const completionPercentage = documentService.getCompletionPercentage(document);
@@ -40,6 +42,11 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const handleClick = () => {
     const url = documentService.getDocumentUrl(document);
     navigate(url);
+  };
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onQuickView?.(document);
   };
 
   return (
@@ -62,10 +69,23 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
           </div>
         </div>
 
-        <Badge 
-          label={STATUS_LABELS[document.status]} 
-          variant={getStatusVariant(document.status)} 
-        />
+        <div className="flex items-center gap-2">
+          {/* Quick View Button */}
+          {onQuickView && (
+            <button
+              onClick={handleQuickView}
+              className="p-2 hover:bg-surface-tertiary rounded-lg transition-colors"
+              title="Быстрый просмотр"
+            >
+              <Eye size={18} className="text-brand-primary" />
+            </button>
+          )}
+          
+          <Badge 
+            label={STATUS_LABELS[document.status]} 
+            variant={getStatusVariant(document.status)} 
+          />
+        </div>
       </div>
 
       {/* Partner Info */}

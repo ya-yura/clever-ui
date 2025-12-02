@@ -10,10 +10,10 @@ interface Props {
 }
 
 const ReceivingCard: React.FC<Props> = ({ line, onAdjust }) => {
-  const statusColor = 
-    line.status === 'completed' ? 'bg-green-900/30 border-green-500/50 dark:bg-green-900/30 dark:border-green-500/50 bg-green-50 border-green-200' :
-    line.status === 'partial' ? 'bg-orange-900/30 border-orange-500/50 dark:bg-orange-900/30 dark:border-orange-500/50 bg-orange-50 border-orange-200' :
-    line.status === 'error' ? 'bg-red-900/30 border-red-500/50 dark:bg-red-900/30 dark:border-red-500/50 bg-red-50 border-red-200' :
+  const statusColor =
+    line.status === 'completed' ? 'bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-500/50' :
+    line.status === 'partial' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-500/50' :
+    line.status === 'error' ? 'bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-500/50' :
     'bg-surface-secondary border-border-default';
 
   const statusIcon =
@@ -78,14 +78,14 @@ const ReceivingCard: React.FC<Props> = ({ line, onAdjust }) => {
       {/* Quick actions */}
       <div className="flex gap-2 mt-4">
         <button
-          onClick={() => onAdjust(-1)}
+          onClick={(e) => { e.stopPropagation(); onAdjust(-1); }}
           className="btn-secondary flex-1 border border-border-default"
           disabled={line.quantityFact === 0}
         >
           −1
         </button>
         <button
-          onClick={() => onAdjust(1)}
+          onClick={(e) => { e.stopPropagation(); onAdjust(1); }}
           className="btn-primary flex-1"
         >
           +1

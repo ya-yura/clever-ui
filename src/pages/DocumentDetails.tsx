@@ -2,10 +2,13 @@
 // Document details page with items table
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '@/services/api';
+import { demoDataService } from '@/services/demoDataService';
+import { configService } from '@/services/configService';
 import { ODataDocumentItem } from '@/types/odata';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Short titles for document types
 const SHORT_TITLES: Record<string, string> = {
@@ -32,7 +35,24 @@ interface DocumentData {
 const DocumentDetails: React.FC = () => {
   const { docTypeUni, docId } = useParams<{ docTypeUni: string; docId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setListInfo } = useDocumentHeader();
+  const { isDemo: authDemoMode } = useAuth();
+  const locationState = location.state as { doc?: Partial<DocumentData> } | undefined;
+  const stateDoc = locationState?.doc;
+  let cachedDoc: Partial<DocumentData> | undefined;
+  if (!stateDoc && docId) {
+    try {
+      const raw = sessionStorage.getItem(`doc_cache_${docId}`);
+      if (raw) {
+        cachedDoc = JSON.parse(raw);
+      }
+    } catch (storageError) {
+      console.warn('⚠️ [DOC] Failed to restore cached document info', storageError);
+    }
+  }
+  const fallbackDoc = stateDoc || cachedDoc;
+  console.log('🧾 [DOC] Location state payload:', locationState, 'Fallback doc:', fallbackDoc);
 
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,19 +118,90 @@ const DocumentDetails: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Special handling for local/new documents that haven't been synced to server yet
+      if (docId.startsWith('new_')) {
+        console.log('🆕 [DOC] Detected new/local document');
+        if (fallbackDoc) {
+          console.log('✅ [DOC] Loaded local document from fallback/cache', fallbackDoc);
+          // Ensure it has required fields for DocumentData
+          const localDoc = {
+             ...fallbackDoc,
+             // Ensure arrays exist if they are missing
+             declaredItems: fallbackDoc.declaredItems || [],
+             currentItems: fallbackDoc.currentItems || [],
+             combinedItems: fallbackDoc.combinedItems || []
+          } as DocumentData;
+          
+          setDocument(localDoc);
+          setLoading(false);
+          return;
+        } else {
+           console.warn('⚠️ [DOC] New document not found in local state/cache');
+           // If we don't have local data for a 'new_' document, we can't fetch it from server
+           // But checking demo mode might still be valid if it's a demo scenario
+        }
+      }
+      
+      // Check if we're in demo mode - if so, prioritize demo data
+      const isDemoMode = authDemoMode || localStorage.getItem('demo_mode') === 'true' || !configService.isConfigured();
+      const resolvedDocType =
+        docTypeUni ||
+        (fallbackDoc as any)?.documentTypeName ||
+        (fallbackDoc as any)?.docType ||
+        (fallbackDoc as any)?.docTypeUni ||
+        '';
+      console.log('🎭 [DOC] Demo flag:', isDemoMode, 'docType:', resolvedDocType, 'docId:', docId);
+      
+      if (isDemoMode && resolvedDocType) {
+        console.log('🎭 [DOC] Demo mode active - loading from demo data');
+        const demoDoc = demoDataService.getDocumentWithItems(resolvedDocType, docId, fallbackDoc);
+        
+        if (demoDoc) {
+          console.log('✅ [DOC] Found document in demo data with items', demoDoc);
+          setDocument(demoDoc);
+          return;
+        } else {
+          console.warn('⚠️ [DOC] Document not found in demo data, trying API...');
+        }
+      }
+
+      // For "new_" documents that weren't found in fallback or demo data,
+      // we should error out early instead of calling API which will 404
+      if (docId.startsWith('new_')) {
+          throw new Error('Локальный документ не найден. Пожалуйста, вернитесь к списку.');
+      }
+      
+      // Try to load from API
       try {
         const doc = await fetchDocument(true);
-        console.log(`📄 [DOC] Loaded document with products`, doc);
+        console.log(`📄 [DOC] Loaded document with products from API`, doc);
         setDocument(doc);
       } catch (primaryError) {
         console.warn('⚠️ [DOC] Failed to load with product expand, retrying without product details', primaryError);
-        const doc = await fetchDocument(false);
-        console.log(`📄 [DOC] Loaded document without product expand`, doc);
-        setDocument(doc);
+        try {
+          const doc = await fetchDocument(false);
+          console.log(`📄 [DOC] Loaded document without product expand from API`, doc);
+          setDocument(doc);
+        } catch (secondaryError) {
+          // If both API attempts failed, try demo data as ultimate fallback
+          if (resolvedDocType) {
+            console.log('🎭 [DOC] API failed completely, using demo data fallback');
+            const demoDoc = demoDataService.getDocumentWithItems(resolvedDocType, docId, fallbackDoc);
+            if (demoDoc) {
+              console.log('✅ [DOC] Loaded from demo data fallback', demoDoc);
+              setDocument(demoDoc);
+              return;
+            } else {
+              console.error('❌ [DOC] Document not found anywhere');
+            }
+          }
+          throw secondaryError;
+        }
       }
     } catch (error: any) {
       console.error('❌ [DOC] Error loading document:', error);
-      setError('Ошибка загрузки документа. Проверьте подключение к серверу.');
+      setError(error.message || 'Не удалось загрузить документ. Проверьте подключение к серверу.');
     } finally {
       setLoading(false);
     }
@@ -290,19 +381,33 @@ const DocumentDetails: React.FC = () => {
 
   // Error state
   if (error || !document) {
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    const isNotFoundError = error?.includes('не найден') || error?.includes('not found');
+    
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-red-500 mb-2">Ошибка загрузки</h2>
-          <p className="text-[#a7a7a7] mb-6">{error || 'Документ не найден'}</p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={loadDocument}
-              className="bg-brand-primary hover:bg-brand-primary text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              Повторить
-            </button>
+        <div className="text-center max-w-md px-4">
+          <div className="text-6xl mb-4">{isNotFoundError ? '📋' : 'ℹ️'}</div>
+          <h2 className="text-2xl font-bold text-amber-500 mb-2">
+            {isNotFoundError ? 'Документ не найден' : 'Не удалось загрузить документ'}
+          </h2>
+          <p className="text-[#a7a7a7] mb-2">
+            {error || 'Документ не найден'}
+          </p>
+          {isDemoMode && (
+            <p className="text-sm text-[#999] mb-6">
+              Демо-режим: данные загружаются из локальных файлов
+            </p>
+          )}
+          <div className="flex gap-4 justify-center mt-6">
+            {!isNotFoundError && (
+              <button
+                onClick={loadDocument}
+                className="bg-brand-primary hover:bg-brand-primary/80 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Повторить
+              </button>
+            )}
             <button
               onClick={() => navigate(`/docs/${docTypeUni}`)}
               className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors"
@@ -451,4 +556,3 @@ const DocumentDetails: React.FC = () => {
 };
 
 export default DocumentDetails;
-

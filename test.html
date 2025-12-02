@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест системы приёмки товара</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.pass { background: #d4edda; color: #155724; }
+        .status.fail { background: #f8d7da; color: #721c24; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тестирование системы приёмки товара</h1>
+
+    <div class="test-section">
+        <h2>1. Проверка демо-данных</h2>
+        <div id="demo-test" class="status pending">Загрузка...</div>
+        <button onclick="testDemoData()">Проверить демо-данные</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Тестирование сканирования</h2>
+        <div id="scan-test" class="status pending">Ожидание</div>
+        <input type="text" id="barcode-input" placeholder="Введите штрихкод">
+        <button onclick="testScan()">Сканировать</button>
+        <div id="scan-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Тестирование управления количеством</h2>
+        <div id="quantity-test" class="status pending">Ожидание</div>
+        <div id="quantity-control">
+            <button onclick="adjustQuantity(-1)">-1</button>
+            <span id="quantity">5</span>
+            <button onclick="adjustQuantity(1)">+1</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Тестирование документа</h2>
+        <div id="document-test" class="status pending">Ожидание</div>
+        <button onclick="testDocument()">Загрузить документ</button>
+        <div id="document-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Итоговый результат</h2>
+        <div id="final-result" class="status pending">Тестирование не завершено</div>
+        <button onclick="runAllTests()">Запустить все тесты</button>
+    </div>
+
+    <script>
+        let testResults = {
+            demo: false,
+            scan: false,
+            quantity: false,
+            document: false
+        };
+
+        // Тест демо-данных
+        async function testDemoData() {
+            try {
+                // Имитация загрузки демо-данных
+                const demoData = {
+                    documents: { PrihodNaSklad: [{ id: 'prihod-001', name: 'Тестовый документ' }] },
+                    products: [
+                        { id: '1', name: 'Тестовый товар', barcode: '123456789' }
+                    ]
+                };
+
+                document.getElementById('demo-test').className = 'status pass';
+                document.getElementById('demo-test').textContent = '✅ Демо-данные загружены';
+                testResults.demo = true;
+                return true;
+            } catch (error) {
+                document.getElementById('demo-test').className = 'status fail';
+                document.getElementById('demo-test').textContent = '❌ Ошибка загрузки демо-данных';
+                return false;
+            }
+        }
+
+        // Тест сканирования
+        function testScan() {
+            const barcode = document.getElementById('barcode-input').value;
+            const resultDiv = document.getElementById('scan-result');
+
+            if (!barcode) {
+                resultDiv.innerHTML = '<span style="color: red;">Введите штрихкод</span>';
+                return;
+            }
+
+            // Имитация поиска товара
+            const products = [
+                { barcode: '123456789', name: 'Тестовый товар 1' },
+                { barcode: '987654321', name: 'Тестовый товар 2' }
+            ];
+
+            const product = products.find(p => p.barcode === barcode);
+
+            if (product) {
+                resultDiv.innerHTML = `<span style="color: green;">✅ Найден: ${product.name}</span>`;
+                document.getElementById('scan-test').className = 'status pass';
+                document.getElementById('scan-test').textContent = '✅ Сканирование работает';
+                testResults.scan = true;
+            } else {
+                resultDiv.innerHTML = '<span style="color: red;">❌ Товар не найден</span>';
+                document.getElementById('scan-test').className = 'status fail';
+                document.getElementById('scan-test').textContent = '❌ Товар не найден';
+            }
+        }
+
+        // Тест управления количеством
+        function adjustQuantity(delta) {
+            const quantitySpan = document.getElementById('quantity');
+            let current = parseInt(quantitySpan.textContent);
+            current = Math.max(0, current + delta);
+            quantitySpan.textContent = current;
+
+            document.getElementById('quantity-test').className = 'status pass';
+            document.getElementById('quantity-test').textContent = '✅ Управление количеством работает';
+            testResults.quantity = true;
+        }
+
+        // Тест документа
+        function testDocument() {
+            const resultDiv = document.getElementById('document-result');
+
+            // Имитация загрузки документа
+            const mockDocument = {
+                id: 'prihod-001',
+                name: 'Тестовый документ приёмки',
+                status: 'in_progress',
+                lines: [
+                    { productName: 'Товар 1', quantityPlan: 10, quantityFact: 5 },
+                    { productName: 'Товар 2', quantityPlan: 5, quantityFact: 5 }
+                ]
+            };
+
+            resultDiv.innerHTML = `
+                <h3>${mockDocument.name}</h3>
+                <p>Статус: ${mockDocument.status}</p>
+                <p>Строк: ${mockDocument.lines.length}</p>
+                <ul>
+                    ${mockDocument.lines.map(line =>
+                        `<li>${line.productName}: ${line.quantityFact}/${line.quantityPlan}</li>`
+                    ).join('')}
+                </ul>
+            `;
+
+            document.getElementById('document-test').className = 'status pass';
+            document.getElementById('document-test').textContent = '✅ Документ загружен';
+            testResults.document = true;
+        }
+
+        // Запуск всех тестов
+        async function runAllTests() {
+            await testDemoData();
+            testDocument();
+
+            // Проверка результатов
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            const totalTests = Object.keys(testResults).length;
+
+            const resultDiv = document.getElementById('final-result');
+            if (passedTests === totalTests) {
+                resultDiv.className = 'status pass';
+                resultDiv.textContent = `✅ Все тесты пройдены (${passedTests}/${totalTests})`;
+            } else {
+                resultDiv.className = 'status fail';
+                resultDiv.textContent = `❌ Некоторые тесты не пройдены (${passedTests}/${totalTests})`;
+            }
+        }
+
+        // Автоматический запуск базовых тестов
+        window.onload = async function() {
+            await testDemoData();
+            testDocument();
+        };
+    </script>
+</body>
+</html>

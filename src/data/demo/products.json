@@ -1,0 +1,44 @@
+{
+  "value": [
+    {
+      "id": "1",
+      "name": "Смартфон Samsung Galaxy A52",
+      "barcode": "8801643620448",
+      "article": "SM-A525F",
+      "price": 25990,
+      "unit": "шт",
+      "weight": 0.189,
+      "category": "Электроника"
+    },
+    {
+      "id": "2",
+      "name": "Ноутбук ASUS VivoBook 15",
+      "barcode": "4718017715652",
+      "article": "X515JA-EJ",
+      "price": 42990,
+      "unit": "шт",
+      "weight": 1.8,
+      "category": "Электроника"
+    },
+    {
+      "id": "3",
+      "name": "Беспроводные наушники Apple AirPods Pro",
+      "barcode": "194252721385",
+      "article": "MLWK3",
+      "price": 19990,
+      "unit": "шт",
+      "weight": 0.056,
+      "category": "Электроника"
+    },
+    {
+      "id": "4",
+      "name": "Телевизор LG 43\" 4K UHD",
+      "barcode": "8806091242426",
+      "article": "43UP76006LC",
+      "price": 34990,
+      "unit": "шт",
+      "weight": 9.5,
+      "category": "Электроника"
+    }
+  ]
+}

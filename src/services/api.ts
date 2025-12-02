@@ -90,6 +90,8 @@ class ApiService {
    * - Check hostname (most reliable)
    * - Check import.meta.env
    * - Check mode explicitly
+   * 
+   * PUBLIC: Can be called externally to refresh baseURL (e.g., after config reset)
    */
   updateBaseURL() {
     try {
@@ -142,7 +144,7 @@ class ApiService {
       return null;
     }
 
-    const devPorts = new Set(['3000', '3001', '3002', '3003', '5173', '5174', '5175']);
+    const devPorts = new Set(['3000', '3001', '3002', '3003', '5173', '5174', '5175', '5176', '5180']);
     if (devPorts.has(window.location.port || '')) {
       return '/MobileSMARTS/api/v1';
     }
@@ -164,7 +166,7 @@ class ApiService {
       const target = new URL(configuredUrl);
       const currentHost = window.location.hostname;
       const targetHost = target.hostname;
-      const devPorts = new Set(['3000', '3001', '3002', '3003', '5173', '5174', '5175', '5176']);
+      const devPorts = new Set(['3000', '3001', '3002', '3003', '5173', '5174', '5175', '5176', '5180']);
       const isLocalCurrent = currentHost === 'localhost' || currentHost === '127.0.0.1';
       const isLocalTarget = targetHost === 'localhost' || targetHost === '127.0.0.1';
       const currentPort = window.location.port || '';

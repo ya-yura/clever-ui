@@ -1,467 +1,440 @@
-// === 📁 src/pages/Shipment.tsx ===
-// Shipment module page
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '@/services/db';
-import { api } from '@/services/api';
-import { useScanner } from '@/hooks/useScanner';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useSync } from '@/hooks/useSync';
-import { ShipmentDocument, ShipmentLine } from '@/types/shipment';
-import { scanFeedback, feedback } from '@/utils/feedback';
-import { STATUS_LABELS } from '@/types/document';
-import ScannerInput from '@/components/ScannerInput';
+import { useDocumentLogic } from '@/hooks/useDocumentLogic';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
+import { LineCard } from '@/components/LineCard';
+import { CompletenessCheck } from '@/components/shipment/CompletenessCheck';
+import { TTNInput } from '@/components/shipment/TTNInput';
+import { Package, Truck, FileText, CheckCircle, AlertTriangle, Printer } from 'lucide-react';
+import { Button } from '@/design/components';
+import { feedback } from '@/utils/feedback';
 
+/**
+ * МОДУЛЬ ОТГРУЗКИ
+ * 
+ * Процесс:
+ * 1. Открытие документа отгрузки
+ * 2. Проверка позиций (все ли подобрано)
+ * 3. Ввод данных ТТН и перевозчика
+ * 4. Финальная проверка комплектности
+ * 5. Предложение печати документов
+ * 6. Завершение отгрузки
+ */
 const Shipment: React.FC = () => {
-  const { id } = useParams();
+  const { id, docId } = useParams();
+  const documentId = docId || id;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const sourceId = searchParams.get('source');
-
-  const [document, setDocument] = useState<ShipmentDocument | null>(null);
-  const [lines, setLines] = useState<ShipmentLine[]>([]);
-  const [documents, setDocuments] = useState<ShipmentDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showTtnModal, setShowTtnModal] = useState(false);
-  const [ttnNumber, setTtnNumber] = useState('');
-  const [carrier, setCarrier] = useState('');
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
-  const { addSyncAction } = useOfflineStorage('shipment');
-  const { sync, isSyncing, pendingCount } = useSync({
-    module: 'shipment',
-    syncEndpoint: '/shipment/sync',
+  // Состояния UI
+  const [showCompletenessCheck, setShowCompletenessCheck] = useState(false);
+  const [showTTNInput, setShowTTNInput] = useState(false);
+  const [showLineCard, setShowLineCard] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<any | null>(null);
+  const [showPrintPrompt, setShowPrintPrompt] = useState(false);
+
+  // Данные отгрузки
+  const [ttnNumber, setTTNNumber] = useState('');
+  const [carrier, setCarrier] = useState('');
+  const [readyToShip, setReadyToShip] = useState(false);
+
+  // Логика документа
+  const {
+    document,
+    lines,
+    loading,
+    finishDocument,
+    setActiveLine,
+  } = useDocumentLogic({
+    docType: 'shipment',
+    docId: documentId,
+    onComplete: () => {
+      feedback.success('✅ Отгрузка завершена');
+      navigate('/docs/Otgruzka');
+    },
   });
 
-  // Update header with document info or list info
+  // Заголовок
   useEffect(() => {
-    if (document && id) {
+    if (documentId && document) {
       setDocumentInfo({
         documentId: document.id,
         completed: document.completedLines || 0,
         total: document.totalLines || 0,
       });
-      setListInfo(null);
-    } else if (!id) {
+    } else {
       setDocumentInfo(null);
-      setListInfo({
-        title: 'Отгрузка',
-        count: documents.length,
-      });
+      setListInfo({ title: 'Отгрузка', count: 0 });
     }
-    
     return () => {
       setDocumentInfo(null);
       setListInfo(null);
     };
-  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
+  }, [documentId, document, setDocumentInfo, setListInfo]);
 
+  // Загрузка сохранённых данных ТТН
   useEffect(() => {
-    loadDocument();
-  }, [id, sourceId]);
-
-  const loadDocument = async () => {
-    setLoading(true);
-    try {
-      if (id) {
-        let doc = await db.shipmentDocuments.get(id);
-        let docLines = await db.shipmentLines.where('documentId').equals(id).toArray();
-
-        if (!doc) {
-          const response = await api.getShipmentDocument(id);
-          if (response.success && response.data) {
-            doc = response.data.document;
-            docLines = response.data.lines || [];
-
-            if (doc) {
-              await db.shipmentDocuments.put(doc);
-            }
-
-            if (docLines.length) {
-              await db.shipmentLines.bulkPut(docLines);
-            }
-          }
-        }
-
-        if (doc) {
-          setDocument(doc);
-          setLines(docLines);
-        }
-      } else if (sourceId) {
-        // Create from picking document
-        const pickingDoc = await db.pickingDocuments.get(sourceId);
-        const pickingLines = await db.pickingLines.where('documentId').equals(sourceId).toArray();
-
-        if (pickingDoc && pickingLines.length > 0) {
-          const newDoc: ShipmentDocument = {
-            id: `SHIP-${Date.now()}`,
-            status: 'in_progress',
-            orderId: pickingDoc.orderId,
-            orderNumber: pickingDoc.orderNumber,
-            customer: pickingDoc.customer,
-            deliveryAddress: pickingDoc.deliveryAddress,
-            totalLines: pickingLines.length,
-            completedLines: 0,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          const newLines: ShipmentLine[] = pickingLines.map((pLine, index) => ({
-            id: `SHIP-${Date.now()}-L${index + 1}`,
-            documentId: newDoc.id,
-            productId: pLine.productId,
-            productName: pLine.productName,
-            productSku: pLine.productSku,
-            barcode: pLine.barcode,
-            quantity: pLine.quantityFact,
-            quantityPlan: pLine.quantityFact,
-            quantityFact: 0,
-            status: 'pending' as const,
-          }));
-
-          await db.shipmentDocuments.add(newDoc);
-          await db.shipmentLines.bulkPut(newLines);
-
-          setDocument(newDoc);
-          setLines(newLines);
-        }
-      } else {
-        // Load all documents
-        const allDocs = await db.shipmentDocuments.toArray();
-        setDocuments(allDocs);
-      }
-    } catch (error) {
-      console.error('Error loading document:', error);
-    } finally {
-      setLoading(false);
+    if (document) {
+      setTTNNumber(document.ttnNumber || '');
+      setCarrier(document.carrier || '');
     }
+  }, [document]);
+
+  // US IV.1: Проверка комплектности
+  const checkCompleteness = () => {
+    setShowCompletenessCheck(true);
   };
 
-  const handleScan = async (code: string) => {
-    if (!document) return;
-
-    const line = lines.find(l =>
-      (l.barcode === code || l.productSku === code || l.packageId === code) &&
-      l.status !== 'completed'
-    );
-
-    if (line) {
-      const updatedLine: ShipmentLine = {
-        ...line,
-        quantityFact: line.quantityFact + 1,
-        status: line.quantityFact + 1 >= line.quantityPlan ? 'completed' : 'partial',
-        verifiedAt: Date.now(),
-      };
-
-      await db.shipmentLines.update(line.id, updatedLine);
-      await addSyncAction('verify_package', updatedLine);
-
-      setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
-      scanFeedback(true, `Проверено: ${line.productName}`);
-
-      updateDocumentProgress();
+  // US IV.2: Подтверждение комплектности → запрос ТТН
+  const handleCompletenessConfirm = () => {
+    setShowCompletenessCheck(false);
+    
+    // Если данные уже введены, пропускаем ввод
+    if (ttnNumber && carrier) {
+      setReadyToShip(true);
+      feedback.success('Готово к отгрузке');
     } else {
-      scanFeedback(false, 'Упаковка не найдена');
+      setShowTTNInput(true);
     }
   };
 
-  const { handleScan: onScanWithFeedback, lastScan } = useScanner({
-    mode: 'keyboard',
-    onScan: handleScan,
-  });
+  // US IV.3: Сохранение ТТН и перевозчика
+  const handleTTNSubmit = async (data: { ttnNumber: string; carrier: string }) => {
+    setTTNNumber(data.ttnNumber);
+    setCarrier(data.carrier);
+    setShowTTNInput(false);
 
-  const updateDocumentProgress = async () => {
-    if (!document) return;
-
-    const completedLines = lines.filter(l => l.status === 'completed').length;
-    const totalLines = lines.length;
-    
-    const updatedDoc = {
-      ...document,
-      completedLines,
-      updatedAt: Date.now(),
-    };
-
-    await db.shipmentDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
-    
-    // Auto-complete when all lines are done
-    if (totalLines > 0 && completedLines === totalLines && document.status !== 'completed') {
-      // Automatically trigger completion
-      await completeDocument();
+    // Сохраняем в документ
+    if (document) {
+      await db.shipmentDocuments.update(document.id, {
+        ttnNumber: data.ttnNumber,
+        carrier: data.carrier,
+        updatedAt: Date.now(),
+      });
     }
+
+    setReadyToShip(true);
+    feedback.success(`✓ ТТН ${data.ttnNumber} (${data.carrier})`);
   };
 
-  const completeDocument = async () => {
-    if (!document) return;
-
-    if (!document.ttn) {
-      setShowTtnModal(true);
+  // US IV.4: Завершение отгрузки
+  const handleShip = async () => {
+    if (!ttnNumber || !carrier) {
+      feedback.error('Сначала введите данные ТТН');
+      setShowTTNInput(true);
       return;
     }
 
-    const updatedDoc: ShipmentDocument = {
-      ...document,
-      status: 'completed',
-      shippedAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    // Финальная проверка
+    const incompleteLines = lines.filter(l => l.quantityFact < l.quantityPlan);
+    if (incompleteLines.length > 0) {
+      if (!confirm(`Неполная комплектность (${incompleteLines.length} позиций).\n\nОтгрузить всё равно?`)) {
+        return;
+      }
+    }
 
-    await db.shipmentDocuments.update(document.id, updatedDoc);
-    await addSyncAction('complete_shipment', updatedDoc);
-
-    setDocument(updatedDoc);
-    sync();
-
-    feedback.success('Отгрузка завершена!');
-    setTimeout(() => navigate('/shipment'), 500);
+    // US IV.5: Предложение печати
+    setShowPrintPrompt(true);
   };
 
-  const saveTtn = async () => {
-    if (!document) return;
+  // US IV.6: Печать и завершение
+  const handlePrintAndFinish = async (print: boolean) => {
+    setShowPrintPrompt(false);
 
-    const updatedDoc = {
-      ...document,
-      ttn: ttnNumber.trim(),
-      carrier: carrier.trim(),
-      updatedAt: Date.now(),
-    };
+    if (print) {
+      // Симуляция печати
+      feedback.info('📄 Отправка на печать...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      feedback.success('✓ Документы распечатаны');
+    }
 
-    await db.shipmentDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
-    setShowTtnModal(false);
-    setTtnNumber('');
-    setCarrier('');
-
-    completeDocument();
+    // Завершаем документ
+    await finishDocument(true);
   };
 
+  const handleLineClick = (line: any) => {
+    setSelectedLine(line);
+    setShowLineCard(true);
+  };
+
+  // Рендер загрузки
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-      </div>
-    );
-  }
-
-  // Show document list if no id or source specified
-  if (!id && !sourceId) {
-    return (
-      <div className="space-y-4">
-        {documents.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              Нет документов отгрузки
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => navigate(`/shipment/${doc.id}`)}
-                className="card hover:shadow-lg transition-shadow text-left p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {doc.id}
-                    </h3>
-                    {doc.orderNumber && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Заказ: {doc.orderNumber}
-                      </p>
-                    )}
-                    {doc.customer && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Клиент: {doc.customer}
-                      </p>
-                    )}
-                    {doc.ttnNumber && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        ТТН: {doc.ttnNumber}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className={`status-badge ${
-                      doc.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      doc.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {doc.status === 'completed' ? 'Завершен' :
-                       doc.status === 'in_progress' ? 'В работе' :
-                       'Ожидает'}
-                    </span>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {doc.completedLines} / {doc.totalLines} строк
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="p-10 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-brand-primary rounded-full border-t-transparent mx-auto"></div>
       </div>
     );
   }
 
   if (!document) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
+      <div className="p-10 text-center">
+        <div className="text-error mb-4">Документ не найден</div>
+        <Button onClick={() => navigate('/docs/Otgruzka')}>
+          Вернуться к списку
+        </Button>
       </div>
     );
   }
 
-  const progress = document.totalLines > 0
-    ? (document.completedLines / document.totalLines) * 100
-    : 0;
+  const completedLines = lines.filter(l => l.quantityFact >= l.quantityPlan);
+  const incompleteLines = lines.filter(l => l.quantityFact < l.quantityPlan);
+  const isComplete = incompleteLines.length === 0;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Заказ: {document.orderNumber || document.id}
-            </p>
-            {document.customer && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Клиент: {document.customer}
-              </p>
-            )}
-            {document.ttn && (
-              <p className="text-sm font-semibold text-orange-600 dark:text-orange-400 mt-1">
-                📋 ТТН: {document.ttn}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            {pendingCount > 0 && (
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
-                {pendingCount} не синхр.
-              </span>
-            )}
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              document.status === 'completed' ? 'bg-green-100 text-green-800' :
-              'bg-orange-100 text-orange-800'
-            }`}>
-              {STATUS_LABELS[document.status] || document.status}
-            </span>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600 dark:text-gray-400">Прогресс проверки</span>
-            <span className="font-semibold text-gray-900 dark:text-white">
-              {document.completedLines} / {document.totalLines}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div
-              className="bg-orange-600 h-2 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Scanner Input */}
-      <ScannerInput 
-        onScan={onScanWithFeedback}
-        placeholder="Отсканируйте упаковку..."
-      />
-
-      {/* Lines */}
-      <div className="space-y-2">
-        {lines.map(line => {
-          const statusColor =
-            line.status === 'completed' ? 'bg-green-100 border-green-500 dark:bg-green-900' :
-            line.status === 'partial' ? 'bg-yellow-100 border-yellow-500 dark:bg-yellow-900' :
-            'bg-gray-100 border-gray-300 dark:bg-gray-700';
-
-          return (
-            <div key={line.id} className={`card border-2 ${statusColor}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {line.productName}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Артикул: {line.productSku}
+    <>
+      <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+        {/* Главный экран */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          {/* Заголовок документа */}
+          <div className="bg-surface-secondary rounded-lg p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Truck size={32} className="text-brand-primary" />
+              <div>
+                <h2 className="text-xl font-bold">{document.id}</h2>
+                {document.customer && (
+                  <p className="text-sm text-content-secondary">
+                    Клиент: {document.customer}
                   </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {line.quantityFact} / {line.quantityPlan}
-                  </div>
-                  <div className="text-2xl">
-                    {line.status === 'completed' ? '✅' :
-                     line.status === 'partial' ? '🟡' : '⚪'}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
-          );
-        })}
+
+            {/* Статус */}
+            <div className={`px-3 py-2 rounded-lg text-center font-bold ${
+              document.status === 'completed'
+                ? 'bg-success-light text-success-dark'
+                : document.status === 'in_progress'
+                ? 'bg-warning-light text-warning-dark'
+                : 'bg-surface-tertiary text-content-secondary'
+            }`}>
+              {document.status === 'completed' ? '✓ ОТГРУЖЕНО' : 
+               document.status === 'in_progress' ? '⏳ В РАБОТЕ' : '📋 НОВЫЙ'}
+            </div>
+          </div>
+
+          {/* US IV.1: Проверка комплектности */}
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+            <h3 className="font-bold">Комплектность заказа</h3>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-success-light rounded-lg p-3">
+                <div className="text-xs text-success-dark mb-1">Готово</div>
+                <div className="text-2xl font-bold text-success">{completedLines.length}</div>
+              </div>
+              <div className="bg-warning-light rounded-lg p-3">
+                <div className="text-xs text-warning-dark mb-1">Не хватает</div>
+                <div className="text-2xl font-bold text-warning">{incompleteLines.length}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              {isComplete ? (
+                <>
+                  <CheckCircle size={16} className="text-success" />
+                  <span className="text-success font-medium">Заказ полностью укомплектован</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle size={16} className="text-warning" />
+                  <span className="text-warning font-medium">
+                    Не хватает {incompleteLines.length} {incompleteLines.length === 1 ? 'позиции' : 'позиций'}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={checkCompleteness}
+              className="w-full py-2 bg-brand-primary hover:brightness-110 text-white rounded-lg font-medium transition-all"
+            >
+              Проверить подробно
+            </button>
+          </div>
+
+          {/* US IV.2: Данные отгрузки */}
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+            <h3 className="font-bold">Данные отгрузки</h3>
+
+            {ttnNumber && carrier ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 bg-success-light rounded-lg">
+                  <Truck size={20} className="text-success" />
+                  <div className="flex-1">
+                    <div className="text-xs text-success-dark">Перевозчик</div>
+                    <div className="font-bold text-success-dark">{carrier}</div>
+                  </div>
+                  <CheckCircle size={20} className="text-success" />
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-success-light rounded-lg">
+                  <FileText size={20} className="text-success" />
+                  <div className="flex-1">
+                    <div className="text-xs text-success-dark">ТТН</div>
+                    <div className="font-bold text-success-dark">{ttnNumber}</div>
+                  </div>
+                  <CheckCircle size={20} className="text-success" />
+                </div>
+
+                <button
+                  onClick={() => setShowTTNInput(true)}
+                  className="w-full py-2 bg-surface-tertiary hover:bg-surface-primary rounded-lg text-sm transition-colors"
+                >
+                  Изменить данные
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowTTNInput(true)}
+                className="w-full py-3 bg-warning-light hover:bg-warning text-warning-dark rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <FileText size={20} />
+                Ввести ТТН и перевозчика
+              </button>
+            )}
+          </div>
+
+          {/* Список позиций */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm text-content-tertiary uppercase flex items-center gap-2">
+              <Package size={16} />
+              Позиции к отгрузке ({lines.length})
+            </h3>
+            {lines.map((line) => {
+              const isLineComplete = line.quantityFact >= line.quantityPlan;
+              
+              return (
+                <div
+                  key={line.id}
+                  onClick={() => handleLineClick(line)}
+                  className={`card p-4 cursor-pointer hover:border-brand-primary transition-colors border-2 ${
+                    isLineComplete ? 'border-success' : 'border-warning'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <h4 className="font-bold">{line.productName}</h4>
+                      <p className="text-xs text-content-tertiary font-mono">{line.barcode}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${
+                      isLineComplete
+                        ? 'bg-success-light text-success-dark'
+                        : 'bg-warning-light text-warning-dark'
+                    }`}>
+                      {isLineComplete && <CheckCircle size={12} />}
+                      {!isLineComplete && <AlertTriangle size={12} />}
+                      {line.quantityFact} / {line.quantityPlan}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 h-1 bg-surface-tertiary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${
+                        isLineComplete ? 'bg-success' : 'bg-warning'
+                      }`}
+                      style={{ width: `${(line.quantityFact / line.quantityPlan) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Кнопка отгрузки */}
+        <div className="p-4 border-t border-separator bg-surface-primary fixed bottom-0 w-full max-w-3xl">
+          <Button
+            variant={document.status === 'completed' ? 'secondary' : 'primary'}
+            className="w-full"
+            onClick={handleShip}
+            disabled={document.status === 'completed'}
+          >
+            {document.status === 'completed' ? '✓ Отгружено' : '🚚 Отгрузить'}
+          </Button>
+        </div>
       </div>
 
-      {/* TTN Modal */}
-      {showTtnModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Параметры отгрузки
-            </h3>
-            
-            <div className="mb-4">
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Номер ТТН *</label>
-              <input
-                type="text"
-                value={ttnNumber}
-                onChange={(e) => setTtnNumber(e.target.value)}
-                placeholder="TTH-123456"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                autoFocus
-              />
+      {/* Диалоги */}
+      {showCompletenessCheck && (
+        <CompletenessCheck
+          lines={lines}
+          onClose={() => setShowCompletenessCheck(false)}
+          onConfirm={handleCompletenessConfirm}
+        />
+      )}
+
+      {showTTNInput && (
+        <TTNInput
+          onSubmit={handleTTNSubmit}
+          onCancel={() => setShowTTNInput(false)}
+        />
+      )}
+
+      {showLineCard && selectedLine && (
+        <LineCard
+          line={selectedLine}
+          onClose={() => {
+            setShowLineCard(false);
+            setSelectedLine(null);
+          }}
+        />
+      )}
+
+      {/* US IV.5: Предложение печати */}
+      {showPrintPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-surface-primary rounded-2xl max-w-md w-full shadow-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-brand-primary/10 rounded-xl">
+                <Printer className="text-brand-primary" size={32} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Печать документов</h2>
+                <p className="text-sm text-content-secondary">
+                  Распечатать накладную и ТТН?
+                </p>
+              </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Перевозчик</label>
-              <input
-                type="text"
-                value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
-                placeholder="Например: СДЭК"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
+            <div className="bg-surface-secondary rounded-lg p-4 mb-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-content-secondary">Документ:</span>
+                <span className="font-medium">{document.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-secondary">ТТН:</span>
+                <span className="font-medium">{ttnNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-secondary">Перевозчик:</span>
+                <span className="font-medium">{carrier}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-secondary">Позиций:</span>
+                <span className="font-medium">{lines.length}</span>
+              </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="space-y-3">
               <button
-                onClick={saveTtn}
-                disabled={!ttnNumber.trim()}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-orange-700"
+                onClick={() => handlePrintAndFinish(true)}
+                className="w-full py-3 bg-brand-primary hover:brightness-110 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
               >
-                Сохранить и завершить
+                <Printer size={20} />
+                Печать и завершение
               </button>
               <button
-                onClick={() => setShowTtnModal(false)}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
+                onClick={() => handlePrintAndFinish(false)}
+                className="w-full py-3 bg-surface-secondary hover:bg-surface-tertiary rounded-lg font-medium transition-colors"
               >
-                Отмена
+                Пропустить печать
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

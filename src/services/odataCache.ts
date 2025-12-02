@@ -138,6 +138,13 @@ class ODataCacheService {
    * Get all documents (with caching)
    */
   async getAllDocuments(options?: { forceRefresh?: boolean }): Promise<ODataDocument[]> {
+    // Demo mode - return data from JSON
+    if (this.isDemoMode()) {
+      console.log('🎭 [DEMO] Loading all documents from demo data');
+      const allDocs = demoDataService.getAllDocuments();
+      return allDocs as any[];
+    }
+
     const forceRefresh = options?.forceRefresh === true;
 
     if (!forceRefresh && await this.isCacheValid(ALL_DOCS_CACHE_KEY)) {
@@ -275,6 +282,16 @@ class ODataCacheService {
    * Get single document by ID with caching
    */
   async getDocById(docId: string, forceRefresh = false): Promise<ODataDocument | null> {
+    // Demo mode - return data from JSON
+    if (this.isDemoMode()) {
+      // We need to find the doc type first to use demoDataService.getDocumentById efficiently
+      // Or we can scan all types
+      console.log(`🎭 [DEMO] Loading document ${docId} from demo data`);
+      const allDocs = demoDataService.getAllDocuments();
+      const found = allDocs.find(d => d.id === docId);
+      return found || null;
+    }
+
     const cacheKey = `doc_${docId}`;
 
     // Try cache first (if not forcing refresh)

@@ -13,6 +13,7 @@ import {
   Info,
   LogOut,
   QrCode,
+  Download,
   LucideIcon,
 } from 'lucide-react';
 
@@ -78,6 +79,14 @@ export const menuItems: MenuItem[] = [
     icon: BarChart3,
     action: 'navigate',
     actionValue: '/statistics',
+  },
+  {
+    id: 'data-fetcher',
+    label: 'Загрузка данных',
+    icon: Download,
+    action: 'navigate',
+    actionValue: '/data-fetcher',
+    requiresOnline: true,
   },
   {
     id: 'diagnostics',

@@ -1,89 +1,96 @@
-// === 📁 src/components/picking/RouteProgress.tsx ===
-// Route progress indicator for picking
-
 import React from 'react';
-import { PickingRoute } from '@/types/picking';
+import { MapPin, Check, ArrowRight } from 'lucide-react';
 
-interface Props {
-  route: PickingRoute[];
-  currentCellId?: string;
+interface RouteStep {
+  cellId: string;
+  productName: string;
+  quantity: number;
+  completed: boolean;
 }
 
-const RouteProgress: React.FC<Props> = ({ route, currentCellId }) => {
-  const completedCount = route.filter(r => r.completed).length;
-  const progress = route.length > 0 ? (completedCount / route.length) * 100 : 0;
+interface RouteProgressProps {
+  steps: RouteStep[];
+  currentStepIndex: number;
+}
+
+/**
+ * US III.1: Навигация по маршруту
+ * Компонент для отображения оптимального маршрута подбора
+ */
+export const RouteProgress: React.FC<RouteProgressProps> = ({ steps, currentStepIndex }) => {
+  if (steps.length === 0) {
+    return null;
+  }
+
+  const currentStep = steps[currentStepIndex];
+  const nextStep = steps[currentStepIndex + 1];
+  const completedCount = steps.filter((s) => s.completed).length;
+  const progress = (completedCount / steps.length) * 100;
 
   return (
-    <div className="card bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900 dark:to-blue-900">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-        🗺️ Маршрут подбора
-      </h3>
-
-      {/* Progress bar */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-600 dark:text-gray-400">Прогресс маршрута</span>
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {completedCount} / {route.length}
+    <div className="bg-surface-secondary p-4 rounded-lg space-y-4">
+      {/* Прогресс маршрута */}
+      <div>
+        <div className="flex justify-between text-xs text-content-tertiary mb-2">
+          <span>Прогресс маршрута</span>
+          <span>
+            {completedCount} / {steps.length}
           </span>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+        <div className="h-3 bg-surface-tertiary rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-green-600 to-blue-600 h-3 rounded-full transition-all"
+            className="h-full bg-brand-primary transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      {/* Route steps */}
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {route.map((step, index) => {
-          const isCurrent = step.cellId === currentCellId;
-          const isNext = !step.completed && route.filter(r => !r.completed)[0]?.cellId === step.cellId;
+      {/* Текущая ячейка */}
+      {currentStep && !currentStep.completed && (
+        <div className="bg-brand-primary/10 border-2 border-brand-primary rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="text-brand-primary" size={20} />
+            <span className="text-xs font-medium text-brand-primary">ТЕКУЩАЯ ЯЧЕЙКА</span>
+          </div>
+          <div className="text-4xl font-bold font-mono mb-2">{currentStep.cellId}</div>
+          <div className="text-sm text-content-secondary">{currentStep.productName}</div>
+          <div className="text-xs text-content-tertiary mt-1">
+            Взять: {currentStep.quantity} шт.
+          </div>
+        </div>
+      )}
 
-          return (
-            <div
-              key={step.cellId}
-              className={`flex items-center space-x-3 p-2 rounded transition-all ${
-                isCurrent ? 'bg-blue-100 dark:bg-blue-800 ring-2 ring-blue-400' :
-                step.completed ? 'bg-green-100 dark:bg-green-900' :
-                isNext ? 'bg-yellow-100 dark:bg-yellow-900' :
-                'bg-white dark:bg-gray-800'
-              }`}
-            >
-              {/* Order number */}
-              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                step.completed ? 'bg-green-600 text-white' :
-                isCurrent || isNext ? 'bg-blue-600 text-white' :
-                'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-              }`}>
-                {step.completed ? '✓' : index + 1}
-              </div>
+      {/* Следующая ячейка */}
+      {nextStep && (
+        <div className="flex items-center gap-3 p-3 bg-surface-tertiary rounded-lg">
+          <ArrowRight className="text-content-tertiary" size={20} />
+          <div className="flex-1">
+            <div className="text-xs text-content-tertiary">Следующая</div>
+            <div className="font-bold font-mono">{nextStep.cellId}</div>
+          </div>
+        </div>
+      )}
 
-              {/* Cell info */}
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900 dark:text-white">
-                  {step.cellName}
+      {/* Завершенные шаги */}
+      {completedCount > 0 && (
+        <div className="pt-3 border-t border-borders-default">
+          <div className="text-xs text-content-tertiary mb-2">Выполнено:</div>
+          <div className="flex flex-wrap gap-2">
+            {steps
+              .filter((s) => s.completed)
+              .slice(-3)
+              .map((step, i) => (
+                <div
+                  key={i}
+                  className="px-2 py-1 bg-success/20 text-success-dark rounded text-xs font-mono flex items-center gap-1"
+                >
+                  <Check size={12} />
+                  {step.cellId}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {step.products.length} позиций
-                </div>
-              </div>
-
-              {/* Status icon */}
-              <div className="text-xl">
-                {step.completed ? '✅' :
-                 isCurrent ? '🔵' :
-                 isNext ? '⏭️' :
-                 '⚪'}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-export default RouteProgress;
-

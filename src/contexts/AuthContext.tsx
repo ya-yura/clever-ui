@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { AuthState, User, LoginCredentials } from '@/types/auth';
 import { api } from '@/services/api';
 import { authService } from '@/services/authService';
+import { configService } from '@/services/configService';
 import { useAnalytics } from '@/lib/analytics';
 
 interface AuthContextType extends AuthState {
@@ -96,6 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
       const storedToken = authService.getToken();
+      const isDemoStored = localStorage.getItem('demo_mode') === 'true';
 
       if (storedAuth && storedToken) {
         const parsed = JSON.parse(storedAuth);
@@ -109,8 +111,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
 
-        // Check if token is expired
-        if (authService.isTokenExpired(storedToken)) {
+        // Restore demo mode if it was active
+        if (isDemoStored) {
+          setIsDemo(true);
+          console.log('🎭 Demo mode restored from storage');
+        }
+
+        // Check if token is expired (skip for demo mode)
+        if (!isDemoStored && authService.isTokenExpired(storedToken)) {
           console.warn('⚠️ Token expired, attempting refresh');
           // Attempt to refresh token
           authService.refreshAccessToken().then((result) => {
@@ -231,17 +239,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       role: 'worker',
     };
 
-    setAuthState({
+    const newAuthState: AuthState = {
       isAuthenticated: true,
       user: demoUser,
       token: 'demo-token',
-    });
+    };
+
+    setAuthState(newAuthState);
+    saveAuthState(newAuthState);
     
     analytics.setUserId(demoUser.id);
 
     setIsDemo(true);
     localStorage.setItem('demo_mode', 'true');
-    console.log('✅ Demo mode activated');
+    
+    // 🎭 Clear server config to force demo mode (use Vite proxy instead of direct API calls)
+    configService.resetConfig();
+    api.updateBaseURL(); // Re-initialize API with proxy settings
+    
+    console.log('✅ Demo mode activated - using demo data');
   };
 
   return (

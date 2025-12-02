@@ -10,7 +10,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import Documents from './pages/Documents';
 import DocumentsByType from './pages/DocumentsByType';
-import DocumentDetails from './pages/DocumentDetails';
+import { SmartDocumentRouter } from './components/SmartDocumentRouter';
 import PartnerManagement from './pages/PartnerManagement';
 import Receiving from './pages/Receiving';
 import Placement from './pages/Placement';
@@ -25,6 +25,7 @@ import About from './pages/About';
 import Feedback from './pages/Feedback';
 import SoundTest from './pages/SoundTest';
 import DesignSystemShowcase from './pages/DesignSystemShowcase';
+import DataFetcher from './pages/DataFetcher';
 import { DynamicGridInterface } from './components/DynamicGridInterface';
 import { MenuProvider } from './modules/menu';
 import { AuthProvider } from './contexts/AuthContext';
@@ -65,7 +66,8 @@ function App() {
                 <Route index element={<Home />} />
                 <Route path="documents" element={<Documents />} />
                 <Route path="docs/:docTypeUni" element={<DocumentsByType />} />
-                <Route path="docs/:docTypeUni/:docId" element={<DocumentDetails />} />
+                {/* Smart router chooses between interactive and table view */}
+                <Route path="docs/:docTypeUni/:docId" element={<SmartDocumentRouter />} />
                 <Route path="partner" element={<PartnerManagement />} />
                 <Route path="receiving" element={<Receiving />} />
                 <Route path="receiving/:id" element={<Receiving />} />
@@ -86,6 +88,7 @@ function App() {
                 <Route path="feedback" element={<Feedback />} />
                 <Route path="sound-test" element={<SoundTest />} />
                 <Route path="custom-interface" element={<DynamicGridInterface />} />
+                <Route path="data-fetcher" element={<DataFetcher />} />
               </Route>
 
               {/* Redirect unknown routes */}

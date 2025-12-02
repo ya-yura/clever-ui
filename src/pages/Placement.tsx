@@ -1,465 +1,480 @@
-// === 📁 src/pages/Placement.tsx ===
-// Placement module page
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/services/db';
-import { api } from '@/services/api';
 import { useScanner } from '@/hooks/useScanner';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useSync } from '@/hooks/useSync';
-import { PlacementDocument, PlacementLine } from '@/types/placement';
-import { scanFeedback, feedback } from '@/utils/feedback';
-import { STATUS_LABELS } from '@/types/document';
-import PlacementCard from '@/components/placement/PlacementCard';
-import ScannerInput from '@/components/ScannerInput';
+import { useDocumentLogic } from '@/hooks/useDocumentLogic';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
-import { LineStatus } from '@/types/common';
+import ScannerInput from '@/components/ScannerInput';
+import { QuantityControl } from '@/components/QuantityControl';
+import { LineCard } from '@/components/LineCard';
+import { AutoCompletePrompt } from '@/components/AutoCompletePrompt';
+import { DiscrepancyAlert } from '@/components/DiscrepancyAlert';
+import { ArrowLeft, Package, MapPin, CheckCircle, X, Undo2 } from 'lucide-react';
+import { Button } from '@/design/components';
+import { feedback } from '@/utils/feedback';
 
-const PLACEMENT_STATUS_ORDER: Record<LineStatus, number> = {
-  pending: 0,
-  partial: 1,
-  completed: 2,
-  error: 3,
-  mismatch: 4,
-};
-
+/**
+ * МОДУЛЬ РАЗМЕЩЕНИЯ
+ * 
+ * Двухшаговое сканирование:
+ * 1. Сканировать ячейку → запомнить
+ * 2. Сканировать товар → разместить в ячейку
+ * 
+ * Сценарии:
+ * - Правильная ячейка + товар = размещение
+ * - Неправильная ячейка = ошибка
+ * - Частичное размещение
+ * - Отмена действия
+ */
 const Placement: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id, docId } = useParams();
   const [searchParams] = useSearchParams();
-  const sourceId = searchParams.get('source');
-
-  const [document, setDocument] = useState<PlacementDocument | null>(null);
-  const [lines, setLines] = useState<PlacementLine[]>([]);
-  const [documents, setDocuments] = useState<PlacementDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentCell, setCurrentCell] = useState<string>('');
-  const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  const [history, setHistory] = useState<{lineId: string, prevLine: PlacementLine}[]>([]);
+  const documentId = docId || id;
+  const sourceDocId = searchParams.get('source');
+  const navigate = useNavigate();
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
 
-  const { addSyncAction } = useOfflineStorage('placement');
-  const { sync, isSyncing, pendingCount } = useSync({
-    module: 'placement',
-    syncEndpoint: '/placement/sync',
+  // Состояние двухшагового сканирования
+  const [currentStep, setCurrentStep] = useState<'cell' | 'product'>('cell');
+  const [scannedCell, setScannedCell] = useState<string | null>(null);
+  const [cellInfo, setCellInfo] = useState<any | null>(null);
+
+  // UI состояния
+  const [showLineCard, setShowLineCard] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<any | null>(null);
+  const [showAutoComplete, setShowAutoComplete] = useState(false);
+
+  // История действий для отмены
+  const [actionHistory, setActionHistory] = useState<Array<{
+    lineId: string;
+    cellId: string;
+    quantity: number;
+    timestamp: number;
+  }>>([]);
+
+  // Логика документа
+  const {
+    document,
+    lines,
+    activeLine,
+    loading,
+    handleScan,
+    updateQuantity,
+    finishDocument,
+    getDiscrepancies,
+    showDiscrepancyAlert,
+    setShowDiscrepancyAlert,
+    setActiveLine,
+  } = useDocumentLogic({
+    docType: 'placement',
+    docId: documentId,
+    onComplete: () => {
+      feedback.success('✅ Размещение завершено');
+      navigate('/docs/RazmeshhenieVYachejki');
+    },
   });
 
-  // Update header with document info or list info
+  // Заголовок
   useEffect(() => {
-    if (document && id) {
+    if (documentId && document) {
       setDocumentInfo({
         documentId: document.id,
         completed: document.completedLines || 0,
         total: document.totalLines || 0,
       });
-      setListInfo(null);
-    } else if (!id) {
+    } else {
       setDocumentInfo(null);
-      setListInfo({
-        title: 'Размещение',
-        count: documents.length,
-      });
+      setListInfo({ title: 'Размещение', count: 0 });
     }
-    
     return () => {
       setDocumentInfo(null);
       setListInfo(null);
     };
-  }, [document, id, documents.length, setDocumentInfo, setListInfo]);
+  }, [documentId, document, setDocumentInfo, setListInfo]);
 
-  // Load document
-  useEffect(() => {
-    loadDocument();
-  }, [id, sourceId]);
-
-  const loadDocument = async () => {
-    setLoading(true);
+  // US II.1: Загрузка ячейки из справочника
+  const loadCellInfo = async (cellCode: string) => {
     try {
-      if (id) {
-        // Load existing document
-        let doc = await db.placementDocuments.get(id);
-        let docLines = await db.placementLines.where('documentId').equals(id).toArray();
-
-        if (!doc) {
-          const response = await api.getPlacementDocument(id);
-          if (response.success && response.data) {
-            doc = response.data.document;
-            docLines = response.data.lines || [];
-
-            if (doc) {
-              await db.placementDocuments.put(doc);
-            }
-
-            if (docLines.length) {
-              await db.placementLines.bulkPut(docLines);
-            }
-          }
-        }
-
-        if (doc) {
-          setDocument(doc);
-          setLines(docLines);
-        }
-      } else if (sourceId) {
-        // Create from receiving document
-        const receivingDoc = await db.receivingDocuments.get(sourceId);
-        const receivingLines = await db.receivingLines.where('documentId').equals(sourceId).toArray();
-
-        if (receivingDoc && receivingLines.length > 0) {
-          const newDoc: PlacementDocument = {
-            id: `PLM-${Date.now()}`,
-            status: 'in_progress',
-            sourceDocumentId: sourceId,
-            sourceDocumentType: 'receiving',
-            totalLines: receivingLines.length,
-            completedLines: 0,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          const newLines: PlacementLine[] = receivingLines.map((rLine, index) => ({
-            id: `PLM-${Date.now()}-L${index + 1}`,
-            documentId: newDoc.id,
-            productId: rLine.productId,
-            productName: rLine.productName,
-            productSku: rLine.productSku,
-            barcode: rLine.barcode,
-            quantity: rLine.quantityFact,
-            quantityPlan: rLine.quantityFact,
-            quantityFact: 0,
-            status: 'pending' as const,
-          }));
-
-          await db.placementDocuments.add(newDoc);
-          await db.placementLines.bulkPut(newLines);
-
-          setDocument(newDoc);
-          setLines(newLines);
-        }
-      } else if (!sourceId) {
-        // Load all documents
-        const allDocs = await db.placementDocuments.toArray();
-        setDocuments(allDocs);
-      } else {
-        // Create new document
-        const newDoc: PlacementDocument = {
-          id: `PLM-${Date.now()}`,
-          status: 'draft',
-          totalLines: 0,
-          completedLines: 0,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        await db.placementDocuments.add(newDoc);
-        setDocument(newDoc);
+      // Поиск в справочнике ячеек
+      const cell = await db.cells?.get(cellCode);
+      if (cell) {
+        return cell;
       }
-    } catch (error) {
-      console.error('Error loading document:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle scan
-  const handleScan = async (code: string) => {
-    if (!document) return;
-
-    // Check if it's a cell barcode (starts with CELL-)
-    if (code.startsWith('CELL-')) {
-      setCurrentCell(code);
-      scanFeedback(true, `Ячейка ${code} активирована`);
-      return;
-    }
-
-    // It's a product barcode
-    if (!currentCell) {
-      scanFeedback(false, 'Сначала отсканируйте ячейку');
-      return;
-    }
-
-    // Find product by barcode
-    const line = lines.find(l => 
-      (l.barcode === code || l.productSku === code) && 
-      l.status !== 'completed'
-    );
-
-    if (line) {
-      // Check if suggested cell matches
-      const cellMatch = !line.suggestedCellId || line.suggestedCellId === currentCell;
       
-      if (!cellMatch) {
-        if (confirm(`Рекомендуемая ячейка: ${line.suggestedCellName}. Разместить в ${currentCell}?`)) {
-          await placeProduct(line, currentCell);
-        } else {
-          scanFeedback(false, 'Размещение отменено');
-        }
-      } else {
-        await placeProduct(line, currentCell);
-      }
+      // Если не найдено, создаём временную запись
+      return {
+        id: cellCode,
+        name: cellCode,
+        zone: 'Неизвестная зона',
+        type: 'storage',
+      };
+    } catch (err) {
+      console.error('Failed to load cell:', err);
+      return null;
+    }
+  };
+
+  // US II.2: Обработка сканирования ячейки
+  const handleCellScan = async (code: string) => {
+    const cell = await loadCellInfo(code);
+    
+    if (cell) {
+      setScannedCell(code);
+      setCellInfo(cell);
+      setCurrentStep('product');
+      feedback.success(`Ячейка: ${cell.name}`);
     } else {
-      scanFeedback(false, 'Товар не найден или уже размещён');
+      feedback.error('Ячейка не найдена');
     }
   };
 
-  const placeProduct = async (line: PlacementLine, cellId: string) => {
-    // Save history
-    setHistory(prev => [...prev, { lineId: line.id, prevLine: { ...line } }]);
+  // US II.3: Обработка сканирования товара
+  const handleProductScan = async (code: string) => {
+    if (!scannedCell) {
+      feedback.error('Сначала отсканируйте ячейку');
+      setCurrentStep('cell');
+      return;
+    }
 
-    const updatedLine: PlacementLine = {
-      ...line,
-      cellId,
-      cellName: cellId,
-      verifiedCellId: cellId,
-      quantityFact: line.quantityFact + 1,
-      status: line.quantityFact + 1 >= line.quantityPlan ? 'completed' : 'partial',
-      placedAt: Date.now(),
-    };
+    // Ищем товар в строках документа
+    const line = lines.find(l => l.barcode === code || l.productSku === code);
+    
+    if (!line) {
+      feedback.error('Товар не найден в документе');
+      return;
+    }
 
-    await db.placementLines.update(line.id, updatedLine);
-    await addSyncAction('place_product', updatedLine);
+    // US II.3.1: Проверка правильности ячейки
+    if (line.cellId && line.cellId !== scannedCell) {
+      const wrongCell = await loadCellInfo(line.cellId);
+      feedback.error(`⚠️ Неправильная ячейка!\nТребуется: ${wrongCell?.name || line.cellId}\nОтсканирована: ${cellInfo?.name}`);
+      return;
+    }
 
-    setLines(prev => prev.map(l => l.id === line.id ? updatedLine : l));
-    scanFeedback(true, `Размещено: ${line.productName} в ${cellId}`);
+    // US II.3.2: Размещение товара
+    // Обновляем ячейку для строки если ещё не задана
+    if (!line.cellId) {
+      const linesTable = db.placementLines;
+      await linesTable.update(line.id, { cellId: scannedCell });
+    }
 
-    // Update document progress
-    updateDocumentProgress();
+    // Увеличиваем количество
+    const newQuantity = line.quantityFact + 1;
+    await updateQuantity(line.id, 1);
 
-    // Set active line
-    setActiveLineId(line.id);
-    setTimeout(() => setActiveLineId(null), 2000);
+    // Сохраняем в историю для отмены
+    setActionHistory(prev => [...prev, {
+      lineId: line.id,
+      cellId: scannedCell,
+      quantity: 1,
+      timestamp: Date.now(),
+    }]);
+
+    // Обратная связь
+    feedback.success(`${line.productName} размещён в ${cellInfo?.name} (+1)`);
+
+    // Если строка выполнена, переходим к следующей
+    if (newQuantity >= line.quantityPlan) {
+      feedback.success(`✅ ${line.productName} полностью размещён`);
+      
+      // Сбрасываем ячейку для следующего товара
+      setScannedCell(null);
+      setCellInfo(null);
+      setCurrentStep('cell');
+
+      // Проверка автозавершения
+      const allCompleted = lines.every(l => 
+        l.id === line.id ? newQuantity >= line.quantityPlan : l.status === 'completed'
+      );
+      
+      if (allCompleted) {
+        setTimeout(() => setShowAutoComplete(true), 500);
+      }
+    }
   };
 
+  // US II.5: Отмена последнего действия
   const handleUndo = async () => {
-    if (history.length === 0) return;
+    if (actionHistory.length === 0) {
+      feedback.error('Нет действий для отмены');
+      return;
+    }
 
-    const lastAction = history[history.length - 1];
-    const { lineId, prevLine } = lastAction;
-
-    await db.placementLines.update(lineId, prevLine);
-    await addSyncAction('update_line', prevLine); // Using generic update for undo
-
-    setLines(prev => prev.map(l => l.id === lineId ? prevLine : l));
-    setHistory(prev => prev.slice(0, -1));
+    const lastAction = actionHistory[actionHistory.length - 1];
+    const line = lines.find(l => l.id === lastAction.lineId);
     
-    scanFeedback(true, 'Действие отменено');
-    feedback.warning('Отмена последнего действия');
-    
-    // Re-calc progress
-    // (updateDocumentProgress will be called indirectly or we can call it)
-    // We need to update doc progress based on reverted line
-    const doc = await db.placementDocuments.get(document!.id);
-    if (doc) {
-       // recalculate locally
-       const currentLines = await db.placementLines.where('documentId').equals(doc.id).toArray();
-       const completedLines = currentLines.filter(l => l.status === 'completed').length;
-       const updatedDoc = { ...doc, completedLines, updatedAt: Date.now() };
-       await db.placementDocuments.update(doc.id, updatedDoc);
-       setDocument(updatedDoc);
+    if (line && line.quantityFact > 0) {
+      await updateQuantity(line.id, -lastAction.quantity);
+      setActionHistory(prev => prev.slice(0, -1));
+      feedback.success(`↶ Отменено размещение ${line.productName}`);
     }
   };
 
-  const { handleScan: onScanWithFeedback, lastScan } = useScanner({
+  // US II.2: Обработчик сканера
+  const { handleScan: onScanWithFeedback } = useScanner({
     mode: 'keyboard',
-    onScan: handleScan,
+    onScan: async (code) => {
+      if (currentStep === 'cell') {
+        await handleCellScan(code);
+      } else {
+        await handleProductScan(code);
+      }
+    },
   });
 
-  // Update document progress and auto-complete if all lines are done
-  const updateDocumentProgress = async () => {
-    if (!document) return;
-
-    const completedLines = lines.filter(l => l.status === 'completed').length;
-    const totalLines = lines.length;
+  // US II.6: Завершение документа
+  const handleFinish = async () => {
+    const discrepancies = getDiscrepancies();
     
-    // Check if all lines are completed
-    const allCompleted = totalLines > 0 && completedLines === totalLines;
-    
-    const updatedDoc = {
-      ...document,
-      completedLines,
-      status: allCompleted ? 'completed' as const : document.status,
-      updatedAt: Date.now(),
-    };
-
-    await db.placementDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
-    
-    // Auto-complete and navigate when all done
-    if (allCompleted && document.status !== 'completed') {
-      await addSyncAction('complete', updatedDoc);
-      sync();
-      
-      // Show success feedback
-      feedback.success('Размещение завершено!');
-      
-      // Navigate after short delay
-      setTimeout(() => {
-        navigate('/placement');
-      }, 500);
+    if (discrepancies.length > 0) {
+      setShowDiscrepancyAlert(true);
+    } else {
+      await finishDocument(true);
     }
   };
 
+  const handleConfirmWithDiscrepancies = async () => {
+    setShowDiscrepancyAlert(false);
+    await finishDocument(true);
+  };
+
+  const handleLineClick = (line: any) => {
+    setSelectedLine(line);
+    setShowLineCard(true);
+  };
+
+  const handleAutoComplete = () => {
+    setShowAutoComplete(false);
+    handleFinish();
+  };
+
+  // Рендер загрузки
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  // Show document list if no id specified
-  if (!id) {
-    return (
-      <div className="space-y-4">
-        {documents.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              Нет документов размещения
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => navigate(`/placement/${doc.id}`)}
-                className="card hover:shadow-lg transition-shadow text-left p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {doc.id}
-                    </h3>
-                    {doc.sourceDocument && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Источник: {doc.sourceDocument}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className={`status-badge ${
-                      doc.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      doc.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {doc.status === 'completed' ? 'Завершен' :
-                       doc.status === 'in_progress' ? 'В работе' :
-                       'Черновик'}
-                    </span>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {doc.completedLines} / {doc.totalLines} строк
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="p-10 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-brand-primary rounded-full border-t-transparent mx-auto"></div>
       </div>
     );
   }
 
   if (!document) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
+      <div className="p-10 text-center">
+        <div className="text-error mb-4">Документ не найден</div>
+        <Button onClick={() => navigate('/docs/RazmeshhenieVYachejki')}>
+          Вернуться к списку
+        </Button>
       </div>
     );
   }
 
-  const progress = document.totalLines > 0
-    ? (document.completedLines / document.totalLines) * 100
-    : 0;
-
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="card-compact">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Документ: {document.id}
-            </p>
-            {currentCell && (
-              <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
-                📍 {currentCell}
-              </p>
+    <>
+      <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+        {/* Главный экран */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          {/* US II.2: Индикатор текущего шага */}
+          <div className="bg-surface-secondary rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold">Двухшаговое сканирование</h3>
+              {actionHistory.length > 0 && (
+                <button
+                  onClick={handleUndo}
+                  className="flex items-center gap-2 px-3 py-1 bg-surface-tertiary hover:bg-warning-light rounded-lg text-sm transition-colors"
+                >
+                  <Undo2 size={16} />
+                  Отменить
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {/* Шаг 1: Ячейка */}
+              <div className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                currentStep === 'cell'
+                  ? 'border-brand-primary bg-brand-primary/10'
+                  : scannedCell
+                  ? 'border-success bg-success/10'
+                  : 'border-separator'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin size={20} className={currentStep === 'cell' ? 'text-brand-primary' : 'text-content-tertiary'} />
+                  <span className="text-xs font-bold uppercase">Шаг 1: Ячейка</span>
+                </div>
+                {scannedCell ? (
+                  <div>
+                    <div className="font-bold">{cellInfo?.name || scannedCell}</div>
+                    <div className="text-xs text-content-tertiary">{cellInfo?.zone}</div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-content-tertiary">Отсканируйте ячейку</div>
+                )}
+              </div>
+
+              <div className="text-2xl text-content-tertiary">→</div>
+
+              {/* Шаг 2: Товар */}
+              <div className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                currentStep === 'product'
+                  ? 'border-brand-primary bg-brand-primary/10'
+                  : 'border-separator'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Package size={20} className={currentStep === 'product' ? 'text-brand-primary' : 'text-content-tertiary'} />
+                  <span className="text-xs font-bold uppercase">Шаг 2: Товар</span>
+                </div>
+                <div className="text-sm text-content-tertiary">
+                  {currentStep === 'product' ? 'Отсканируйте товар' : 'Ожидает'}
+                </div>
+              </div>
+            </div>
+
+            {scannedCell && (
+              <button
+                onClick={() => {
+                  setScannedCell(null);
+                  setCellInfo(null);
+                  setCurrentStep('cell');
+                  feedback.info('Сканирование ячейки сброшено');
+                }}
+                className="mt-3 w-full py-2 bg-surface-tertiary hover:bg-surface-primary rounded-lg text-sm transition-colors"
+              >
+                <X size={16} className="inline mr-1" />
+                Сбросить ячейку
+              </button>
             )}
           </div>
-          <div className="flex items-center space-x-1.5">
-            {pendingCount > 0 && (
-              <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded text-xs">
-                {pendingCount}
+
+          {/* Поле сканирования */}
+          <ScannerInput
+            onScan={onScanWithFeedback}
+            placeholder={
+              currentStep === 'cell'
+                ? 'Шаг 1: Скан ячейки...'
+                : `Шаг 2: Скан товара в ${cellInfo?.name || 'ячейку'}...`
+            }
+            className="sticky top-0 z-10 shadow-md"
+          />
+
+          {/* Статус и прогресс */}
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold">Прогресс размещения</h3>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                document.status === 'completed'
+                  ? 'bg-success-light text-success-dark'
+                  : document.status === 'in_progress'
+                  ? 'bg-warning-light text-warning-dark'
+                  : 'bg-surface-tertiary text-content-secondary'
+              }`}>
+                {document.status === 'completed' ? 'ЗАВЕРШЁН' : document.status === 'in_progress' ? 'В РАБОТЕ' : 'НОВЫЙ'}
               </span>
-            )}
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              document.status === 'completed' ? 'bg-green-100 text-green-800' :
-              document.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {STATUS_LABELS[document.status] || document.status}
-            </span>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Размещено позиций</span>
+                <span className="font-mono">{document.completedLines} / {document.totalLines}</span>
+              </div>
+              <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-brand-primary transition-all duration-300"
+                  style={{ width: `${document.totalLines > 0 ? (document.completedLines / document.totalLines) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Список строк */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm text-content-tertiary uppercase">Товары к размещению</h3>
+            {lines.map((line) => (
+              <div
+                key={line.id}
+                onClick={() => handleLineClick(line)}
+                className="card p-4 cursor-pointer hover:border-brand-primary transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-bold">{line.productName}</h4>
+                    <p className="text-xs text-content-tertiary font-mono">{line.barcode}</p>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    line.status === 'completed'
+                      ? 'bg-success-light text-success-dark'
+                      : line.status === 'partial'
+                      ? 'bg-warning-light text-warning-dark'
+                      : 'bg-surface-tertiary text-content-secondary'
+                  }`}>
+                    {line.quantityFact} / {line.quantityPlan}
+                  </div>
+                </div>
+
+                {line.cellId && (
+                  <div className="flex items-center gap-2 text-sm text-content-secondary">
+                    <MapPin size={14} />
+                    <span>Ячейка: {line.cellId}</span>
+                  </div>
+                )}
+
+                <div className="mt-2 h-1 bg-surface-tertiary rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      line.status === 'completed' ? 'bg-success' : 'bg-warning'
+                    }`}
+                    style={{ width: `${line.quantityPlan > 0 ? (line.quantityFact / line.quantityPlan) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Progress */}
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-gray-600 dark:text-gray-400">Прогресс</span>
-            <span className="font-semibold text-gray-900 dark:text-white">
-              {document.completedLines} / {document.totalLines}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div
-              className="bg-purple-600 h-1.5 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Scanner Input */}
-      <ScannerInput 
-        onScan={onScanWithFeedback}
-        placeholder={currentCell ? 'Отсканируйте товар...' : 'Отсканируйте ячейку...'}
-      />
-
-      {/* Actions */}
-      {history.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={handleUndo}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors flex items-center gap-2"
+        {/* Кнопка завершения */}
+        <div className="p-4 border-t border-separator bg-surface-primary fixed bottom-0 w-full max-w-3xl">
+          <Button
+            variant={document.status === 'completed' ? 'secondary' : 'primary'}
+            className="w-full"
+            onClick={handleFinish}
+            disabled={document.status === 'completed'}
           >
-            ↩ Отменить последнее
-          </button>
+            {document.status === 'completed' ? '✅ Документ завершён' : 'Завершить размещение'}
+          </Button>
         </div>
-      )}
-
-      {/* Lines */}
-      <div className="space-y-2">
-        {lines
-          .sort((a, b) => {
-            return (PLACEMENT_STATUS_ORDER[a.status] ?? 99) - (PLACEMENT_STATUS_ORDER[b.status] ?? 99);
-          })
-          .map(line => (
-            <PlacementCard
-              key={line.id}
-              line={line}
-              isActive={activeLineId === line.id}
-            />
-          ))}
       </div>
 
-      {lines.length === 0 && (
-        <div className="card text-center py-8">
-          <p className="text-gray-600 dark:text-gray-400">
-            Нет товаров для размещения
-          </p>
-        </div>
+      {/* Диалоги */}
+      {showDiscrepancyAlert && (
+        <DiscrepancyAlert
+          discrepancies={getDiscrepancies()}
+          onConfirm={handleConfirmWithDiscrepancies}
+          onCancel={() => setShowDiscrepancyAlert(false)}
+        />
       )}
-    </div>
+
+      {showLineCard && selectedLine && (
+        <LineCard
+          line={selectedLine}
+          onClose={() => {
+            setShowLineCard(false);
+            setSelectedLine(null);
+          }}
+          onQuantityChange={(lineId, delta) => {
+            updateQuantity(lineId, delta);
+            const updatedLine = lines.find(l => l.id === lineId);
+            if (updatedLine) setSelectedLine(updatedLine);
+          }}
+        />
+      )}
+
+      {showAutoComplete && document && (
+        <AutoCompletePrompt
+          totalLines={document.totalLines}
+          completedLines={document.completedLines}
+          onComplete={handleAutoComplete}
+          onContinue={() => setShowAutoComplete(false)}
+        />
+      )}
+    </>
   );
 };
 

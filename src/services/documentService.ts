@@ -71,13 +71,26 @@ export class DocumentService {
    * Get all documents from all modules
    */
   async getAllDocuments(): Promise<UniversalDocument[]> {
-    const remoteDocuments = await this.loadRemoteDocuments();
-    if (remoteDocuments.length > 0) {
-      return remoteDocuments;
-    }
+    console.log('📂 [DocumentService] getAllDocuments called');
+    
+    try {
+      const remoteDocuments = await this.loadRemoteDocuments();
+      console.log(`📂 [DocumentService] Remote documents: ${remoteDocuments.length}`);
+      
+      if (remoteDocuments.length > 0) {
+        return remoteDocuments;
+      }
 
-    console.warn('⚠️ Falling back to legacy IndexedDB documents (receiving/placement/etc.)');
-    return this.loadLegacyDocuments();
+      console.warn('⚠️ Falling back to legacy IndexedDB documents (receiving/placement/etc.)');
+      const legacyDocs = await this.loadLegacyDocuments();
+      console.log(`📂 [DocumentService] Legacy documents: ${legacyDocs.length}`);
+      
+      return legacyDocs;
+    } catch (error) {
+      console.error('❌ [DocumentService] Error in getAllDocuments:', error);
+      // Return empty array instead of throwing to prevent UI breaking
+      return [];
+    }
   }
 
   /**

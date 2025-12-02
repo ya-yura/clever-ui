@@ -8,6 +8,7 @@ import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useMenu } from '@/modules/menu';
 import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ConnectionIndicator } from './ConnectionIndicator';
 
 // Route to title mapping
 const getPageTitle = (pathname: string): { title: string; subtitle?: string } => {

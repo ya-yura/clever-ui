@@ -1,523 +1,546 @@
-// === 📁 src/pages/Return.tsx ===
-// Return/Write-off module page
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Camera } from 'lucide-react';
 import { db } from '@/services/db';
+import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
 import { useScanner } from '@/hooks/useScanner';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useSync } from '@/hooks/useSync';
-import { ReturnDocument, ReturnLine, ReturnType, ReturnReason } from '@/types/return';
-import { scanFeedback, feedback } from '@/utils/feedback';
-import { STATUS_LABELS } from '@/types/document';
 import ScannerInput from '@/components/ScannerInput';
-import { useDocumentHeader } from '@/contexts/DocumentHeaderContext';
+import { OperationTypeSelector } from '@/components/return/OperationTypeSelector';
+import { ReasonSelector } from '@/components/return/ReasonSelector';
+import { PhotoCapture } from '@/components/return/PhotoCapture';
+import { Button } from '@/design/components';
+import { 
+  RotateCcw, 
+  Trash2, 
+  Camera, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  Plus,
+  Minus,
+  Package,
+  FileText
+} from 'lucide-react';
+import { feedback } from '@/utils/feedback';
+import analytics, { EventType } from '@/lib/analytics';
+
+/**
+ * МОДУЛЬ ВОЗВРАТА/СПИСАНИЯ
+ * 
+ * Процесс:
+ * 1. Выбор типа операции (Возврат/Списание)
+ * 2. Сканирование товара
+ * 3. Указание причины
+ * 4. Добавление фото (опционально)
+ * 5. Проверка списка
+ * 6. Подтверждение операции
+ */
+
+interface ReturnLine {
+  id: string;
+  productId: string;
+  productName: string;
+  barcode: string;
+  quantity: number;
+  reason: string;
+  comment?: string;
+  photo?: string;
+  timestamp: number;
+}
 
 const Return: React.FC = () => {
-  const { id } = useParams();
+  const { id, docId } = useParams();
+  const documentId = docId || id;
   const navigate = useNavigate();
-
-  const [document, setDocument] = useState<ReturnDocument | null>(null);
-  const [lines, setLines] = useState<ReturnLine[]>([]);
-  const [documents, setDocuments] = useState<ReturnDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showTypeSelector, setShowTypeSelector] = useState(false);
-  const [showReasonModal, setShowReasonModal] = useState(false);
-  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
-  const [selectedReason, setSelectedReason] = useState<ReturnReason | ''>('');
-  const [customReason, setCustomReason] = useState('');
   const { setDocumentInfo, setListInfo } = useDocumentHeader();
-
   const { addSyncAction } = useOfflineStorage('return');
-  const { sync, isSyncing, pendingCount } = useSync({
-    module: 'return',
-    syncEndpoint: document?.type === 'return' ? '/return/sync' : '/writeoff/sync',
+
+  // US V.1: Тип операции
+  const [operationType, setOperationType] = useState<'return' | 'writeoff' | null>(null);
+  
+  // Документ и строки
+  const [document, setDocument] = useState<any | null>(null);
+  const [lines, setLines] = useState<ReturnLine[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // UI состояния
+  const [showReasonSelector, setShowReasonSelector] = useState(false);
+  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<any | null>(null);
+  const [selectedLineForPhoto, setSelectedLineForPhoto] = useState<ReturnLine | null>(null);
+
+  // Сканер
+  const { handleScan: onScan } = useScanner({
+    mode: 'keyboard',
+    continuous: true,
+    onScan: handleProductScan,
   });
 
-  // Update header with document info or list info
+  // Заголовок
   useEffect(() => {
-    if (document && id) {
-      const title = document.type === 'return' ? 'Возврат' : 'Списание';
+    if (documentId && document) {
       setDocumentInfo({
         documentId: document.id,
-        completed: lines.filter(l => l.reason).length,
-        total: lines.length,
+        completed: lines.length,
+        total: lines.length, // Dynamic
       });
-      setListInfo(null);
-    } else if (!id) {
-      setDocumentInfo(null);
-      setListInfo({
-        title: 'Возврат',
-        count: documents.length,
-      });
+    } else if (!documentId) {
+      setListInfo({ title: 'Возврат/Списание', count: 0 });
     }
-    
     return () => {
       setDocumentInfo(null);
       setListInfo(null);
     };
-  }, [document, id, documents.length, lines.length, lines, setDocumentInfo, setListInfo]);
+  }, [documentId, document, lines, setDocumentInfo, setListInfo]);
 
+  // Загрузка документа
   useEffect(() => {
-    loadDocument();
-  }, [id]);
+    if (documentId) {
+      loadDocument();
+    }
+  }, [documentId]);
 
   const loadDocument = async () => {
     setLoading(true);
     try {
-      if (id) {
-        const doc = await db.returnDocuments.get(id);
-        const docLines = await db.returnLines.where('documentId').equals(id).toArray();
-
-        if (doc) {
-          setDocument(doc);
-          setLines(docLines);
-        }
-      } else {
-        // Load all documents
-        const allDocs = await db.returnDocuments.toArray();
-        setDocuments(allDocs);
+      const doc = await db.returnDocuments.get(documentId!);
+      const docLines = doc ? await db.returnLines.where('documentId').equals(documentId!).toArray() : [];
+      
+      if (doc) {
+        setDocument(doc);
+        setOperationType(doc.operationType || null);
+        setLines(docLines);
       }
-    } catch (error) {
-      console.error('Error loading document:', error);
+    } catch (err: any) {
+      console.error(err);
+      feedback.error(`Ошибка загрузки: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const createDocument = async (type: ReturnType) => {
-    const newDoc: ReturnDocument = {
-      id: `${type.toUpperCase()}-${Date.now()}`,
-      status: 'in_progress',
-      type,
-      totalLines: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+  // US V.1: Создание нового документа после выбора типа
+  const handleTypeSelect = async (type: 'return' | 'writeoff') => {
+    setOperationType(type);
 
-    await db.returnDocuments.add(newDoc);
-    setDocument(newDoc);
-    setShowTypeSelector(false);
+    if (!document) {
+      // Создаём новый документ
+      const newDocId = `${type.toUpperCase()}-${crypto.randomUUID().substring(0, 8)}`;
+      const newDoc = {
+        id: newDocId,
+        operationType: type,
+        status: 'new',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        totalLines: 0,
+      };
+
+      try {
+        await db.returnDocuments.add(newDoc);
+        setDocument(newDoc);
+        feedback.success(`Создан документ ${type === 'return' ? 'возврата' : 'списания'}`);
+        
+        // Обновляем URL
+        navigate(`/docs/Vozvrat/${newDocId}`, { replace: true });
+      } catch (err: any) {
+        feedback.error(`Ошибка создания документа: ${err.message}`);
+      }
+    } else {
+      // Обновляем существующий
+      await db.returnDocuments.update(document.id, {
+        operationType: type,
+        updatedAt: Date.now(),
+      });
+      setDocument({ ...document, operationType: type });
+    }
   };
 
-  const handleScan = async (code: string) => {
-    if (!document) return;
-
-    // Check if product already in lines
-    const existingLine = lines.find(l => l.barcode === code || l.productSku === code);
-
-    if (existingLine) {
-      scanFeedback(false, 'Товар уже добавлен');
+  // US V.2: Сканирование товара
+  async function handleProductScan(barcode: string) {
+    if (!operationType) {
+      feedback.error('Сначала выберите тип операции');
       return;
     }
 
-    // Create new line (in real app, we'd fetch product info from API)
+    analytics.track(EventType.SCAN_SUCCESS, { barcode, module: 'return' });
+
+    // Поиск товара в справочнике
+    const products = await db.products.where('barcode').equals(barcode).toArray();
+    const product = products[0];
+
+    if (!product) {
+      feedback.error(`Товар не найден: ${barcode}`);
+      return;
+    }
+
+    // Сохраняем товар для следующего шага
+    setCurrentProduct(product);
+    setShowReasonSelector(true);
+  }
+
+  // US V.3: Добавление товара с причиной
+  const handleReasonSubmit = async (reason: string, comment?: string) => {
+    setShowReasonSelector(false);
+
+    if (!currentProduct || !document) return;
+
+    // Создаём новую строку
     const newLine: ReturnLine = {
-      id: `${document.id}-L${lines.length + 1}`,
-      documentId: document.id,
-      productId: `P${Date.now()}`,
-      productName: `Товар ${code}`,
-      productSku: code,
-      barcode: code,
+      id: crypto.randomUUID(),
+      productId: currentProduct.id,
+      productName: currentProduct.name,
+      barcode: currentProduct.barcode,
       quantity: 1,
-      quantityPlan: 1,
-      quantityFact: 1,
-      status: 'pending',
-      addedAt: Date.now(),
+      reason,
+      comment,
+      timestamp: Date.now(),
     };
 
-    await db.returnLines.add(newLine);
-    await addSyncAction('add_line', newLine);
+    try {
+      // Сохраняем в БД
+      await db.returnLines.add({
+        ...newLine,
+        documentId: document.id,
+      });
 
-    setLines(prev => [...prev, newLine]);
-    scanFeedback(true, 'Товар добавлен');
+      // Обновляем локальное состояние
+      setLines((prev) => [...prev, newLine]);
 
-    // Update document
-    const updatedDoc = {
-      ...document,
-      totalLines: lines.length + 1,
-      updatedAt: Date.now(),
-    };
-    await db.returnDocuments.update(document.id, updatedDoc);
-    setDocument(updatedDoc);
+      // Обновляем документ
+      await db.returnDocuments.update(document.id, {
+        totalLines: lines.length + 1,
+        updatedAt: Date.now(),
+      });
 
-    // Show reason modal
-    setSelectedLineId(newLine.id);
-    setShowReasonModal(true);
+      // Очищаем текущий товар
+      setCurrentProduct(null);
+
+      feedback.success(`Добавлен товар: ${currentProduct.name}`);
+
+      // US V.4: Предложение добавить фото
+      if (confirm('Добавить фото для этого товара?')) {
+        setSelectedLineForPhoto(newLine);
+        setShowPhotoCapture(true);
+      }
+    } catch (err: any) {
+      feedback.error(`Ошибка добавления: ${err.message}`);
+    }
   };
 
-  const { handleScan: onScanWithFeedback, lastScan } = useScanner({
-    mode: 'keyboard',
-    onScan: handleScan,
-  });
+  // US V.4: Добавление фото к строке
+  const handlePhotoTaken = async (photoData: string) => {
+    setShowPhotoCapture(false);
 
-  const saveReason = async () => {
-    if (!selectedLineId || !selectedReason) return;
+    if (!selectedLineForPhoto) return;
 
-    const line = lines.find(l => l.id === selectedLineId);
+    try {
+      // Обновляем строку с фото
+      await db.returnLines
+        .where('id')
+        .equals(selectedLineForPhoto.id)
+        .modify({ photo: photoData });
+
+      // Обновляем локальное состояние
+      setLines((prev) =>
+        prev.map((line) =>
+          line.id === selectedLineForPhoto.id ? { ...line, photo: photoData } : line
+        )
+      );
+
+      feedback.success('✓ Фото добавлено');
+      setSelectedLineForPhoto(null);
+    } catch (err: any) {
+      feedback.error(`Ошибка сохранения фото: ${err.message}`);
+    }
+  };
+
+  // Изменение количества
+  const handleQuantityChange = async (lineId: string, delta: number) => {
+    const line = lines.find((l) => l.id === lineId);
     if (!line) return;
 
-    const updatedLine: ReturnLine = {
-      ...line,
-      reason: selectedReason,
-      reasonText: selectedReason === 'other' ? customReason : undefined,
-      status: 'completed',
-    };
+    const newQuantity = Math.max(1, line.quantity + delta);
 
-    await db.returnLines.update(selectedLineId, updatedLine);
-    await addSyncAction('update_reason', updatedLine);
+    try {
+      await db.returnLines
+        .where('id')
+        .equals(lineId)
+        .modify({ quantity: newQuantity });
 
-    setLines(prev => prev.map(l => l.id === selectedLineId ? updatedLine : l));
+      setLines((prev) =>
+        prev.map((l) => (l.id === lineId ? { ...l, quantity: newQuantity } : l))
+      );
 
-    // Reset modal
-    setShowReasonModal(false);
-    setSelectedLineId(null);
-    setSelectedReason('');
-    setCustomReason('');
-    
-    // Check if all lines now have reasons - auto-complete if yes
-    const allHaveReasons = lines.every(l => 
-      l.id === selectedLineId ? true : l.reason
-    );
-    
-    if (allHaveReasons && lines.length > 0 && document?.status !== 'completed') {
-      // Автоматически завершаем документ
-      setTimeout(() => completeDocument(), 300);
+      feedback.info(`Количество: ${newQuantity}`);
+    } catch (err: any) {
+      feedback.error(`Ошибка обновления: ${err.message}`);
     }
   };
 
-  const completeDocument = async () => {
-    if (!document) return;
+  // Удаление строки
+  const handleRemoveLine = async (lineId: string) => {
+    if (!confirm('Удалить эту позицию?')) return;
 
-    // Check if all lines have reasons
-    const missingReasons = lines.filter(l => !l.reason);
-    if (missingReasons.length > 0) {
-      alert('Укажите причину для всех товаров');
+    try {
+      await db.returnLines.where('id').equals(lineId).delete();
+      setLines((prev) => prev.filter((l) => l.id !== lineId));
+
+      await db.returnDocuments.update(document!.id, {
+        totalLines: lines.length - 1,
+        updatedAt: Date.now(),
+      });
+
+      feedback.success('✓ Удалено');
+    } catch (err: any) {
+      feedback.error(`Ошибка удаления: ${err.message}`);
+    }
+  };
+
+  // US V.5 + V.6: Завершение документа
+  const handleFinish = async () => {
+    if (lines.length === 0) {
+      feedback.error('Добавьте хотя бы один товар');
       return;
     }
 
-    const updatedDoc: ReturnDocument = {
-      ...document,
-      status: 'completed',
-      updatedAt: Date.now(),
-    };
+    const opName = operationType === 'return' ? 'возврата' : 'списания';
 
-    await db.returnDocuments.update(document.id, updatedDoc);
-    await addSyncAction('complete', updatedDoc);
+    if (!confirm(`Подтвердить ${opName}?\n\nПозиций: ${lines.length}\nОбщее количество: ${lines.reduce((sum, l) => sum + l.quantity, 0)}`)) {
+      return;
+    }
 
-    setDocument(updatedDoc);
-    sync();
-
-    feedback.success('Документ завершён!');
-    setTimeout(() => navigate('/return'), 500);
-  };
-
-  const removeProduct = async (lineId: string) => {
-    await db.returnLines.delete(lineId);
-    setLines(prev => prev.filter(l => l.id !== lineId));
-
-    if (document) {
-      const updatedDoc = {
-        ...document,
-        totalLines: lines.length - 1,
+    try {
+      await db.returnDocuments.update(document!.id, {
+        status: 'completed',
         updatedAt: Date.now(),
-      };
-      await db.returnDocuments.update(document.id, updatedDoc);
-      setDocument(updatedDoc);
+      });
+
+      await addSyncAction('complete', { documentId: document!.id });
+
+      feedback.success(`✅ Документ ${opName} завершён`);
+      analytics.track(EventType.DOC_COMPLETE, { 
+        module: 'return', 
+        type: operationType,
+        linesCount: lines.length 
+      });
+
+      navigate('/docs/Vozvrat');
+    } catch (err: any) {
+      feedback.error(`Ошибка завершения: ${err.message}`);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      <div className="p-10 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-brand-primary rounded-full border-t-transparent mx-auto"></div>
       </div>
     );
   }
 
-  // Show document list if no id specified
-  if (!id) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowTypeSelector(true)}
-            className="px-4 py-2 bg-brand-primary text-white rounded-lg font-semibold hover:brightness-90 transition-colors"
-          >
-            + Создать
-          </button>
-        </div>
-
-        {showTypeSelector && (
-          <div className="card text-center py-12">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Выберите тип документа
-            </h3>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => createDocument('return')}
-                className="px-6 py-3 bg-brand-primary text-white rounded-lg font-semibold hover:brightness-90 transition-colors"
-              >
-                ♻️ Возврат
-              </button>
-              <button
-                onClick={() => createDocument('writeoff')}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-              >
-                🗑️ Списание
-              </button>
-              <button
-                onClick={() => setShowTypeSelector(false)}
-                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        )}
-
-        {documents.length === 0 && !showTypeSelector ? (
-          <div className="card text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              Нет документов возврата или списания
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => navigate(`/return/${doc.id}`)}
-                className="card hover:shadow-lg transition-shadow text-left p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {doc.type === 'return' ? '♻️' : '🗑️'} {doc.id}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {doc.type === 'return' ? 'Возврат' : 'Списание'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`status-badge ${
-                      doc.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      doc.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {doc.status === 'completed' ? 'Завершен' :
-                       doc.status === 'in_progress' ? 'В работе' :
-                       'Ожидает'}
-                    </span>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {doc.totalLines} {doc.totalLines === 1 ? 'строка' : doc.totalLines < 5 ? 'строки' : 'строк'}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (!document) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">Документ не найден</p>
-      </div>
-    );
-  }
-
-  const reasons: { value: ReturnReason; label: string }[] = [
-    { value: 'damaged', label: '🔨 Брак / Повреждение' },
-    { value: 'expired', label: '📅 Срок годности истёк' },
-    { value: 'wrong_item', label: '❌ Ошибка комплектации' },
-    { value: 'customer_return', label: '↩️ Возврат от клиента' },
-    { value: 'other', label: '📝 Другое' },
-  ];
+  const TypeIcon = operationType === 'return' ? RotateCcw : Trash2;
+  const typeColor = operationType === 'return' ? 'brand-primary' : 'error';
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Документ: {document.id}
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            {pendingCount > 0 && (
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
-                {pendingCount} не синхр.
-              </span>
-            )}
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              document.status === 'completed' ? 'bg-green-100 text-green-800' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {STATUS_LABELS[document.status] || document.status}
-            </span>
-          </div>
-        </div>
+    <>
+      <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          {/* US V.1: Выбор типа операции */}
+          <OperationTypeSelector selected={operationType} onSelect={handleTypeSelect} />
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {lines.length}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Всего позиций</div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {lines.filter(l => l.reason).length}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">С причиной</div>
-          </div>
-        </div>
-      </div>
+          {operationType && (
+            <>
+              {/* Заголовок документа */}
+              {document && (
+                <div className={`bg-surface-secondary rounded-lg p-4 border-2 border-${typeColor}`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <TypeIcon size={28} className={`text-${typeColor}`} />
+                    <div>
+                      <h2 className="text-lg font-bold">{document.id}</h2>
+                      <p className="text-sm text-content-secondary">
+                        {operationType === 'return' ? 'Возврат' : 'Списание'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`px-3 py-2 rounded-lg text-center font-bold ${
+                    document.status === 'completed'
+                      ? 'bg-success-light text-success-dark'
+                      : 'bg-warning-light text-warning-dark'
+                  }`}>
+                    {document.status === 'completed' ? '✓ ЗАВЕРШЁН' : '⏳ В РАБОТЕ'}
+                  </div>
+                </div>
+              )}
 
-      {/* Scanner Input */}
-      <ScannerInput 
-        onScan={onScanWithFeedback}
-        placeholder="Отсканируйте товар..."
-      />
+              {/* US V.2: Сканирование */}
+              {document?.status !== 'completed' && (
+                <div className="bg-surface-secondary rounded-lg p-4">
+                  <h3 className="font-bold mb-3 flex items-center gap-2">
+                    <Package size={20} />
+                    Добавить товар
+                  </h3>
+                  <ScannerInput
+                    onScan={handleProductScan}
+                    placeholder="Отсканируйте товар..."
+                    autoFocus
+                  />
+                </div>
+              )}
 
-      {/* Lines */}
-      <div className="space-y-2">
-        {lines.map(line => (
-          <div
-            key={line.id}
-            className={`card border-2 ${
-              line.reason
-                ? 'bg-green-50 border-green-500 dark:bg-green-900'
-                : 'bg-red-50 border-red-500 dark:bg-red-900'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {line.productName}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Артикул: {line.productSku}
-                </p>
-                {line.reason && (
-                  <div className="mt-2 flex items-center space-x-2">
-                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">
-                      Причина:
-                    </span>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {reasons.find(r => r.value === line.reason)?.label || line.reasonText}
+              {/* Список добавленных товаров */}
+              {lines.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-bold text-sm text-content-tertiary uppercase flex items-center gap-2">
+                    <FileText size={16} />
+                    Список позиций ({lines.length})
+                  </h3>
+
+                  {lines.map((line) => (
+                    <div
+                      key={line.id}
+                      className="bg-surface-secondary rounded-lg p-4 space-y-3"
+                    >
+                      {/* Заголовок */}
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-bold">{line.productName}</h4>
+                          <p className="text-xs text-content-tertiary font-mono">
+                            {line.barcode}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveLine(line.id)}
+                          className="p-2 hover:bg-error/10 rounded-lg text-error transition-colors"
+                          disabled={document?.status === 'completed'}
+                        >
+                          <XCircle size={20} />
+                        </button>
+                      </div>
+
+                      {/* Причина */}
+                      <div className="bg-warning-light rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle size={16} className="text-warning-dark flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="text-xs text-warning-dark font-bold mb-1">
+                              Причина:
+                            </div>
+                            <div className="text-sm font-medium">{line.reason}</div>
+                            {line.comment && (
+                              <div className="text-xs text-content-secondary mt-1">
+                                {line.comment}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Количество */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Количество:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleQuantityChange(line.id, -1)}
+                            disabled={line.quantity <= 1 || document?.status === 'completed'}
+                            className="p-2 bg-surface-tertiary hover:bg-surface-primary rounded-lg disabled:opacity-50"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="text-xl font-bold min-w-[3ch] text-center">
+                            {line.quantity}
+                          </span>
+                          <button
+                            onClick={() => handleQuantityChange(line.id, 1)}
+                            disabled={document?.status === 'completed'}
+                            className="p-2 bg-surface-tertiary hover:bg-surface-primary rounded-lg disabled:opacity-50"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Фото */}
+                      {line.photo ? (
+                        <div className="relative">
+                          <img
+                            src={line.photo}
+                            alt="Product"
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                          <div className="absolute top-2 right-2 bg-success rounded-full p-2">
+                            <Camera size={16} className="text-white" />
+                          </div>
+                        </div>
+                      ) : document?.status !== 'completed' && (
+                        <button
+                          onClick={() => {
+                            setSelectedLineForPhoto(line);
+                            setShowPhotoCapture(true);
+                          }}
+                          className="w-full py-2 bg-surface-tertiary hover:bg-surface-primary rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Camera size={16} />
+                          Добавить фото
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Итоги */}
+              {lines.length > 0 && (
+                <div className="bg-brand-primary/10 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">Всего позиций:</span>
+                    <span className="text-xl font-bold">{lines.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Общее количество:</span>
+                    <span className="text-xl font-bold">
+                      {lines.reduce((sum, l) => sum + l.quantity, 0)}
                     </span>
                   </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                {!line.reason && (
-                  <button
-                    onClick={() => {
-                      setSelectedLineId(line.id);
-                      setShowReasonModal(true);
-                    }}
-                    className="px-3 py-1 bg-brand-primary text-white rounded text-sm hover:brightness-90"
-                  >
-                    Указать причину
-                  </button>
-                )}
-                <button
-                  onClick={() => removeProduct(line.id)}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
-            {/* Photo Button */}
-            <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => {
-                  alert('Функция фотофиксации будет доступна в следующей версии');
-                  // In real app: open camera -> save photo blob -> update line.photo
-                }}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-brand-primary transition-colors"
-              >
-                <Camera size={16} />
-                <span>Добавить фото</span>
-              </button>
-            </div>
+        {/* Кнопка завершения */}
+        {operationType && document && document.status !== 'completed' && lines.length > 0 && (
+          <div className="p-4 border-t border-separator bg-surface-primary fixed bottom-0 w-full max-w-3xl">
+            <Button onClick={handleFinish} className="w-full" size="lg">
+              <CheckCircle className="mr-2" />
+              Завершить {operationType === 'return' ? 'возврат' : 'списание'}
+            </Button>
           </div>
-        ))}
+        )}
       </div>
 
-      {lines.length === 0 && (
-        <div className="card text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">
-            Нет товаров. Отсканируйте товары для добавления.
-          </p>
-        </div>
+      {/* Диалоги */}
+      {showReasonSelector && (
+        <ReasonSelector
+          operationType={operationType!}
+          onSubmit={handleReasonSubmit}
+          onCancel={() => {
+            setShowReasonSelector(false);
+            setCurrentProduct(null);
+          }}
+        />
       )}
 
-      {/* Reason Modal */}
-      {showReasonModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Укажите причину
-            </h3>
-            <div className="space-y-2 mb-4">
-              {reasons.map(reason => (
-                <button
-                  key={reason.value}
-                  onClick={() => setSelectedReason(reason.value)}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors ${
-                    selectedReason === reason.value
-                      ? 'bg-brand-primary text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {reason.label}
-                </button>
-              ))}
-            </div>
-            {selectedReason === 'other' && (
-              <textarea
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-                placeholder="Опишите причину"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
-                rows={3}
-              />
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={saveReason}
-                disabled={!selectedReason || (selectedReason === 'other' && !customReason.trim())}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold disabled:opacity-50 hover:bg-green-700"
-              >
-                Сохранить
-              </button>
-              <button
-                onClick={() => {
-                  setShowReasonModal(false);
-                  setSelectedLineId(null);
-                  setSelectedReason('');
-                  setCustomReason('');
-                }}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
+      {showPhotoCapture && (
+        <PhotoCapture
+          onPhotoTaken={handlePhotoTaken}
+          onCancel={() => {
+            setShowPhotoCapture(false);
+            setSelectedLineForPhoto(null);
+          }}
+          existingPhoto={selectedLineForPhoto?.photo}
+        />
       )}
-    </div>
+    </>
   );
 };
 
